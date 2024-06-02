@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Privacy Maxx</title>
+        <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+            gm
+        <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    </head>
+    <body>
+        <button
+            hx-get="/pgp"
+            hx-swap="outerHTML"
+            hx-disabled-elt="this"
+        >
+            Click for Ideology
+        </button>
+        <button
+            hx-get="/image"
+            hx-swap="outerHTML"
+            hx-target="#cig"
+            hx-disabled-elt="this"
+        >
+            Get Random Cig
+        </button>
+        <div class="container" id="main" >
+            <img id="remilio" src="./assets/remilio.jpg" alt="Remilio" width="400" height="400">
+            <img id="cig" src="./assets/cig.jpg" alt="Cigawrette" width="400" height="400">
+        </div>
+    </body>
+</html>
