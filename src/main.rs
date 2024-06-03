@@ -36,7 +36,9 @@ pub async fn get_image() -> impl axum::response::IntoResponse {
     let cig_id = rand::thread_rng().gen_range(1..9997);
     let ipfs_link = format!("https://ipfs.io/ipfs/bafybeigvhgkcqqamlukxcmjodalpk2kuy5qzqtx6m4i6pvb7o3ammss3y4/{cig_id}.jpg");
 
-    let img_bytes = reqwest::get(ipfs_link)
+    let client = reqwest::ClientBuilder::new().use_rustls_tls().build().unwrap();
+    let img_bytes = client.get(ipfs_link)
+        .send()
         .await
         .unwrap()
         .bytes()
