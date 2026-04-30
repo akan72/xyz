@@ -4,7 +4,15 @@ Personal Website [`alexkan.xyz`](https://alexkan.xyz/) using [Axum](https://gith
 
 ## Local Build
 
-```{rust}
+Copy the env template and fill in your R2 credentials:
+
+```{bash}
+cp .env.template .env
+```
+
+Then run:
+
+```{bash}
 cargo run
 ```
 
@@ -40,3 +48,4 @@ python scripts/favicon.py
 - [Tom Schmidt's Website](https://github.com/tomhschmidt/PersonalWebsite)
 - [Artur Sapek's Website](https://github.com/artursapek/isometric-cubes/blob/main/artcx/src/main.rs)
 - [0xichigo's Website](https://github.com/0xIchigo/0xIchigo-Website/tree/main)
+
