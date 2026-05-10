@@ -7,8 +7,8 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-worker = "0.5"
-worker-macros = "0.5"
+worker = "0.8"
+worker-macros = "0.8"
 console_error_panic_hook = "0.1"
 getrandom = { version = "0.2", features = ["js"] }
 rand = "0.8"
