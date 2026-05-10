@@ -2,39 +2,18 @@
 name = "xyz"
 version = "0.1.0"
 edition = "2021"
-default-run = "xyz"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+crate-type = ["cdylib"]
 
 [dependencies]
-aws-sdk-s3 = "1"
-axum = "0.7.5"
-base64 = "0.22.1"
-dotenvy = "0.15"
-image = "0.25.1"
-include_dir = "0.7.3"
-markdown = "1.0.0-alpha.17"
-mdxjs = "0.2.2"
-rand = "0.8.5"
-tokio = { version = "1.37.0", features = ["full"] }
-tower-http = { version = "0.5.2" , features = ["fs", "trace"] }
-tower-serve-static = "0.1.1"
-tracing = "0.1.40"
-tracing-subscriber = "0.3.18"
+worker = "0.8"
+worker-macros = "0.8"
+console_error_panic_hook = "0.1"
+getrandom = { version = "0.2", features = ["js"] }
+rand = "0.8"
 
-# Optimize image-processing crates in dev so both
-# cargo run and image processing are fast
-[profile.dev.package.image]
-opt-level = 3
-[profile.dev.package.zune-jpeg]
-opt-level = 3
-[profile.dev.package.zune-core]
-opt-level = 3
-[profile.dev.package.jpeg-decoder]
-opt-level = 3
-[profile.dev.package.png]
-opt-level = 3
-[profile.dev.package.miniz_oxide]
-opt-level = 3
-[profile.dev.package.flate2]
-opt-level = 3
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true

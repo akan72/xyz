@@ -1,51 +1,57 @@
 # xyz
 
-Personal Website [`alexkan.xyz`](https://alexkan.xyz/) using [Axum](https://github.com/tokio-rs/axum), hosted on [fly.io](https://fly.io)
+Personal website [`alexkan.xyz`](https://alexkan.xyz/) built in Rust on
+[Cloudflare Workers](https://developers.cloudflare.com/workers/) via
+[`workers-rs`](https://github.com/cloudflare/workers-rs).
+[Static Assets](https://developers.cloudflare.com/workers/static-assets/)
+serves the HTML/images from the edge; an
+[R2](https://developers.cloudflare.com/r2/) binding backs the dynamic
+`/image` endpoint.
 
-## Local Build
+## Layout
 
-Copy the env template and fill in your R2 credentials:
+- `public/` — static HTML and images served by Workers Static Assets.
+- `src/lib.rs` — the Worker code. Handles `GET /image` (random cig HTML) and
+  `GET /cig/{id}` (R2 fetch + stream). Falls back to `404.html` for
+  unmatched paths.
+- `wrangler.toml` — assets directory, R2 binding, custom domain routes.
+- `Cargo.toml` — `workers-rs` deps; compiled to WASM by `worker-build`.
 
-```{bash}
-cp .env.template .env
-```
+## Local dev
 
-Then run:
+Prerequisites:
 
-```{bash}
-cargo run
-```
+    rustup target add wasm32-unknown-unknown
+    cargo install worker-build
+    npm install -g wrangler
 
-Navigate to `localhost:8080`
+Run against the real R2 bucket:
+
+    wrangler dev --remote
+
+Open http://localhost:8787
 
 ## Deploy
 
-Install fly.io cli
+Pushes to `master` deploy via GitHub Actions
+(`.github/workflows/deploy.yml`). To deploy manually:
 
-```{bash}
-brew install flyctl
-```
+    wrangler deploy
 
-Deploy
+First-time setup:
 
-```{bash}
-fly deploy
-```
+1. Set `bucket_name` in `wrangler.toml` to your R2 bucket.
+2. `wrangler login` (or set `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`).
+3. Add repo secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` for
+   GitHub Actions.
+4. Add your custom domain to Clodufalre.
 
-Generate Zyn Favicon
+## Generate Zyn Favicon
 
-```{python}
-python scripts/favicon.py
-```
-
-## Details
-
-- Axum webserver
-- [`tower_serve_static`](https://docs.rs/tower-serve-static/latest/tower_serve_static/) to embed static assets into the Rust binary
+    python scripts/favicon.py
 
 ## Inspiration
 
 - [Tom Schmidt's Website](https://github.com/tomhschmidt/PersonalWebsite)
 - [Artur Sapek's Website](https://github.com/artursapek/isometric-cubes/blob/main/artcx/src/main.rs)
 - [0xichigo's Website](https://github.com/0xIchigo/0xIchigo-Website/tree/main)
-

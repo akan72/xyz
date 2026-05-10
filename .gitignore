@@ -1,5 +1,9 @@
 /target
 .vscode
-.DS_STORE
+.DS_Store
 .env
+.dev.vars
+.wrangler/
+build/
 src/bin/
+node_modules/
