@@ -61,9 +61,10 @@ jobs:
       - name: Install worker-build
         run: cargo install worker-build --locked
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version-file: .nvmrc
+          node-version: '22'
 
       # Production: push to the default branch → create-or-update the Worker
       # at its production URL. `wrangler deploy` creates the script on first
