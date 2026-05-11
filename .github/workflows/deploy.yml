@@ -31,7 +31,7 @@ jobs:
 
       - run: cargo fmt --all --check
 
-      - run: cargo check --target wasm32-unknown-unknown
+      - run: cargo check --lib --target wasm32-unknown-unknown
 
   deploy:
     name: Cloudflare Workers
@@ -73,11 +73,14 @@ jobs:
         if: github.event_name == 'push'
         run: npx --yes wrangler@${{ env.WRANGLER_VERSION }} deploy
 
-      # Pull requests: deploy to a per-PR Worker via the `preview` env in
-      # wrangler.toml, which omits the custom-domain routes so each open
-      # PR has its own isolated preview at a stable workers.dev URL. The
-      # companion `pr-preview-cleanup.yml` workflow tears the Worker down
-      # when the PR is closed.
+      # Pull requests: deploy to a per-PR Worker using wrangler.preview.toml,
+      # which mirrors wrangler.toml but omits the [[routes]] blocks. That
+      # way each PR's Worker publishes only to its workers.dev URL and
+      # cannot hijack the production custom domains. (We deliberately do
+      # NOT use `wrangler deploy --env preview` — wrangler's --env / --name
+      # interaction is inconsistent enough that previews ended up grabbing
+      # production routes.) The companion `pr-preview-cleanup.yml` workflow
+      # tears the Worker down when the PR is closed.
       - name: Deploy PR preview
         id: preview
         if: github.event_name == 'pull_request'
@@ -89,7 +92,7 @@ jobs:
 
           DEPLOY_LOG="$(mktemp)"
           npx --yes wrangler@${{ env.WRANGLER_VERSION }} deploy \
-            --env preview --name "${PREVIEW_NAME}" 2>&1 | tee "${DEPLOY_LOG}"
+            --config wrangler.preview.toml --name "${PREVIEW_NAME}" 2>&1 | tee "${DEPLOY_LOG}"
 
           # Capture the first https://*.workers.dev URL printed by wrangler;
           # that's the deployed preview's public URL.

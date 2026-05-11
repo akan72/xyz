@@ -24,15 +24,3 @@ custom_domain = true
 
 [observability]
 enabled = true
-
-# Preview environment used by `.github/workflows/deploy.yml` for PR
-# previews. Routes are intentionally omitted so each PR's
-# Worker is created on `workers.dev` only and doesn't deploy to
-# the production domain. `r2_buckets` is non-inheritable across wrangler
-# environments and must be redeclared. Other top-level keys
-# are automatically inherited.
-[env.preview]
-
-[[env.preview.r2_buckets]]
-binding = "BUCKET"
-bucket_name = "cigawrette-packs"
