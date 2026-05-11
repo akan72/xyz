@@ -33,7 +33,9 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
                     .execute()
                     .await?
                 {
-                    let body = obj.body().ok_or_else(|| Error::from("R2 object had no body"))?;
+                    let body = obj
+                        .body()
+                        .ok_or_else(|| Error::from("R2 object had no body"))?;
                     let bytes = body.bytes().await?;
                     let headers = Headers::new();
                     // Add Edge Caching with 24hr TTL
@@ -52,5 +54,3 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     let res = env.assets("ASSETS")?.fetch_request(nf_req).await?;
     Ok(res.with_status(404))
 }
-
-
