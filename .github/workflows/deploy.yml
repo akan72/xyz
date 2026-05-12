@@ -1,37 +1,150 @@
-name: Deploy
+name: CI & Deploy
+
 on:
   push:
-    branches: [master]
-  workflow_dispatch:
+    branches: [master, main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+# Pin Wrangler to a single exact version everywhere so CI matches what
+# you'd get running `npx wrangler@${WRANGLER_VERSION}` locally.
+env:
+  WRANGLER_VERSION: "4.90.0"
 
 jobs:
-  deploy:
+  rust:
+    name: Rust (fmt + check)
     runs-on: ubuntu-latest
-    concurrency: deploy-group
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
+      - run: cargo fmt --all --check
+
+      - run: cargo check --lib --target wasm32-unknown-unknown
+
+  deploy:
+    name: Cloudflare Workers
+    needs: [rust]
+    runs-on: ubuntu-latest
+    # Secrets aren't exposed to PRs from forks; skip deploy there.
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    permissions:
+      contents: read
+      deployments: write
+      pull-requests: write
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install worker-build
+        run: cargo install worker-build --locked
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      # Production: push to the default branch → create-or-update the Worker
+      # at its production URL. `wrangler deploy` creates the script on first
+      # run, so no separate bootstrap is needed.
+      - name: Deploy to production
+        if: github.event_name == 'push'
+        run: npx --yes wrangler@${{ env.WRANGLER_VERSION }} deploy
+
+      # Pull requests: deploy to a per-PR Worker using wrangler.preview.toml,
+      # which mirrors wrangler.toml but omits the [[routes]] blocks. That
+      # way each PR's Worker publishes only to its workers.dev URL and
+      # cannot hijack the production custom domains. (We deliberately do
+      # NOT use `wrangler deploy --env preview` — wrangler's --env / --name
+      # interaction is inconsistent enough that previews ended up grabbing
+      # production routes.) The companion `pr-preview-cleanup.yml` workflow
+      # tears the Worker down when the PR is closed.
+      - name: Deploy PR preview
+        id: preview
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          PREVIEW_NAME="xyz-pr-${PR_NUMBER}"
+          echo "preview_name=${PREVIEW_NAME}" >>"$GITHUB_OUTPUT"
+
+          DEPLOY_LOG="$(mktemp)"
+          npx --yes wrangler@${{ env.WRANGLER_VERSION }} deploy \
+            --config wrangler.preview.toml --name "${PREVIEW_NAME}" 2>&1 | tee "${DEPLOY_LOG}"
+
+          # Capture the first https://*.workers.dev URL printed by wrangler;
+          # that's the deployed preview's public URL.
+          PREVIEW_URL="$(grep -oE 'https://[^[:space:]]+\.workers\.dev' "${DEPLOY_LOG}" | head -n1)"
+          if [ -z "${PREVIEW_URL}" ]; then
+            echo "::error::Failed to detect preview URL in wrangler output"
+            exit 1
+          fi
+          echo "preview_url=${PREVIEW_URL}" >>"$GITHUB_OUTPUT"
+
+      - name: Comment preview URL on PR
+        if: github.event_name == 'pull_request' && steps.preview.outputs.preview_url
+        uses: actions/github-script@v7
+        env:
+          PREVIEW_URL: ${{ steps.preview.outputs.preview_url }}
+          PREVIEW_NAME: ${{ steps.preview.outputs.preview_name }}
         with:
-          targets: wasm32-unknown-unknown
+          script: |
+            const marker = '<!-- preview-deployment -->';
+            const previewUrl = process.env.PREVIEW_URL;
+            const previewName = process.env.PREVIEW_NAME;
+            const sha = context.payload.pull_request.head.sha.substring(0, 7);
+            const body = [
+              marker,
+              '### Cloudflare Workers preview',
+              '',
+              `Preview deployed for commit \`${sha}\`:`,
+              '',
+              `- URL: ${previewUrl}`,
+              `- Worker: \`${previewName}\``,
+              '',
+              'This preview environment will be deleted when the PR is closed.',
+            ].join('\n');
 
-      - name: Cache cargo
-        uses: Swatinem/rust-cache@v2
-
-      - name: Install worker-build
-        run: cargo install worker-build --locked
-
-      - name: Deploy
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          wranglerVersion: "4.90.0"
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

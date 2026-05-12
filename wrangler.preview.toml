@@ -1,0 +1,25 @@
+# Preview-only wrangler config used by .github/workflows/deploy.yml for
+# PR previews. Mirrors wrangler.toml exactly except the [[routes]]
+# blocks are omitted so each PR Worker publishes only to its
+# <name>.<subdomain>.workers.dev URL and cannot deploy to the production
+# custom domain. The Worker name is passed via `--name` at deploy
+# time (e.g. `--name xyz-pr-5`); the `name` field below is a
+# placeholder that gets overridden.
+name = "xyz"
+main = "build/worker/shim.mjs"
+compatibility_date = "2026-05-01"
+
+[build]
+command = "cargo install -q worker-build && worker-build --release"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "none"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "cigawrette-packs"
+
+[observability]
+enabled = true
