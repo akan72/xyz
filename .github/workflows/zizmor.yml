@@ -1,0 +1,28 @@
+name: zizmor
+
+# Static analysis of the GitHub Actions workflows themselves, catching
+# unpinned actions, credential persistence, template injection, and other
+# CI/CD risks. See https://docs.zizmor.sh.
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  zizmor:
+    name: zizmor
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - uses: zizmorcore/zizmor-action@5f14fd08f7cf1cb1609c1e344975f152c7ee938d # v0.5.6
+        with:
+          # Don't upload SARIF to code scanning (requires GitHub Advanced
+          # Security); fail the job directly on any finding instead.
+          advanced-security: false
