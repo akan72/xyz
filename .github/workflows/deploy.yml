@@ -58,6 +58,14 @@ jobs:
       - name: Install worker-build
         run: cargo install worker-build --locked
 
+      - name: Cache worker-build binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/worker-build
+          key: ${{ runner.os }}-worker-build-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-worker-build-
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
