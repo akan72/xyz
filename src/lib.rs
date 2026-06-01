@@ -14,12 +14,10 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     let url = req.url()?;
     let path = url.path();
 
-    // Replace base Cig with random one on button click
+    // Replace base Cig with random one on button click (returns raw URL for preload)
     if path == "/image" {
         let id = rand::thread_rng().gen_range(CIG_MIN..=CIG_MAX);
-        return Response::from_html(format!(
-            r#"<img id="cig" alt="Cigawrette" width="400" height="400" src="/cig/{id}">"#
-        ));
+        return Response::ok(format!("/cig/{id}"));
     }
 
     if let Some(id_str) = path.strip_prefix("/cig/") {
@@ -38,9 +36,9 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
                         .ok_or_else(|| Error::from("R2 object had no body"))?;
                     let bytes = body.bytes().await?;
                     let headers = Headers::new();
-                    // Add Edge Caching with 24hr TTL
+                    // Add Edge Caching: 24hr Browser TTL & 1yr CDN TTL (allows purging updates)
                     headers.set("content-type", "image/jpeg")?;
-                    headers.set("cache-control", "public, max-age=86400, immutable")?;
+                    headers.set("cache-control", "public, max-age=86400, s-maxage=31536000")?;
                     return Ok(Response::from_bytes(bytes)?.with_headers(headers));
                 }
             }
