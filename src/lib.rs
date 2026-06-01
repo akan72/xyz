@@ -34,12 +34,12 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
                     let body = obj
                         .body()
                         .ok_or_else(|| Error::from("R2 object had no body"))?;
-                    let bytes = body.bytes().await?;
-                    let headers = Headers::new();
+                    let mut res = Response::from_body(body.response_body()?)?;
+                    let headers = res.headers_mut();
                     // Add Edge Caching: 24hr Browser TTL & 1yr CDN TTL (allows purging updates)
                     headers.set("content-type", "image/jpeg")?;
                     headers.set("cache-control", "public, max-age=86400, s-maxage=31536000")?;
-                    return Ok(Response::from_bytes(bytes)?.with_headers(headers));
+                    return Ok(res);
                 }
             }
         }
