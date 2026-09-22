@@ -2,29 +2,35 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>alexkan.xyz</title>
         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
-            gm
         <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     </head>
     <body>
-        <button
-            hx-get="/pgp"
-            hx-swap="outerHTML"
-            hx-disabled-elt="this"
-        >
-            Click for Ideology
-        </button>
-        <button
-            hx-get="/image"
-            hx-swap="outerHTML"
-            hx-target="#cig"
-            hx-disabled-elt="this"
-        >
+        gm
+        <br><br>
+        <a href="/pgp.txt" target="_blank"><button>Click for PGP</button></a>
+        <a href="/ideology.html"><button>Click for Ideology</button></a>
+        <button onclick="
+            const btn = this;
+            btn.disabled = true;
+            fetch('/image')
+                .then(r => r.text())
+                .then(url => {
+                    const temp = new Image();
+                    temp.onload = () => {
+                        document.getElementById('cig').src = url;
+                        btn.disabled = false;
+                    };
+                    temp.src = url;
+                });
+        ">
             Get Random Cig
         </button>
+        <br><br>
         <div class="container" id="main" >
-            <img id="remilio" src="./assets/remilio.jpg" alt="Remilio" width="400" height="400">
+            <img id="milady" src="./assets/milady.jpg" alt="Milady" width="320" height="400">
             <img id="cig" src="./assets/cig.jpg" alt="Cigawrette" width="400" height="400">
         </div>
     </body>
