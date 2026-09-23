@@ -5,20 +5,86 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Projects | alexkan.xyz</title>
         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+        <script>
+            // Apply a saved theme choice before paint; otherwise follow the system setting
+            try {
+                const theme = localStorage.getItem('theme');
+                if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+            } catch (e) {}
+        </script>
         <style>
-            body { max-width: 720px; margin: 40px auto; padding: 0 16px; }
+            :root { color-scheme: light; --bg: #f4f4f4; --fg: #111; --nav: #333; --muted: #666; --rule: #d6d6d6; }
+            @media (prefers-color-scheme: dark) {
+                :root:not([data-theme="light"]) { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --nav: #c8c8c8; --muted: #9a9a9a; --rule: #333; }
+            }
+            :root[data-theme="dark"] { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --nav: #c8c8c8; --muted: #9a9a9a; --rule: #333; }
+            body { background: var(--bg); color: var(--fg); font-family: Georgia, "Times New Roman", serif; margin: 0; }
+            main { max-width: 720px; margin: 40px auto; padding: 0 16px; }
+            h2 { margin: 0 0 24px; }
+            nav a { color: var(--nav); margin-right: 14px; }
+            button { font: inherit; cursor: pointer; }
+            .project { padding: 28px 0; border-top: 1px solid var(--rule); }
+            .project:first-of-type { border-top: 0; margin-top: 16px; }
+            .project h3 { margin: 0 0 10px; font-weight: normal; font-size: 1.25rem; }
+            .project h3 a { color: var(--fg); }
+            .project p { margin: 0 0 10px; line-height: 1.55; max-width: 62ch; }
+            .project .meta { color: var(--muted); font-size: 0.9rem; }
+            .split { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
+            .split > div { flex: 1 1 260px; min-width: 0; }
+            .fig { width: 260px; max-width: 100%; aspect-ratio: 4 / 5; background: #111; flex: none; }
+            .fig canvas { display: block; width: 100%; height: 100%; }
+            .caption { color: var(--muted); font-size: 0.9rem; line-height: 1.5; margin-top: 10px; max-width: 260px; }
+            .bullet { display: inline-grid; place-items: center; width: 1.35em; height: 1.35em; border-radius: 50%; color: #fff; font-size: 0.85em; vertical-align: -0.2em; }
         </style>
     </head>
     <body>
-        <h2> Projects </h2>
-        <ul>
-            <li> <a href="https://github.com/akan72/dotfiles" target="_blank">dotfiles</a> </li>
-            <li> <a href="https://github.com/akan72/xyz" target="_blank">xyz</a> </li>
-            <li> <a href="https://alexkan.xyz/mingus/" target="_blank">mingus</a> </li>
-            <li> <a href="https://istheldown.com" target="_blank">istheldown.com</a> </li>
-            <li> <a href="https://github.com/akan72/cig_scraper" target="_blank">cig_scraper</a> </li>
-        </ul>
-        <br>
-        <a href="/">[ Home ]</a>
+        <main>
+            <h2>Projects</h2>
+            <nav>
+                <a href="/">Home</a>
+                <a href="/ideology.html">Ideology</a>
+                <a href="/contact.html">Contact</a>
+            </nav>
+
+            <section class="project">
+                <h3><a href="https://istheldown.com" target="_blank">istheldown.com</a></h3>
+                <div class="split">
+                    <div>
+                        <p>A real-time map of every train in New York. A Cloudflare Worker and a Durable Object poll the MTA&rsquo;s GTFS-Realtime feeds every 15 seconds and push the diffs over a WebSocket to a MapLibre map: subway, LIRR, Metro-North, NJ Transit, ferries, buses, and every service alert, with a page per line that answers &ldquo;is the L down?&rdquo;</p>
+                        <p class="meta">TypeScript &middot; Cloudflare Workers, Durable Objects, R2 &middot; MapLibre GL</p>
+                    </div>
+                    <div>
+                        <div class="fig"><canvas id="subway-vis" aria-label="Generative figure driven by one subway line's live train positions"></canvas></div>
+                        <div class="caption" id="subway-vis-caption">Connecting to istheldown.com&hellip;</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="project">
+                <h3><a href="https://alexkan.xyz/mingus/" target="_blank">mingus</a></h3>
+                <p>A map of your music taste. It takes a Spotify extended streaming history export, tags every artist with genres from Last.fm and MusicBrainz, projects them into two dimensions with UMAP, and renders the result as a WebGL scatter with a time scrubber, so you can watch your taste drift over the life of the account. The pipeline runs on Modal.</p>
+                <p class="meta">Python, polars, UMAP &middot; Modal &middot; WebGL</p>
+            </section>
+
+            <section class="project">
+                <h3><a href="https://github.com/akan72/xyz" target="_blank">xyz</a></h3>
+                <p>This site. Rust compiled to WebAssembly and run on Cloudflare Workers through workers-rs. The pages are static files served from the edge; the only dynamic route is the random-cig button, which streams an image out of an R2 bucket.</p>
+                <p class="meta">Rust &middot; workers-rs &middot; Cloudflare Workers, R2</p>
+            </section>
+
+            <section class="project">
+                <h3><a href="https://github.com/akan72/cig_scraper" target="_blank">cig_scraper</a></h3>
+                <p>Pulls all 9,998 Cigarette Pack NFT images from IPFS into an R2 bucket, fanned out across Modal containers in batches of a hundred with retries and resumable runs. That bucket is what the random-cig button on the homepage reads from.</p>
+                <p class="meta">Python &middot; Modal &middot; Cloudflare R2</p>
+            </section>
+
+            <section class="project">
+                <h3><a href="https://github.com/akan72/dotfiles" target="_blank">dotfiles</a></h3>
+                <p>Neovim, tmux, iTerm2, and Oh My Zsh configuration, plus Hammerspoon hotkeys that switch focus between apps from a Hyper key. Clone it on a new machine and the setup comes with you.</p>
+                <p class="meta">Vimscript, Lua, zsh</p>
+            </section>
+        </main>
+        <script src="https://cdn.jsdelivr.net/npm/hydra-synth@1.4.0/dist/hydra-synth.js"></script>
+        <script src="/assets/subway-vis.js"></script>
     </body>
 </html>
