@@ -47,24 +47,32 @@
   const scratch = document.createElement('canvas'); scratch.width = 70; scratch.height = 88; const sctx = scratch.getContext('2d');
   const seed = Math.floor(Math.random() * 10000);
 
-  function build(p, withData) {
-    const [lo, mid, hi] = p.pal.map(hex);
-    let shape = S.osc(p.bands, p.drift, 0).rotate(p.angle, p.spin)
-      .modulate(S.noise(4, p.morph).pixelate(50, 1).rotate(seed, 0.75), 1);
-    if (withData) shape = shape.modulate(S.src(S.s1), 0.35);
-    shape.modulateRotate(S.noise(1, p.morph).rotate(seed, 0.75), 1.57).pixelate(112, 140).out(S.o0);
-    S.src(S.o1).blend(S.src(S.o0), 0.12).out(S.o1);
+  // Every data-driven value is read through a function, so hydra treats it as a uniform: the shader
+  // source never changes, the graph is compiled exactly once (before the data arrives), and a new
+  // snapshot only updates numbers. Two output programs: the feedback buffer and the colour/post pass.
+  const K = { bands: 20, drift: 0.1, angle: 1.57, spin: 0, morph: 0.5, jitter: 0.002, bright: -0.1, lo: hex('#7c858c'), mid: hex('#525252'), hi: hex('#3d3d3d') };
+  function buildGraph() {
+    const u = k => () => K[k], c = (k, i) => () => K[k][i];
+    const shape = S.osc(u('bands'), u('drift'), 0).rotate(u('angle'), u('spin'))
+      .modulate(S.noise(4, u('morph')).pixelate(50, 1).rotate(seed, 0.75), 1)
+      .modulate(S.src(S.s1), 0.35)
+      .modulateRotate(S.noise(1, u('morph')).rotate(seed, 0.75), 1.57)
+      .pixelate(112, 140);
+    S.src(S.o1).blend(shape, 0.12).out(S.o1);
     const L = () => S.src(S.o1);
-    S.solid(...lo).mult(L().thresh(0.1).invert())
-      .add(S.solid(...mid).mult(L().thresh(0.1).mult(L().thresh(0.8).invert())))
-      .add(S.solid(...hi).mult(L().thresh(0.8)))
-      .out(S.o2);
-    S.src(S.o2).modulate(S.noise(1000, 5), p.jitter)
+    S.solid(c('lo', 0), c('lo', 1), c('lo', 2)).mult(L().thresh(0.1).invert())
+      .add(S.solid(c('mid', 0), c('mid', 1), c('mid', 2)).mult(L().thresh(0.1).mult(L().thresh(0.8).invert())))
+      .add(S.solid(c('hi', 0), c('hi', 1), c('hi', 2)).mult(L().thresh(0.8)))
+      .modulate(S.noise(1000, 5), u('jitter'))
       .add(S.noise(300, 20).luma(0.6, 0.1), 0.12)
-      .brightness(p.bright)
-      .out(S.o3);
-    S.render(S.o3);
-    S.speed = p.speed;
+      .brightness(u('bright'))
+      .out(S.o2);
+    S.render(S.o2);
+  }
+  function applyKnobs(k) {
+    Object.assign(K, { bands: k.bands, drift: k.drift, angle: k.angle, spin: k.spin, morph: k.morph, jitter: k.jitter, bright: k.bright });
+    [K.lo, K.mid, K.hi] = k.pal.map(hex);
+    S.speed = k.speed;
   }
 
   // --- frame loop: pauses offscreen, on hidden tabs, and for reduced motion ---
@@ -136,7 +144,7 @@
   (async () => {
     if (!(await ensureHydra())) return remove('hydra-synth did not load from jsDelivr or unpkg');
     // Create the renderer and compile the shader graph now, so the only work left when the snapshot lands is one rebuild with real numbers.
-    try { createRenderer(); build({ bands: 20, drift: 0.1, angle: 1.57, spin: 0, morph: 0.5, speed: 0.15, jitter: 0.002, bright: -0.1, pal: ['#7c858c', '#525252', '#3d3d3d'] }, true); hydra.tick(16); }
+    try { createRenderer(); buildGraph(); hydra.tick(16); }
     catch (e) { return remove('renderer failed (WebGL?): ' + e); }
     const pre = window.__subway || null;
     let stations;
@@ -163,13 +171,13 @@
         scene = { route, stations, trains: new Map(), alerts: 0, serverTime: m.serverTime, receivedAt: performance.now() };
         m.trains.forEach(t => { if (subway(t) && t.routeId === route) scene.trains.set(t.tripId, t); });
         scene.alerts = m.alerts.filter(a => (a.system || 'subway') === 'subway' && a.routeIds.includes(route)).length;
-        drawInputs(scene); const k = knobs(scene); build(k, true); describe(scene, k, true); settle(); show(); start(); lastBuild = performance.now();
+        drawInputs(scene); const k = knobs(scene); applyKnobs(k); describe(scene, k, true); settle(); show(); start(); lastBuild = performance.now();
       } else if (!scene) return;
       else if (m.type === 'trains') { m.updated.forEach(t => { if (subway(t) && t.routeId === scene.route) scene.trains.set(t.tripId, t); }); m.removed.forEach(id => scene.trains.delete(id)); dirty = true; }
       else if (m.type === 'alerts') { scene.alerts = m.alerts.filter(a => (a.system || 'subway') === 'subway' && a.routeIds.includes(scene.route)).length; dirty = true; }
       else return;
       scene.serverTime = m.serverTime; scene.receivedAt = performance.now();
-      if (dirty && performance.now() - lastBuild > 20000) { const k = knobs(scene); build(k, true); describe(scene, k, true); lastBuild = performance.now(); dirty = false; }
+      if (dirty && performance.now() - lastBuild > 20000) { const k = knobs(scene); applyKnobs(k); describe(scene, k, true); lastBuild = performance.now(); dirty = false; }
     };
     // Before the first snapshot, any failure means "no figure". After it, the last state simply stays on screen.
     ws.onerror = () => {};
