@@ -14,9 +14,13 @@
     try { console.info('[subway-vis] figure hidden: ' + reason); } catch (e) {}
     if (DEBUG) { captionBlock.hidden = false; caption.textContent = 'subway-vis hidden: ' + reason + ' | ' + navigator.userAgent; }
   };
+  // The renderer script loads async in <head>; wait for it, and try unpkg if the first CDN fails.
+  function loadScript(src) { return new Promise(res => { const sc = document.createElement('script'); sc.src = src; sc.onload = () => res(typeof Hydra !== 'undefined'); sc.onerror = () => res(false); document.head.appendChild(sc); }); }
   function ensureHydra() {
     if (typeof Hydra !== 'undefined') return Promise.resolve(true);
-    return new Promise(res => { const sc = document.createElement('script'); sc.src = 'https://unpkg.com/hydra-synth@1.4.0/dist/hydra-synth.js'; sc.onload = () => res(typeof Hydra !== 'undefined'); sc.onerror = () => res(false); document.head.appendChild(sc); });
+    const tag = document.getElementById('hydra-script');
+    const primary = tag && !window.__hydraFailed ? new Promise(res => { tag.addEventListener('load', () => res(typeof Hydra !== 'undefined')); tag.addEventListener('error', () => res(false)); setTimeout(() => res(typeof Hydra !== 'undefined'), 5000); }) : Promise.resolve(false);
+    return primary.then(ok => ok || loadScript('https://unpkg.com/hydra-synth@1.4.0/dist/hydra-synth.js'));
   }
 
   const LINE = { '1': '#D82233', '2': '#D82233', '3': '#D82233', '4': '#009952', '5': '#009952', '6': '#009952', '7': '#9A38A1', A: '#0062CF', C: '#0062CF', E: '#0062CF', B: '#EB6800', D: '#EB6800', F: '#EB6800', M: '#EB6800', G: '#799534', J: '#8E5C33', Z: '#8E5C33', L: '#7C858C', N: '#F6BC26', Q: '#F6BC26', R: '#F6BC26', W: '#F6BC26' };
@@ -33,8 +37,7 @@
   function show() { box.hidden = false; captionBlock.hidden = false; }
   function remove(reason) { stop(); box.hidden = true; captionBlock.hidden = true; hide(reason || 'unknown'); }
   function createRenderer() {
-    show();
-    const W = Math.max(2, Math.round(box.clientWidth)), H = Math.max(2, Math.round(box.clientHeight));
+    const W = Math.max(2, Math.min(260, Math.round(box.parentElement.clientWidth || 260))), H = Math.round(W * 1.25);
     hydra = new Hydra({ canvas, width: W, height: H, detectAudio: false, makeGlobal: false, autoLoop: false, enableStreamCapture: false });
     S = hydra.synth;
     S.s0.init({ src: dots, dynamic: true }); S.s1.init({ src: field, dynamic: true });
@@ -70,7 +73,7 @@
   function frame(t) { if (!hydra) { raf = null; return; } const dt = Math.min(t - last, 100); last = t; frameNo++; if (scene && frameNo % 30 === 0) drawInputs(scene); hydra.tick(dt); raf = requestAnimationFrame(frame); }
   function start() { if (!hydra || raf || reduced || document.hidden || !visible) return; last = performance.now(); raf = requestAnimationFrame(frame); }
   function stop() { cancelAnimationFrame(raf); raf = null; }
-  const settle = () => { if (hydra) for (let k = 0; k < 40; k++) hydra.tick(16); };
+  const settle = () => { if (hydra) for (let k = 0; k < 24; k++) hydra.tick(16); };
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? start() : stop(); }, { threshold: 0 }).observe(box);
   document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
 
@@ -132,13 +135,21 @@
 
   (async () => {
     if (!(await ensureHydra())) return remove('hydra-synth did not load from jsDelivr or unpkg');
+    // Create the renderer and compile the shader graph now, so the only work left when the snapshot lands is one rebuild with real numbers.
+    try { createRenderer(); build({ bands: 20, drift: 0.1, angle: 1.57, spin: 0, morph: 0.5, speed: 0.15, jitter: 0.002, bright: -0.1, pal: ['#7c858c', '#525252', '#3d3d3d'] }, true); hydra.tick(16); }
+    catch (e) { return remove('renderer failed (WebGL?): ' + e); }
+    const pre = window.__subway || null;
     let stations;
-    try { const r = await fetch(STATIONS_URL); if (!r.ok) throw new Error(r.status); stations = await r.json(); } catch (e) { return remove('station file failed: ' + e); }
+    try { stations = await (pre && pre.stations ? pre.stations : fetch(STATIONS_URL).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })); } catch (e) { return remove('station file failed: ' + e); }
     let attempts = 0;
     const connect = () => {
     attempts++;
-    let ws; try { ws = new WebSocket(WS_URL); } catch (e) { return remove('WebSocket constructor failed: ' + e); }
-    const timer = setTimeout(() => { if (!scene) { try { ws.close(); } catch (e) {} remove('no snapshot within 20 s'); } }, 20000);
+    // First attempt: adopt the socket the page opened in <head>, replaying anything it already queued.
+    const early = attempts === 1 && pre && pre.ws && pre.closed === null ? pre : null;
+    let ws;
+    if (early) ws = early.ws; else { try { ws = new WebSocket(WS_URL); } catch (e) { return remove('WebSocket constructor failed: ' + e); } }
+    const elapsed = early ? performance.now() - early.t0 : 0;
+    const timer = setTimeout(() => { if (!scene) { try { ws.close(); } catch (e) {} remove('no snapshot within 20 s'); } }, Math.max(2000, 20000 - elapsed));
     const subway = t => (t.system || 'subway') === 'subway';
     let lastBuild = 0, dirty = false;
     ws.onmessage = ev => {
@@ -152,8 +163,7 @@
         scene = { route, stations, trains: new Map(), alerts: 0, serverTime: m.serverTime, receivedAt: performance.now() };
         m.trains.forEach(t => { if (subway(t) && t.routeId === route) scene.trains.set(t.tripId, t); });
         scene.alerts = m.alerts.filter(a => (a.system || 'subway') === 'subway' && a.routeIds.includes(route)).length;
-        try { createRenderer(); } catch (e) { scene = null; try { ws.close(); } catch (e2) {} return remove('renderer failed (WebGL?): ' + e); }
-        drawInputs(scene); const k = knobs(scene); build(k, true); describe(scene, k, true); settle(); start(); lastBuild = performance.now();
+        drawInputs(scene); const k = knobs(scene); build(k, true); describe(scene, k, true); settle(); show(); start(); lastBuild = performance.now();
       } else if (!scene) return;
       else if (m.type === 'trains') { m.updated.forEach(t => { if (subway(t) && t.routeId === scene.route) scene.trains.set(t.tripId, t); }); m.removed.forEach(id => scene.trains.delete(id)); dirty = true; }
       else if (m.type === 'alerts') { scene.alerts = m.alerts.filter(a => (a.system || 'subway') === 'subway' && a.routeIds.includes(scene.route)).length; dirty = true; }
@@ -168,6 +178,7 @@
       clearTimeout(timer);
       if (attempts < 2) setTimeout(connect, 1500); else remove('socket closed before a snapshot (code ' + ev.code + ')');
     };
+    if (early) { ws.removeEventListener('message', early.onmsg); const q = early.queue.splice(0); q.forEach(d => ws.onmessage({ data: d })); if (early.closed !== null && !scene) ws.onclose({ code: early.closed }); }
     };
     connect();
   })();

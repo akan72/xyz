@@ -5,6 +5,25 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Projects | alexkan.xyz</title>
         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+        <link rel="preconnect" href="https://istheldown.com">
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+        <script>
+            // Open the istheldown feed and fetch the station table right away, before the
+            // renderer has loaded; assets/subway-vis.js picks these up (messages are queued).
+            window.__subway = (function () {
+                try {
+                    var s = { ws: new WebSocket('wss://istheldown.com/ws'), queue: [], closed: null, t0: performance.now() };
+                    s.onmsg = function (e) { s.queue.push(e.data); };
+                    s.ws.addEventListener('message', s.onmsg);
+                    s.ws.addEventListener('close', function (e) { s.closed = e.code; });
+                    s.stations = fetch('/assets/subway-stations.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+                    s.stations.catch(function () {});
+                    return s;
+                } catch (e) { return null; }
+            })();
+        </script>
+        <script id="hydra-script" src="https://cdn.jsdelivr.net/npm/hydra-synth@1.4.0/dist/hydra-synth.js" async onerror="window.__hydraFailed = true"></script>
+        <script src="/assets/subway-vis.js" defer></script>
         <script>
             // Apply a saved theme choice before paint; otherwise follow the system setting
             try {
@@ -50,7 +69,5 @@
         </ul>
         <br>
         <a href="/">[ Home ]</a>
-        <script src="https://cdn.jsdelivr.net/npm/hydra-synth@1.4.0/dist/hydra-synth.js"></script>
-        <script src="/assets/subway-vis.js"></script>
     </body>
 </html>
