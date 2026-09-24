@@ -8,8 +8,16 @@
   const canvas = document.getElementById('subway-vis');
   const caption = document.getElementById('subway-vis-caption');
   if (!canvas) return;
-  const hide = reason => { try { console.info('[subway-vis] figure hidden: ' + reason); } catch (e) {} };
-  if (typeof Hydra === 'undefined') { hide('hydra-synth did not load'); return; }
+  const DEBUG = /[?&]debug\b/.test(location.search);
+  const box = canvas.parentElement, captionBlock = caption.parentElement;
+  const hide = reason => {
+    try { console.info('[subway-vis] figure hidden: ' + reason); } catch (e) {}
+    if (DEBUG) { captionBlock.hidden = false; caption.textContent = 'subway-vis hidden: ' + reason + ' | ' + navigator.userAgent; }
+  };
+  function ensureHydra() {
+    if (typeof Hydra !== 'undefined') return Promise.resolve(true);
+    return new Promise(res => { const sc = document.createElement('script'); sc.src = 'https://unpkg.com/hydra-synth@1.4.0/dist/hydra-synth.js'; sc.onload = () => res(typeof Hydra !== 'undefined'); sc.onerror = () => res(false); document.head.appendChild(sc); });
+  }
 
   const LINE = { '1': '#D82233', '2': '#D82233', '3': '#D82233', '4': '#009952', '5': '#009952', '6': '#009952', '7': '#9A38A1', A: '#0062CF', C: '#0062CF', E: '#0062CF', B: '#EB6800', D: '#EB6800', F: '#EB6800', M: '#EB6800', G: '#799534', J: '#8E5C33', Z: '#8E5C33', L: '#7C858C', N: '#F6BC26', Q: '#F6BC26', R: '#F6BC26', W: '#F6BC26' };
   const CANDIDATES = Object.keys(LINE);          // mainline services only; no shuttles or express variants
@@ -21,7 +29,6 @@
   const parentOf = s => (s && /[NS]$/.test(s)) ? s.slice(0, -1) : s;
 
   // --- renderer (created only once a snapshot has arrived, so a dead feed never shows a black box) ---
-  const box = canvas.parentElement, captionBlock = caption.parentElement;
   let hydra = null, S = null;
   function show() { box.hidden = false; captionBlock.hidden = false; }
   function remove(reason) { stop(); box.hidden = true; captionBlock.hidden = true; hide(reason || 'unknown'); }
@@ -124,6 +131,7 @@
   }
 
   (async () => {
+    if (!(await ensureHydra())) return remove('hydra-synth did not load from jsDelivr or unpkg');
     let stations;
     try { const r = await fetch(STATIONS_URL); if (!r.ok) throw new Error(r.status); stations = await r.json(); } catch (e) { return remove('station file failed: ' + e); }
     let attempts = 0;
