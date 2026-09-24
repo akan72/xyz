@@ -41,8 +41,8 @@
             </li>
             <li> <a href="https://istheldown.com" target="_blank">istheldown.com</a>
                 <p>A real-time map of every train in New York. A Cloudflare Worker and a Durable Object poll the MTA&rsquo;s GTFS-Realtime feeds every 15 seconds and push the diffs over a WebSocket to a MapLibre map: subway, LIRR, Metro-North, NJ Transit, ferries, buses, and every service alert, with a page per line that answers &ldquo;is the L down?&rdquo;</p>
-                <div class="fig"><canvas id="subway-vis" aria-label="Generative figure driven by one subway line's live train positions"></canvas></div>
-                <p><small id="subway-vis-caption">Connecting to istheldown.com&hellip;</small></p>
+                <div class="fig" hidden><canvas id="subway-vis" aria-label="Generative figure driven by one subway line's live train positions"></canvas></div>
+                <p hidden><small id="subway-vis-caption"></small></p>
             </li>
             <li> <a href="https://github.com/akan72/cig_scraper" target="_blank">cig_scraper</a>
                 <p>Pulls all 9,998 Cigarette Pack NFT images from IPFS into an R2 bucket, fanned out across Modal containers in batches of a hundred with retries and resumable runs. That bucket is what the random-cig button on the homepage reads from.</p>

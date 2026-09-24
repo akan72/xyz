@@ -2,8 +2,8 @@
 // Subscribes to istheldown's WebSocket, picks one subway line at random on every
 // page load, and renders it with hydra-synth: one band per train on that line,
 // bands turned to the line's geographic axis, the line's official color, and the
-// trains' positions (blurred) warping the shape. Falls back to a fixed sketch if
-// the feed can't be reached.
+// trains' positions (blurred) warping the shape. The figure stays hidden until a
+// snapshot arrives; if istheldown can't be reached, it is removed from the page.
 (function () {
   const canvas = document.getElementById('subway-vis');
   const caption = document.getElementById('subway-vis-caption');
@@ -18,15 +18,21 @@
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const parentOf = s => (s && /[NS]$/.test(s)) ? s.slice(0, -1) : s;
 
-  // --- renderer ---
-  const box = canvas.parentElement;
-  const W = Math.max(2, Math.round(box.clientWidth)), H = Math.max(2, Math.round(box.clientHeight));
-  const hydra = new Hydra({ canvas, width: W, height: H, detectAudio: false, makeGlobal: false, autoLoop: false, enableStreamCapture: false });
-  const S = hydra.synth;
+  // --- renderer (created only once a snapshot has arrived, so a dead feed never shows a black box) ---
+  const box = canvas.parentElement, captionBlock = caption.parentElement;
+  let hydra = null, S = null;
+  function show() { box.hidden = false; captionBlock.hidden = false; }
+  function remove() { stop(); box.hidden = true; captionBlock.hidden = true; }
+  function createRenderer() {
+    show();
+    const W = Math.max(2, Math.round(box.clientWidth)), H = Math.max(2, Math.round(box.clientHeight));
+    hydra = new Hydra({ canvas, width: W, height: H, detectAudio: false, makeGlobal: false, autoLoop: false, enableStreamCapture: false });
+    S = hydra.synth;
+    S.s0.init({ src: dots, dynamic: true }); S.s1.init({ src: field, dynamic: true });
+  }
   const dots = document.createElement('canvas'); dots.width = 280; dots.height = 350; const dctx = dots.getContext('2d');
   const field = document.createElement('canvas'); field.width = 70; field.height = 88; const fctx = field.getContext('2d');
   const scratch = document.createElement('canvas'); scratch.width = 70; scratch.height = 88; const sctx = scratch.getContext('2d');
-  S.s0.init({ src: dots, dynamic: true }); S.s1.init({ src: field, dynamic: true });
   const seed = Math.floor(Math.random() * 10000);
 
   function build(p, withData) {
@@ -52,10 +58,10 @@
   // --- frame loop: pauses offscreen, on hidden tabs, and for reduced motion ---
   let raf = null, last = 0, visible = true, frameNo = 0, scene = null;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function frame(t) { const dt = Math.min(t - last, 100); last = t; frameNo++; if (scene && frameNo % 30 === 0) drawInputs(scene); hydra.tick(dt); raf = requestAnimationFrame(frame); }
-  function start() { if (raf || reduced || document.hidden || !visible) return; last = performance.now(); raf = requestAnimationFrame(frame); }
+  function frame(t) { if (!hydra) { raf = null; return; } const dt = Math.min(t - last, 100); last = t; frameNo++; if (scene && frameNo % 30 === 0) drawInputs(scene); hydra.tick(dt); raf = requestAnimationFrame(frame); }
+  function start() { if (!hydra || raf || reduced || document.hidden || !visible) return; last = performance.now(); raf = requestAnimationFrame(frame); }
   function stop() { cancelAnimationFrame(raf); raf = null; }
-  const settle = () => { for (let k = 0; k < 40; k++) hydra.tick(16); };
+  const settle = () => { if (hydra) for (let k = 0; k < 40; k++) hydra.tick(16); };
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? start() : stop(); }, { threshold: 0 }).observe(box);
   document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
 
@@ -114,29 +120,26 @@
       k.n + ' ' + sc.route + ' train' + (k.n === 1 ? '' : 's') + ' running, ' + k.alerts + ' alert' + (k.alerts === 1 ? '' : 's') +
       (live ? ' &middot; live from istheldown.com' : '') + '. One band per train, turned to the line’s axis. Refresh for another line.';
   }
-  function fallback(msg) {
-    build({ bands: 20, drift: 0.1, angle: 1.57, spin: 0.1, morph: 0.5, speed: 0.15, jitter: 0.002, bright: -0.1, pal: ['#ff7aed', '#525252', '#3d3d3d'] }, false);
-    caption.textContent = msg;
-    settle(); start();
-  }
 
   (async () => {
     let stations;
-    try { stations = await (await fetch(STATIONS_URL)).json(); } catch (e) { return fallback('Couldn’t load station data.'); }
-    let ws; try { ws = new WebSocket(WS_URL); } catch (e) { return fallback('Couldn’t reach istheldown.com.'); }
-    const timer = setTimeout(() => { try { ws.close(); } catch (e) {} if (!scene) fallback('Couldn’t reach istheldown.com.'); }, 8000);
+    try { const r = await fetch(STATIONS_URL); if (!r.ok) throw new Error(r.status); stations = await r.json(); } catch (e) { return remove(); }
+    let ws; try { ws = new WebSocket(WS_URL); } catch (e) { return remove(); }
+    const timer = setTimeout(() => { if (!scene) { try { ws.close(); } catch (e) {} remove(); } }, 8000);
     const subway = t => (t.system || 'subway') === 'subway';
     let lastBuild = 0, dirty = false;
     ws.onmessage = ev => {
-      const m = JSON.parse(ev.data);
-      if (m.type === 'snapshot') {
+      let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+      if (m.type === 'snapshot' && !scene) {
         clearTimeout(timer);
         const counts = {}; m.trains.filter(subway).forEach(t => { counts[t.routeId] = (counts[t.routeId] || 0) + 1; });
         const pool = CANDIDATES.filter(r => (counts[r] || 0) >= 3);
-        const route = (pool.length ? pool : CANDIDATES)[Math.floor(Math.random() * (pool.length || CANDIDATES.length))];
+        if (!pool.length) { try { ws.close(); } catch (e) {} return remove(); }
+        const route = pool[Math.floor(Math.random() * pool.length)];
         scene = { route, stations, trains: new Map(), alerts: 0, serverTime: m.serverTime, receivedAt: performance.now() };
         m.trains.forEach(t => { if (subway(t) && t.routeId === route) scene.trains.set(t.tripId, t); });
         scene.alerts = m.alerts.filter(a => (a.system || 'subway') === 'subway' && a.routeIds.includes(route)).length;
+        try { createRenderer(); } catch (e) { scene = null; try { ws.close(); } catch (e2) {} return remove(); }
         drawInputs(scene); const k = knobs(scene); build(k, true); describe(scene, k, true); settle(); start(); lastBuild = performance.now();
       } else if (!scene) return;
       else if (m.type === 'trains') { m.updated.forEach(t => { if (subway(t) && t.routeId === scene.route) scene.trains.set(t.tripId, t); }); m.removed.forEach(id => scene.trains.delete(id)); dirty = true; }
@@ -145,6 +148,8 @@
       scene.serverTime = m.serverTime; scene.receivedAt = performance.now();
       if (dirty && performance.now() - lastBuild > 20000) { const k = knobs(scene); build(k, true); describe(scene, k, true); lastBuild = performance.now(); dirty = false; }
     };
-    ws.onerror = () => { if (!scene) { clearTimeout(timer); fallback('Couldn’t reach istheldown.com.'); } };
+    // Before the first snapshot, any failure means "no figure". After it, the last state simply stays on screen.
+    ws.onerror = () => { if (!scene) { clearTimeout(timer); remove(); } };
+    ws.onclose = () => { if (!scene) { clearTimeout(timer); remove(); } else describe(scene, knobs(scene), false); };
   })();
 })();
