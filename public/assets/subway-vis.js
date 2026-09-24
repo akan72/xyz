@@ -7,7 +7,9 @@
 (function () {
   const canvas = document.getElementById('subway-vis');
   const caption = document.getElementById('subway-vis-caption');
-  if (!canvas || typeof Hydra === 'undefined') return;
+  if (!canvas) return;
+  const hide = reason => { try { console.info('[subway-vis] figure hidden: ' + reason); } catch (e) {} };
+  if (typeof Hydra === 'undefined') { hide('hydra-synth did not load'); return; }
 
   const LINE = { '1': '#D82233', '2': '#D82233', '3': '#D82233', '4': '#009952', '5': '#009952', '6': '#009952', '7': '#9A38A1', A: '#0062CF', C: '#0062CF', E: '#0062CF', B: '#EB6800', D: '#EB6800', F: '#EB6800', M: '#EB6800', G: '#799534', J: '#8E5C33', Z: '#8E5C33', L: '#7C858C', N: '#F6BC26', Q: '#F6BC26', R: '#F6BC26', W: '#F6BC26' };
   const CANDIDATES = Object.keys(LINE);          // mainline services only; no shuttles or express variants
@@ -22,7 +24,7 @@
   const box = canvas.parentElement, captionBlock = caption.parentElement;
   let hydra = null, S = null;
   function show() { box.hidden = false; captionBlock.hidden = false; }
-  function remove() { stop(); box.hidden = true; captionBlock.hidden = true; }
+  function remove(reason) { stop(); box.hidden = true; captionBlock.hidden = true; hide(reason || 'unknown'); }
   function createRenderer() {
     show();
     const W = Math.max(2, Math.round(box.clientWidth)), H = Math.max(2, Math.round(box.clientHeight));
@@ -123,9 +125,12 @@
 
   (async () => {
     let stations;
-    try { const r = await fetch(STATIONS_URL); if (!r.ok) throw new Error(r.status); stations = await r.json(); } catch (e) { return remove(); }
-    let ws; try { ws = new WebSocket(WS_URL); } catch (e) { return remove(); }
-    const timer = setTimeout(() => { if (!scene) { try { ws.close(); } catch (e) {} remove(); } }, 8000);
+    try { const r = await fetch(STATIONS_URL); if (!r.ok) throw new Error(r.status); stations = await r.json(); } catch (e) { return remove('station file failed: ' + e); }
+    let attempts = 0;
+    const connect = () => {
+    attempts++;
+    let ws; try { ws = new WebSocket(WS_URL); } catch (e) { return remove('WebSocket constructor failed: ' + e); }
+    const timer = setTimeout(() => { if (!scene) { try { ws.close(); } catch (e) {} remove('no snapshot within 20 s'); } }, 20000);
     const subway = t => (t.system || 'subway') === 'subway';
     let lastBuild = 0, dirty = false;
     ws.onmessage = ev => {
@@ -134,12 +139,12 @@
         clearTimeout(timer);
         const counts = {}; m.trains.filter(subway).forEach(t => { counts[t.routeId] = (counts[t.routeId] || 0) + 1; });
         const pool = CANDIDATES.filter(r => (counts[r] || 0) >= 3);
-        if (!pool.length) { try { ws.close(); } catch (e) {} return remove(); }
+        if (!pool.length) { try { ws.close(); } catch (e) {} return remove('no line with 3+ trains in the snapshot'); }
         const route = pool[Math.floor(Math.random() * pool.length)];
         scene = { route, stations, trains: new Map(), alerts: 0, serverTime: m.serverTime, receivedAt: performance.now() };
         m.trains.forEach(t => { if (subway(t) && t.routeId === route) scene.trains.set(t.tripId, t); });
         scene.alerts = m.alerts.filter(a => (a.system || 'subway') === 'subway' && a.routeIds.includes(route)).length;
-        try { createRenderer(); } catch (e) { scene = null; try { ws.close(); } catch (e2) {} return remove(); }
+        try { createRenderer(); } catch (e) { scene = null; try { ws.close(); } catch (e2) {} return remove('renderer failed (WebGL?): ' + e); }
         drawInputs(scene); const k = knobs(scene); build(k, true); describe(scene, k, true); settle(); start(); lastBuild = performance.now();
       } else if (!scene) return;
       else if (m.type === 'trains') { m.updated.forEach(t => { if (subway(t) && t.routeId === scene.route) scene.trains.set(t.tripId, t); }); m.removed.forEach(id => scene.trains.delete(id)); dirty = true; }
@@ -149,7 +154,13 @@
       if (dirty && performance.now() - lastBuild > 20000) { const k = knobs(scene); build(k, true); describe(scene, k, true); lastBuild = performance.now(); dirty = false; }
     };
     // Before the first snapshot, any failure means "no figure". After it, the last state simply stays on screen.
-    ws.onerror = () => { if (!scene) { clearTimeout(timer); remove(); } };
-    ws.onclose = () => { if (!scene) { clearTimeout(timer); remove(); } else describe(scene, knobs(scene), false); };
+    ws.onerror = () => {};
+    ws.onclose = ev => {
+      if (scene) return describe(scene, knobs(scene), false);
+      clearTimeout(timer);
+      if (attempts < 2) setTimeout(connect, 1500); else remove('socket closed before a snapshot (code ' + ev.code + ')');
+    };
+    };
+    connect();
   })();
 })();
