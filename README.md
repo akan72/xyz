@@ -50,6 +50,13 @@ First-time setup:
 
     python scripts/favicon.py
 
+## Generate Link Preview Card
+
+`public/assets/og.jpg` is the Open Graph image shown when a link to the site
+is pasted into iMessage, Slack, Discord, etc. Uses macOS system Georgia.
+
+    uv run --with pillow python scripts/og.py          # add --dark for the dark card
+
 ## Inspiration
 
 - [Tom Schmidt's Website](https://github.com/tomhschmidt/PersonalWebsite)
