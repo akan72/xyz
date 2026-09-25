@@ -1,0 +1,509 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XYZ Screensaver Opacity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+    :root {
+        --ground: #FAFAF7;
+        --raised: #F0F0EA;
+        --ink: #16171A;
+        --muted: #5C5F66;
+        --rule: #DCDCD4;
+        --accent: #D212AF;
+        --accent-ink: #FFFFFF;
+        --serif: Georgia, "Times New Roman", serif;
+        --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+            color-scheme: dark;
+            --ground: #111214;
+            --raised: #1A1B1F;
+            --ink: #EDEDE8;
+            --muted: #9B9DA4;
+            --rule: #2B2D32;
+            --accent: #FF4FD8;
+            --accent-ink: #111214;
+        }
+    }
+    :root[data-theme="dark"] {
+        color-scheme: dark;
+        --ground: #111214;
+        --raised: #1A1B1F;
+        --ink: #EDEDE8;
+        --muted: #9B9DA4;
+        --rule: #2B2D32;
+        --accent: #FF4FD8;
+        --accent-ink: #111214;
+    }
+
+    body {
+        margin: 0;
+        background: var(--ground);
+        color: var(--ink);
+        font: 17px/1.55 var(--serif);
+    }
+    .page {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding-inline: 20px;
+        padding-block: 40px 72px;
+        display: grid;
+        gap: 56px;
+    }
+    h1, h2 {
+        margin: 0;
+        font-weight: 700;
+        line-height: 1.15;
+        text-wrap: balance;
+    }
+    h1 { font-size: 36px; }
+    h2 { font-size: 24px; }
+    p { margin: 0; }
+    code, .mono {
+        font-family: var(--mono);
+        font-size: 0.86em;
+    }
+    img {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+    }
+
+    .intro {
+        display: grid;
+        gap: 18px;
+    }
+    .mark {
+        width: 96px;
+        aspect-ratio: 550 / 260;
+        background: var(--accent);
+        -webkit-mask: url("xyz.svg") center / contain no-repeat;
+        mask: url("xyz.svg") center / contain no-repeat;
+    }
+    .lede {
+        max-width: 64ch;
+        color: var(--ink);
+    }
+    .facts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 40px;
+        margin: 6px 0 0;
+        padding-top: 18px;
+        border-top: 1px solid var(--rule);
+    }
+    .facts div {
+        display: grid;
+        gap: 2px;
+    }
+    .facts dt {
+        font: 600 11px/1.4 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+    }
+    .facts dd {
+        margin: 0;
+        font: 15px/1.4 var(--mono);
+    }
+
+    section {
+        display: grid;
+        gap: 18px;
+    }
+    .section-head {
+        display: grid;
+        gap: 6px;
+    }
+    .section-head p {
+        color: var(--muted);
+        max-width: 64ch;
+    }
+
+    .levels {
+        display: grid;
+        grid-template-columns: repeat(11, minmax(0, 1fr));
+        gap: 6px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+    }
+    .seg { position: relative; }
+    .seg input {
+        position: absolute;
+        opacity: 0;
+        width: 1px;
+        height: 1px;
+        margin: 0;
+    }
+    .seg label {
+        position: relative;
+        display: block;
+        padding: 10px 0;
+        text-align: center;
+        font: 600 15px/1 var(--mono);
+        font-variant-numeric: tabular-nums;
+        color: var(--ink);
+        background: var(--raised);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        cursor: pointer;
+    }
+    .seg label:hover { border-color: var(--accent); }
+    .seg input:checked + label {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--accent-ink);
+    }
+    .seg input:focus-visible + label {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+    }
+    .seg label.is-current::after {
+        content: "";
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+    .levels-note {
+        font: 13px/1.4 var(--mono);
+        color: var(--muted);
+    }
+
+    .clip {
+        margin: 0;
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        overflow: hidden;
+        background: var(--raised);
+    }
+    .viewer-caption {
+        display: grid;
+        gap: 10px;
+    }
+    .reading {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 4px 14px;
+    }
+    .reading .value {
+        font: 600 30px/1 var(--mono);
+        font-variant-numeric: tabular-nums;
+        color: var(--accent);
+    }
+    .formulas {
+        display: grid;
+        gap: 4px;
+        margin: 0;
+        overflow-x: auto;
+    }
+    .formulas div {
+        display: flex;
+        gap: 12px;
+        white-space: nowrap;
+    }
+    .formulas dt {
+        width: 3.5em;
+        font: 13px/1.6 var(--mono);
+        color: var(--muted);
+    }
+    .formulas dd {
+        margin: 0;
+        font: 13px/1.6 var(--mono);
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+    .grid .baseline { grid-column: 1 / -1; }
+    .tile {
+        display: grid;
+        gap: 8px;
+        width: 100%;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+    }
+    .tile .clip { transition: border-color 120ms ease; }
+    .tile:hover .clip { border-color: var(--accent); }
+    .tile:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 4px;
+        border-radius: 6px;
+    }
+    .tile-label {
+        display: flex;
+        gap: 10px;
+        align-items: baseline;
+    }
+    .tile-label .mono {
+        font-weight: 600;
+        font-size: 15px;
+        font-variant-numeric: tabular-nums;
+    }
+    .tile-label span:last-child {
+        font-size: 15px;
+        color: var(--muted);
+    }
+
+    h3 {
+        margin: 0;
+        font-size: 19px;
+        line-height: 1.2;
+        text-wrap: balance;
+    }
+    .halo-clips {
+        display: grid;
+        gap: 28px;
+    }
+    .halo-clip {
+        display: grid;
+        gap: 8px;
+        margin: 0;
+    }
+    .halo-clip figcaption,
+    .closeup-level {
+        font-weight: 600;
+        font-size: 15px;
+        font-variant-numeric: tabular-nums;
+        color: var(--accent);
+    }
+    .closeup-sets {
+        display: grid;
+        gap: 20px;
+    }
+    .closeup-set {
+        display: grid;
+        gap: 8px;
+    }
+    .closeups {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+    }
+    .closeups figure {
+        display: grid;
+        gap: 6px;
+        margin: 0;
+    }
+    .closeups img {
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+    }
+    .closeups figcaption {
+        font: 13px/1.4 var(--mono);
+        color: var(--muted);
+    }
+
+    .colophon {
+        padding-top: 18px;
+        border-top: 1px solid var(--rule);
+        font-size: 15px;
+        color: var(--muted);
+        max-width: 72ch;
+    }
+
+    .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+
+    @media (max-width: 700px) {
+        h1 { font-size: 30px; }
+        .levels { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+        .grid { grid-template-columns: minmax(0, 1fr); }
+        .closeups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .tile .clip { transition: none; }
+    }
+</style>
+
+<main class="page">
+    <header class="intro">
+        <div class="mark" aria-hidden="true"></div>
+        <h1>Screensaver opacity</h1>
+        <p class="lede">The alexkan.xyz idle screensaver recorded at every <code>BACKGROUND_OPACITY</code> from <span class="mono">1.0</span> down to <span class="mono">0.0</span>. Each clip shows dark mode on the left and light mode on the right, and every clip starts from the same spot, so the background is the only thing that changes. The halo test compares <span class="mono">0.7</span> and <span class="mono">0.6</span> with and without a glow around the logo.</p>
+        <dl class="facts">
+            <div><dt>Chosen value</dt><dd>0.6 with halo</dd></div>
+            <div><dt>Set in</dt><dd>public/assets/screensaver.js</dd></div>
+            <div><dt>Playback</dt><dd>Real speed, 15 fps</dd></div>
+        </dl>
+    </header>
+
+    <section aria-labelledby="halo-heading">
+        <div class="section-head">
+            <h2 id="halo-heading">Halo test</h2>
+            <p>A soft glow in the screensaver's background color around the logo, so the letters sit on the background their colors were chosen for. Without it, at <span class="mono">0.7</span> red, magenta and violet drop to about 2.5:1 in dark mode, below the 3:1 a graphic needs to stand out.</p>
+        </div>
+        <div class="halo-clips">
+            <figure class="halo-clip">
+                <figcaption class="mono">0.7</figcaption>
+                <div class="clip"><img src="gifs/halo-0.7.gif" width="1284" height="888" loading="lazy" alt="Screensaver at background opacity 0.7: without a halo on top, with a halo below, playing in sync."></div>
+            </figure>
+            <figure class="halo-clip">
+                <figcaption class="mono">0.6</figcaption>
+                <div class="clip"><img src="gifs/halo-0.6.gif" width="1284" height="888" loading="lazy" alt="Screensaver at background opacity 0.6: without a halo on top, with a halo below, playing in sync."></div>
+            </figure>
+        </div>
+        <p class="levels-note">In each clip the top half has no halo and the bottom half has it; both halves move in sync.</p>
+        <div class="section-head">
+            <h3>Close-up over the photo</h3>
+            <p>The hardest spot for the logo: the red letters over the dark parts of the homepage photo, at twice the resolution.</p>
+        </div>
+        <div class="closeup-sets">
+            <div class="closeup-set">
+                <p class="closeup-level mono">0.7</p>
+                <div class="closeups">
+                    <figure><img src="closeups/closeup-0.7-dark-none.png" width="478" height="264" loading="lazy" alt="Dark mode at 0.7 without a halo: red letters over the photo."><figcaption>Dark, no halo</figcaption></figure>
+                    <figure><img src="closeups/closeup-0.7-dark-halo.png" width="478" height="264" loading="lazy" alt="Dark mode at 0.7 with a halo: red letters outlined in the dark background color."><figcaption>Dark, halo</figcaption></figure>
+                    <figure><img src="closeups/closeup-0.7-light-none.png" width="478" height="264" loading="lazy" alt="Light mode at 0.7 without a halo: red letters over the washed-out photo."><figcaption>Light, no halo</figcaption></figure>
+                    <figure><img src="closeups/closeup-0.7-light-halo.png" width="478" height="264" loading="lazy" alt="Light mode at 0.7 with a halo: red letters with a soft light edge."><figcaption>Light, halo</figcaption></figure>
+                </div>
+            </div>
+            <div class="closeup-set">
+                <p class="closeup-level mono">0.6</p>
+                <div class="closeups">
+                    <figure><img src="closeups/closeup-0.6-dark-none.png" width="478" height="264" loading="lazy" alt="Dark mode at 0.6 without a halo: red letters over the photo."><figcaption>Dark, no halo</figcaption></figure>
+                    <figure><img src="closeups/closeup-0.6-dark-halo.png" width="478" height="264" loading="lazy" alt="Dark mode at 0.6 with a halo: red letters outlined in the dark background color."><figcaption>Dark, halo</figcaption></figure>
+                    <figure><img src="closeups/closeup-0.6-light-none.png" width="478" height="264" loading="lazy" alt="Light mode at 0.6 without a halo: red letters over the washed-out photo."><figcaption>Light, no halo</figcaption></figure>
+                    <figure><img src="closeups/closeup-0.6-light-halo.png" width="478" height="264" loading="lazy" alt="Light mode at 0.6 with a halo: red letters with a soft light edge."><figcaption>Light, halo</figcaption></figure>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="compare" aria-labelledby="compare-heading">
+        <div class="section-head">
+            <h2 id="compare-heading">Compare levels</h2>
+            <p>Pick a value to play its five-second clip. These clips have no halo.</p>
+        </div>
+        <fieldset class="levels">
+            <legend class="visually-hidden">Background opacity</legend>
+            <div class="seg"><input type="radio" name="level" id="level-10" value="1.0"><label for="level-10">1.0</label></div>
+            <div class="seg"><input type="radio" name="level" id="level-09" value="0.9"><label for="level-09">0.9</label></div>
+            <div class="seg"><input type="radio" name="level" id="level-08" value="0.8"><label for="level-08">0.8</label></div>
+            <div class="seg"><input type="radio" name="level" id="level-07" value="0.7"><label for="level-07">0.7</label></div>
+            <div class="seg"><input type="radio" name="level" id="level-06" value="0.6" checked><label for="level-06" class="is-current">0.6</label></div>
+            <div class="seg"><input type="radio" name="level" id="level-05" value="0.5"><label for="level-05">0.5</label></div>
+            <div class="seg"><input type="radio" name="level" id="level-04" value="0.4"><label for="level-04">0.4</label></div>
+            <div class="seg"><input type="radio" name="level" id="level-03" value="0.3"><label for="level-03">0.3</label></div>
+            <div class="seg"><input type="radio" name="level" id="level-02" value="0.2"><label for="level-02">0.2</label></div>
+            <div class="seg"><input type="radio" name="level" id="level-01" value="0.1"><label for="level-01">0.1</label></div>
+            <div class="seg"><input type="radio" name="level" id="level-00" value="0.0"><label for="level-00">0.0</label></div>
+        </fieldset>
+        <p class="levels-note">The dot marks the chosen value.</p>
+        <figure class="clip">
+            <img id="viewer-img" src="gifs/opacity-0.6.gif" width="1284" height="444" alt="Screensaver at background opacity 0.6, dark mode on the left and light mode on the right.">
+        </figure>
+        <div class="viewer-caption" aria-live="polite">
+            <p class="reading"><span class="value" id="viewer-value">0.6</span><span id="viewer-note">The page is clearly visible: dimmed in dark mode, washed out in light mode.</span></p>
+            <dl class="formulas">
+                <div><dt>dark</dt><dd id="formula-dark">color-mix(in srgb, #111214 60%, transparent)</dd></div>
+                <div><dt>light</dt><dd id="formula-light">color-mix(in srgb, #FAFAF7 60%, transparent)</dd></div>
+            </dl>
+        </div>
+    </section>
+
+    <section aria-labelledby="sweep-heading">
+        <div class="section-head">
+            <h2 id="sweep-heading"><span class="mono">1.0</span> to <span class="mono">0.0</span> in one run</h2>
+            <p>Each level plays for 1.6 seconds without restarting, so the logo keeps moving while the background steps down.</p>
+        </div>
+        <figure class="clip">
+            <img src="gifs/opacity-sweep.gif" width="1284" height="444" loading="lazy" alt="One continuous screensaver recording whose background opacity steps from 1.0 down to 0.0.">
+        </figure>
+    </section>
+
+    <section aria-labelledby="all-heading">
+        <div class="section-head">
+            <h2 id="all-heading">All eleven clips</h2>
+            <p>Select a clip to open it under Compare levels.</p>
+        </div>
+        <ul class="grid">
+            <li class="baseline"><button type="button" class="tile" data-level="1.0"><figure class="clip"><img src="gifs/opacity-1.0.gif" width="1284" height="444" loading="lazy" alt="Screensaver at background opacity 1.0."></figure><span class="tile-label"><span class="mono">1.0</span><span>Solid, the original design</span></span></button></li>
+            <li><button type="button" class="tile" data-level="0.9"><figure class="clip"><img src="gifs/opacity-0.9.gif" width="1284" height="444" loading="lazy" alt="Screensaver at background opacity 0.9."></figure><span class="tile-label"><span class="mono">0.9</span><span>Page barely visible</span></span></button></li>
+            <li><button type="button" class="tile" data-level="0.8"><figure class="clip"><img src="gifs/opacity-0.8.gif" width="1284" height="444" loading="lazy" alt="Screensaver at background opacity 0.8."></figure><span class="tile-label"><span class="mono">0.8</span><span>Page shows faintly</span></span></button></li>
+            <li><button type="button" class="tile" data-level="0.7"><figure class="clip"><img src="gifs/opacity-0.7.gif" width="1284" height="444" loading="lazy" alt="Screensaver at background opacity 0.7."></figure><span class="tile-label"><span class="mono">0.7</span><span>Page readable through the tint</span></span></button></li>
+            <li><button type="button" class="tile" data-level="0.6"><figure class="clip"><img src="gifs/opacity-0.6.gif" width="1284" height="444" loading="lazy" alt="Screensaver at background opacity 0.6."></figure><span class="tile-label"><span class="mono">0.6</span><span>Page clearly visible</span></span></button></li>
+            <li><button type="button" class="tile" data-level="0.5"><figure class="clip"><img src="gifs/opacity-0.5.gif" width="1284" height="444" loading="lazy" alt="Screensaver at background opacity 0.5."></figure><span class="tile-label"><span class="mono">0.5</span><span>Gray veil in dark mode</span></span></button></li>
+            <li><button type="button" class="tile" data-level="0.4"><figure class="clip"><img src="gifs/opacity-0.4.gif" width="1284" height="444" loading="lazy" alt="Screensaver at background opacity 0.4."></figure><span class="tile-label"><span class="mono">0.4</span><span>Mostly page</span></span></button></li>
+            <li><button type="button" class="tile" data-level="0.3"><figure class="clip"><img src="gifs/opacity-0.3.gif" width="1284" height="444" loading="lazy" alt="Screensaver at background opacity 0.3."></figure><span class="tile-label"><span class="mono">0.3</span><span>Light mode nearly gone</span></span></button></li>
+            <li><button type="button" class="tile" data-level="0.2"><figure class="clip"><img src="gifs/opacity-0.2.gif" width="1284" height="444" loading="lazy" alt="Screensaver at background opacity 0.2."></figure><span class="tile-label"><span class="mono">0.2</span><span>Faint tint</span></span></button></li>
+            <li><button type="button" class="tile" data-level="0.1"><figure class="clip"><img src="gifs/opacity-0.1.gif" width="1284" height="444" loading="lazy" alt="Screensaver at background opacity 0.1."></figure><span class="tile-label"><span class="mono">0.1</span><span>Barely any tint</span></span></button></li>
+            <li><button type="button" class="tile" data-level="0.0"><figure class="clip"><img src="gifs/opacity-0.0.gif" width="1284" height="444" loading="lazy" alt="Screensaver at background opacity 0.0."></figure><span class="tile-label"><span class="mono">0.0</span><span>Logo only</span></span></button></li>
+        </ul>
+    </section>
+
+    <p class="colophon">Recorded in headless Chromium on the homepage at 640 × 400 per theme. Every clip starts with the red logo near the top left, heading down and to the right, and changes color at each edge it hits.</p>
+</main>
+
+<script>
+    const NOTES = {
+        '1.0': 'Solid: the page is hidden. This is the original design.',
+        '0.9': 'The page is barely visible behind the tint.',
+        '0.8': 'The page shows faintly, and the logo keeps the contrast it was designed for.',
+        '0.7': 'The page is readable through the tint.',
+        '0.6': 'The page is clearly visible: dimmed in dark mode, washed out in light mode.',
+        '0.5': 'Dark mode turns into a gray veil. Over the photo, the logo starts to compete with the image.',
+        '0.4': 'Mostly page. In light mode the overlay is hard to tell apart from the site.',
+        '0.3': 'Dark mode is a light haze, and light mode looks almost like the plain page.',
+        '0.2': 'A faint tint. Over the photo, the logo gets harder to read.',
+        '0.1': 'Barely any tint in either mode.',
+        '0.0': 'No background at all: just the logo bouncing over the page.',
+    };
+
+    const viewer = document.getElementById('viewer-img');
+    const value = document.getElementById('viewer-value');
+    const note = document.getElementById('viewer-note');
+    const formulaDark = document.getElementById('formula-dark');
+    const formulaLight = document.getElementById('formula-light');
+    const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+    function show(level) {
+        const percent = Math.round(Number(level) * 100);
+        viewer.src = `gifs/opacity-${level}.gif`;
+        viewer.alt = `Screensaver at background opacity ${level}, dark mode on the left and light mode on the right.`;
+        value.textContent = level;
+        note.textContent = NOTES[level];
+        formulaDark.textContent = `color-mix(in srgb, #111214 ${percent}%, transparent)`;
+        formulaLight.textContent = `color-mix(in srgb, #FAFAF7 ${percent}%, transparent)`;
+    }
+
+    for (const input of document.querySelectorAll('input[name="level"]')) {
+        input.addEventListener('change', () => show(input.value));
+    }
+
+    for (const tile of document.querySelectorAll('.tile')) {
+        tile.addEventListener('click', () => {
+            const input = document.querySelector(`input[name="level"][value="${tile.dataset.level}"]`);
+            input.checked = true;
+            show(input.value);
+            document.getElementById('compare').scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start' });
+            input.focus({ preventScroll: true });
+        });
+    }
+</script>
