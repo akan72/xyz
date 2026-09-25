@@ -1,8 +1,10 @@
 # Preview-only wrangler config used by .github/workflows/deploy.yml for
-# PR previews. Mirrors wrangler.toml exactly except the [[routes]]
+# PR previews. Mirrors wrangler.toml except the [[routes]]
 # blocks are omitted so each PR Worker publishes only to its
 # <name>.<subdomain>.workers.dev URL and cannot deploy to the production
-# custom domain. The Worker name is passed via `--name` at deploy
+# custom domain, and `run_worker_first` is set so the Worker can point
+# the pages' link-preview (og:image, og:url) URLs at the preview host.
+# The Worker name is passed via `--name` at deploy
 # time (e.g. `--name xyz-pr-5`); the `name` field below is a
 # placeholder that gets overridden.
 name = "xyz"
@@ -16,6 +18,7 @@ command = "command -v worker-build >/dev/null 2>&1 || cargo install worker-build
 directory = "./public"
 binding = "ASSETS"
 not_found_handling = "none"
+run_worker_first = true
 
 [[r2_buckets]]
 binding = "BUCKET"
