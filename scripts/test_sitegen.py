@@ -227,6 +227,7 @@ Each link below is a Markdown copy of a page. Any page is also available as Mark
         )
 
         sitemap = self.read("sitemap.html")
+        self.assertIn('<li> <a href="/">Home</a> </li>', sitemap)
         self.assertIn('<li> <a href="/ideology">Ideology</a> </li>', sitemap)
         self.assertIn("<h2> Notes </h2>", sitemap)
         self.assertNotIn("Not found", sitemap)

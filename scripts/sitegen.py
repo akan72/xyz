@@ -569,7 +569,7 @@ def render_sitemap_html(pages) -> str:
     blocks = []
     for section, section_pages in sections(pages):
         items = "\n".join(
-            f'            <li> <a href="{html.escape(p.path)}">{html.escape(p.title)}</a> </li>'
+            f'            <li> <a href="{html.escape(p.path)}">{html.escape("Home" if p.path == "/" else p.title)}</a> </li>'
             for p in section_pages
         )
         heading = html.escape(section_title(section, "Sitemap"))
