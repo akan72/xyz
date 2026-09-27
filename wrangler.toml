@@ -9,6 +9,9 @@ command = "command -v worker-build >/dev/null 2>&1 || cargo install worker-build
 directory = "./public"
 binding = "ASSETS"
 not_found_handling = "none"
+# Pages go through the Worker so it can add link-preview tags (src/link_preview.rs);
+# assets are still served straight from the edge
+run_worker_first = ["/*", "!/assets/*", "!/pgp.txt"]
 
 [[r2_buckets]]
 binding = "BUCKET"

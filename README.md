@@ -12,8 +12,9 @@ serves the HTML/images from the edge; an
 
 - `public/` — static HTML and images served by Workers Static Assets.
 - `src/lib.rs` — the Worker code. Handles `GET /image` (random cig HTML) and
-  `GET /cig/{id}` (R2 fetch + stream). Falls back to `404.html` for
-  unmatched paths.
+  `GET /cig/{id}` (R2 fetch + stream), serves pages with link-preview tags
+  added, and falls back to `404.html` for unmatched paths.
+- `src/link_preview.rs` — adds Open Graph / Twitter tags to every HTML page.
 - `wrangler.toml` — assets directory, R2 binding, custom domain routes.
 - `Cargo.toml` — `workers-rs` deps; compiled to WASM by `worker-build`.
 
@@ -50,10 +51,19 @@ First-time setup:
 
     python scripts/favicon.py
 
-## Generate Link Preview Card
+## Link Previews
 
-`public/assets/og.jpg` is the Open Graph image shown when a link to the site
-is pasted into iMessage, Slack, Discord, etc. Uses macOS system Georgia.
+Every HTML page gets link-preview tags (iMessage, Slack, Discord, etc.)
+from the Worker: `og:title` from the page's `<title>`, `og:description`
+from its `<meta name="description">`, and the default card
+`public/assets/og.jpg`. New pages need nothing extra.
+
+To override a default on one page, declare that tag in the page's `<head>`;
+root-relative paths are fine:
+
+    <meta property="og:image" content="/assets/other-card.jpg">
+
+Regenerate the default card (uses macOS system Georgia):
 
     uv run --with pillow python scripts/og.py          # add --dark for the dark card
 

@@ -1,12 +1,11 @@
 use rand::Rng;
 use worker::*;
 
+mod link_preview;
+
 // Cig IDs go from 1 -> 9996
 const CIG_MIN: u32 = 1;
 const CIG_MAX: u32 = 9996;
-
-// Absolute origin baked into the Open Graph tags in public/*.html
-const PROD_ORIGIN: &str = "https://alexkan.xyz";
 
 // Worker entrypoint
 #[event(fetch)]
@@ -48,22 +47,25 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         }
     }
 
-    // PR previews run this Worker ahead of static assets (wrangler.preview.toml) so
-    // share-card URLs in HTML point at the preview host instead of production.
-    // In production assets are served first, so this only ever sees misses.
+    // Pages run this Worker ahead of static assets (run_worker_first in wrangler.toml)
+    // so every HTML page gets link-preview tags; see link_preview.rs
     let assets = env.assets("ASSETS")?;
     let mut res = assets.fetch_request(req.clone()?).await?;
     if res.status_code() != 404 {
-        let origin = url.origin().ascii_serialization();
         let is_html = res
             .headers()
             .get("content-type")?
             .is_some_and(|t| t.starts_with("text/html"));
-        if origin != PROD_ORIGIN && is_html && res.status_code() == 200 {
-            let html = res.text().await?.replace(
-                &format!("content=\"{PROD_ORIGIN}"),
-                &format!("content=\"{origin}"),
-            );
+        if is_html && res.status_code() == 200 {
+            // Crawlers expect https URLs even if the page was requested over http
+            let origin = match url.host_str() {
+                Some("localhost" | "127.0.0.1") => url.origin().ascii_serialization(),
+                _ => url
+                    .origin()
+                    .ascii_serialization()
+                    .replacen("http://", "https://", 1),
+            };
+            let html = link_preview::add_tags(&res.text().await?, &origin, path);
             return Response::from_html(html);
         }
         return Ok(res);
