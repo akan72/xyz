@@ -5,6 +5,9 @@ use worker::*;
 const CIG_MIN: u32 = 1;
 const CIG_MAX: u32 = 9996;
 
+// Absolute origin baked into the Open Graph tags in public/*.html
+const PROD_ORIGIN: &str = "https://alexkan.xyz";
+
 // Worker entrypoint
 #[event(fetch)]
 async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
@@ -43,6 +46,27 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
                 }
             }
         }
+    }
+
+    // PR previews run this Worker ahead of static assets (wrangler.preview.toml) so
+    // share-card URLs in HTML point at the preview host instead of production.
+    // In production assets are served first, so this only ever sees misses.
+    let assets = env.assets("ASSETS")?;
+    let mut res = assets.fetch_request(req.clone()?).await?;
+    if res.status_code() != 404 {
+        let origin = url.origin().ascii_serialization();
+        let is_html = res
+            .headers()
+            .get("content-type")?
+            .is_some_and(|t| t.starts_with("text/html"));
+        if origin != PROD_ORIGIN && is_html && res.status_code() == 200 {
+            let html = res.text().await?.replace(
+                &format!("content=\"{PROD_ORIGIN}"),
+                &format!("content=\"{origin}"),
+            );
+            return Response::from_html(html);
+        }
+        return Ok(res);
     }
 
     // 404 support
