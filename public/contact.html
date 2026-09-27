@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="/assets/theme.js"></script>
         <title>Contact | alexkan.xyz</title>
         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
         <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
@@ -27,7 +28,14 @@
         <meta name="twitter:image" content="https://alexkan.xyz/assets/og.jpg">
         <meta name="twitter:image:alt" content="alexkan.xyz, Alex Kan's personal website">
         <style>
-            body { max-width: 720px; margin: 40px auto; padding: 0 16px; }
+            :root { color-scheme: light; }
+            @media (prefers-color-scheme: dark) {
+                :root:not([data-theme="light"]) { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --link: #8ab4f8; --visited: #c58af9; }
+            }
+            :root[data-theme="dark"] { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --link: #8ab4f8; --visited: #c58af9; }
+            body { max-width: 720px; margin: 40px auto; padding: 0 16px; background: var(--bg, Canvas); color: var(--fg, CanvasText); }
+            a { color: var(--link, LinkText); }
+            a:visited { color: var(--visited, VisitedText); }
         </style>
     </head>
     <body>
