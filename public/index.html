@@ -7,6 +7,27 @@
         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
         <meta name="description" content="Alex Kan's personal website.">
         <script type="module" src="/assets/screensaver.js"></script>
+        <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@graph": [
+                    {
+                        "@type": "WebSite",
+                        "name": "alexkan.xyz",
+                        "url": "https://alexkan.xyz/"
+                    },
+                    {
+                        "@type": "ProfilePage",
+                        "url": "https://alexkan.xyz/",
+                        "mainEntity": {
+                            "@type": "Person",
+                            "name": "Alex Kan",
+                            "url": "https://alexkan.xyz/"
+                        }
+                    }
+                ]
+            }
+        </script>
         <style>
             body { background: #f4f4f4; color: #111; font-family: Georgia, "Times New Roman", serif; margin: 0; }
             main { max-width: 720px; margin: 40px auto; padding: 0 16px; }
@@ -22,9 +43,10 @@
         <main>
             <h2>alexkan.xyz</h2>
             <nav>
-                <a href="/ideology.html">Ideology</a>
-                <a href="/projects.html">Projects</a>
-                <a href="/contact.html">Contact</a>
+                <a href="/ideology">Ideology</a>
+                <a href="/projects">Projects</a>
+                <a href="/contact">Contact</a>
+                <a href="/sitemap">Sitemap</a>
             </nav>
             <img id="milady" src="./assets/milady.jpg" alt="Milady">
             <div class="cig-box">

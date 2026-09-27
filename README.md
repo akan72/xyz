@@ -10,18 +10,37 @@ serves the HTML/images from the edge; an
 
 ## Layout
 
-- `public/` — static HTML and images served by Workers Static Assets.
+- `public/` — hand-written HTML, images and `robots.txt`.
 - `public/assets/screensaver.js` — idle screensaver loaded by every page: the
   `public/assets/xyz-logo/` mark bounces around after 5s without input. Set
   `ENABLED = false` at the top of the file to turn it off.
 - `docs/screensaver/` — design log for the screensaver: screenshots and
   recordings from each iteration. Not deployed.
+- `scripts/sitegen.py` — runs in the wrangler build. Copies `public/` to
+  `dist/` (served by Workers Static Assets) and generates the files AI
+  crawlers and agents read: `llms.txt`, `llms-full.txt`, a Markdown copy of
+  each page (`/ideology.md`, `/index.md`), `sitemap.xml` and the `/sitemap`
+  page.
 - `src/lib.rs` — the Worker code. Handles `GET /image` (random cig HTML) and
-  `GET /cig/{id}` (R2 fetch + stream), serves pages with link-preview tags
-  added, and falls back to `404.html` for unmatched paths.
+  `GET /cig/{id}` (R2 fetch + stream), adds link-preview tags to pages, and
+  serves a page's Markdown copy to requests sent with
+  `Accept: text/markdown`. Unmatched paths get `404.html`.
 - `src/link_preview.rs` — adds Open Graph / Twitter tags to every HTML page.
-- `wrangler.toml` — assets directory, R2 binding, custom domain routes.
+- `wrangler.toml` — build command, assets directory, R2 binding, custom
+  domain routes.
 - `Cargo.toml` — `workers-rs` deps; compiled to WASM by `worker-build`.
+
+## Adding a page
+
+Add an `.html` file to `public/` with a `<title>` and a
+`<meta name="description">`. The build adds it to `llms.txt`,
+`llms-full.txt`, both sitemaps and its own Markdown copy, dated by its last
+git commit. It fails if either tag is missing. Pages with
+`<meta name="robots" content="noindex">` (like `404.html`) are left out.
+
+Test the generator with:
+
+    python3 -m unittest discover -s scripts
 
 ## Local dev
 
@@ -34,6 +53,8 @@ Prerequisites:
 Run against the real R2 bucket:
 
     wrangler dev --remote
+
+The build (and `dist/`) reruns when `src/`, `public/` or `scripts/` change.
 
 Open http://localhost:8787
 
