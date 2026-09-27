@@ -1,5 +1,6 @@
 """Tests for sitegen.py. Run: python3 -m unittest discover -s scripts"""
 
+import re
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
@@ -302,6 +303,18 @@ Each link below is a Markdown copy of a page. Any page is also available as Mark
 
 
 class SiteTests(unittest.TestCase):
+    def test_sitemap_page_matches_subpages(self):
+        """If this fails after restyling the subpages, copy the change into SITEMAP_HTML."""
+        with tempfile.TemporaryDirectory() as tmp:
+            sitegen.build(sitegen.PUBLIC, Path(tmp), {})
+            sitemap = (Path(tmp) / "sitemap.html").read_text()
+        subpage = (sitegen.PUBLIC / "ideology.html").read_text()
+        for pattern in (r"<style>.*?</style>", r"<script [^>]*></script>", r'<button class="theme-toggle".*?</button>'):
+            blocks = re.findall(pattern, subpage, re.S)
+            self.assertTrue(blocks, pattern)
+            for block in blocks:
+                self.assertIn(block, sitemap)
+
     def test_public_builds(self):
         with tempfile.TemporaryDirectory() as tmp:
             pages = sitegen.build(sitegen.PUBLIC, Path(tmp), {})

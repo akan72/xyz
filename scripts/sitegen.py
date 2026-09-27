@@ -35,6 +35,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path, PurePosixPath
+from string import Template
 from urllib.parse import quote, urljoin, urlsplit
 from xml.sax.saxutils import escape as xml_escape
 
@@ -515,24 +516,38 @@ def render_sitemap_xml(pages) -> str:
     return "\n".join(lines + ["</urlset>"]) + "\n"
 
 
-# Styled like the other subpages (ideology.html, contact.html)
-SITEMAP_HTML = """\
+# Same look as the other subpages (ideology.html, projects.html). A test checks
+# that its <style>, scripts and theme toggle still match them.
+SITEMAP_HTML = Template("""\
 <!DOCTYPE html>
 <html lang="en">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Sitemap | {site_name}</title>
+        <script src="/assets/theme.js"></script>
+        <title>Sitemap | $site_name</title>
         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
-        <meta name="description" content="Every page on {site_name}.">
+        <meta name="description" content="Every page on $site_name.">
         <script type="module" src="/assets/screensaver.js"></script>
         <style>
-            body {{ max-width: 720px; margin: 40px auto; padding: 0 16px; }}
+            :root { color-scheme: light; }
+            @media (prefers-color-scheme: dark) {
+                :root:not([data-theme="light"]) { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --link: #8ab4f8; --visited: #c58af9; }
+            }
+            :root[data-theme="dark"] { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --link: #8ab4f8; --visited: #c58af9; }
+            body { max-width: 720px; margin: 40px auto; padding: 0 16px; background: var(--bg, Canvas); color: var(--fg, CanvasText); }
+            a { color: var(--link, LinkText); }
+            a:visited { color: var(--visited, VisitedText); }
+            .theme-toggle { color: inherit; background: none; border: 0; padding: 2px; margin-left: 14px; cursor: pointer; line-height: 0; vertical-align: -4px; }
+            .theme-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+            .theme-toggle:hover { opacity: 0.7; }
+            .icon-sun, :root[data-theme="dark"] .icon-moon { display: none; }
+            :root[data-theme="dark"] .icon-sun { display: inline; }
         </style>
-        <link rel="canonical" href="{site_url}/sitemap">
+        <link rel="canonical" href="$site_url/sitemap">
     </head>
     <body>
-{sections}
+$sections
         <h2> For Robots </h2>
         <ul>
             <li> <a href="/llms.txt">llms.txt</a> </li>
@@ -541,10 +556,13 @@ SITEMAP_HTML = """\
             <li> <a href="/robots.txt">robots.txt</a> </li>
         </ul>
         <br>
-        <nav><a href="/">[ Home ]</a></nav>
+        <nav>
+            <a href="/">[ Home ]</a>
+            <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode"><svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button>
+        </nav>
     </body>
 </html>
-"""
+""")
 
 
 def render_sitemap_html(pages) -> str:
@@ -556,7 +574,7 @@ def render_sitemap_html(pages) -> str:
         )
         heading = html.escape(section_title(section, "Sitemap"))
         blocks.append(f"        <h2> {heading} </h2>\n        <ul>\n{items}\n        </ul>")
-    return SITEMAP_HTML.format(site_name=SITE_NAME, site_url=SITE_URL, sections="\n".join(blocks))
+    return SITEMAP_HTML.substitute(site_name=SITE_NAME, site_url=SITE_URL, sections="\n".join(blocks))
 
 
 def render_headers(pages, existing: str) -> str:

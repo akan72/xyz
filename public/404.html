@@ -2,6 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
+        <script src="/assets/theme.js"></script>
         <title>Page Not Found :(</title>
         <meta name="robots" content="noindex">
         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
@@ -17,12 +18,47 @@
                 text-shadow: none;
             }
 
+            :root {
+                color-scheme: light;
+                --text: #737373;
+                --page: #f0f0f0;
+                --card: #fcfcfc;
+                --border: #b3b3b3;
+                --shadow: 0 1px 10px #a7a7a7, inset 0 1px 0 #fff;
+                --heading: #737373;
+                --heading-muted: #bbb;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                :root:not([data-theme="light"]) {
+                    color-scheme: dark;
+                    --text: #a8a8a8;
+                    --page: #161616;
+                    --card: #1f1f1f;
+                    --border: #333;
+                    --shadow: 0 1px 10px #000, inset 0 1px 0 #2a2a2a;
+                    --heading: #e8e8e8;
+                    --heading-muted: #666;
+                }
+            }
+
+            :root[data-theme="dark"] {
+                color-scheme: dark;
+                --text: #a8a8a8;
+                --page: #161616;
+                --card: #1f1f1f;
+                --border: #333;
+                --shadow: 0 1px 10px #000, inset 0 1px 0 #2a2a2a;
+                --heading: #e8e8e8;
+                --heading-muted: #666;
+            }
+
             html {
                 padding: 30px 10px;
                 font-size: 20px;
                 line-height: 1.4;
-                color: #737373;
-                background: #f0f0f0;
+                color: var(--text);
+                background: var(--page);
                 -webkit-text-size-adjust: 100%;
                 -ms-text-size-adjust: 100%;
             }
@@ -36,21 +72,22 @@
                 max-width: 500px;
                 _width: 500px;
                 padding: 30px 20px 50px;
-                border: 1px solid #b3b3b3;
+                border: 1px solid var(--border);
                 border-radius: 4px;
                 margin: 0 auto;
-                box-shadow: 0 1px 10px #a7a7a7, inset 0 1px 0 #fff;
-                background: #fcfcfc;
+                box-shadow: var(--shadow);
+                background: var(--card);
             }
 
             h1 {
                 margin: 0 10px;
                 font-size: 50px;
                 text-align: center;
+                color: var(--heading);
             }
 
             h1 span {
-                color: #bbb;
+                color: var(--heading-muted);
             }
 
             h3 {
