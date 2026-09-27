@@ -25,7 +25,7 @@
 
   const LINE = { '1': '#D82233', '2': '#D82233', '3': '#D82233', '4': '#009952', '5': '#009952', '6': '#009952', '7': '#9A38A1', A: '#0062CF', C: '#0062CF', E: '#0062CF', B: '#EB6800', D: '#EB6800', F: '#EB6800', M: '#EB6800', G: '#799534', J: '#8E5C33', Z: '#8E5C33', L: '#7C858C', N: '#F6BC26', Q: '#F6BC26', R: '#F6BC26', W: '#F6BC26' };
   const CANDIDATES = Object.keys(LINE);          // mainline services only; no shuttles or express variants
-  const WS_URL = 'wss://istheldown.com/ws';
+  const WS_URL = 'wss://istheldown.com/ws?systems=subway&alerts=subway'; // subway trains + subway alerts only (istheldown D-123)
   const STATIONS_URL = '/assets/subway-stations.json';
   const BBOX = { lonMin: -74.26, lonMax: -73.70, latMin: 40.49, latMax: 40.92 }, KX = Math.cos(40.7 * Math.PI / 180);
   const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);

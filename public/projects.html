@@ -12,7 +12,7 @@
             // renderer has loaded; assets/subway-vis.js picks these up (messages are queued).
             window.__subway = (function () {
                 try {
-                    var s = { ws: new WebSocket('wss://istheldown.com/ws'), queue: [], closed: null, t0: performance.now() };
+                    var s = { ws: new WebSocket('wss://istheldown.com/ws?systems=subway&alerts=subway'), queue: [], closed: null, t0: performance.now() };
                     s.onmsg = function (e) { s.queue.push(e.data); };
                     s.ws.addEventListener('message', s.onmsg);
                     s.ws.addEventListener('close', function (e) { s.closed = e.code; });
