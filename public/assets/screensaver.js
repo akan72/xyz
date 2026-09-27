@@ -79,6 +79,8 @@ async function init() {
         if (!active) resetIdleTimer();
     });
     darkMode.addEventListener('change', paint);
+    // Follow the page's theme switch (see theme.js), not just the OS setting
+    new MutationObserver(paint).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     reducedMotion.addEventListener('change', () => {
         if (active) {
             stopMotion();
@@ -208,11 +210,13 @@ function draw() {
     logo.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
 }
 
+// The page's theme when it sets one on <html data-theme> (theme.js), otherwise the OS setting.
 function currentTheme() {
-    return darkMode.matches ? THEMES.dark : THEMES.light;
+    const theme = document.documentElement.dataset.theme ?? (darkMode.matches ? 'dark' : 'light');
+    return THEMES[theme] ?? THEMES.light;
 }
 
-// Also runs when the OS theme changes, so a running screensaver switches immediately.
+// Also runs when the theme changes, so a running screensaver switches immediately.
 function paint() {
     const { background, palette } = currentTheme();
     colorIndex %= palette.length;

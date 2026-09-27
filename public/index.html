@@ -3,17 +3,35 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="/assets/theme.js"></script>
         <title>alexkan.xyz</title>
         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
         <meta name="description" content="Alex Kan's personal website.">
         <script type="module" src="/assets/screensaver.js"></script>
         <style>
-            body { background: #f4f4f4; color: #111; font-family: Georgia, "Times New Roman", serif; margin: 0; }
+            :root { color-scheme: light; --bg: #f4f4f4; --fg: #111; --nav: #333; }
+            @media (prefers-color-scheme: dark) {
+                :root:not([data-theme="light"]) { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --nav: #c8c8c8; }
+            }
+            :root[data-theme="dark"] { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --nav: #c8c8c8; }
+            body { background: var(--bg); color: var(--fg); font-family: Georgia, "Times New Roman", serif; margin: 0; }
             main { max-width: 720px; margin: 40px auto; padding: 0 16px; }
             h2 { margin: 0 0 24px; }
-            nav a { color: #333; margin-right: 14px; }
+            nav a { color: var(--nav); margin-right: 14px; }
             #milady { display: block; width: 260px; max-width: 100%; height: auto; margin: 32px 0 16px; }
             button { font: inherit; cursor: pointer; }
+            .theme-toggle { color: var(--nav); background: none; border: 0; padding: 2px; margin-left: 0; cursor: pointer; line-height: 0; vertical-align: -4px; }
+            .theme-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+            .theme-toggle:hover { opacity: 0.7; }
+            .icon-sun, :root[data-theme="dark"] .icon-moon { display: none; }
+            :root[data-theme="dark"] .icon-sun { display: inline; }
+            /* Dark mode: outline the cig button instead of the browser's gray fill; light mode keeps the native button */
+            @media (prefers-color-scheme: dark) {
+                :root:not([data-theme="light"]) #cig-button { background: transparent; color: var(--fg); border: 1px solid #6a6a6a; border-radius: 4px; padding: 2px 7px; }
+                :root:not([data-theme="light"]) #cig-button:hover { border-color: #9a9a9a; }
+            }
+            :root[data-theme="dark"] #cig-button { background: transparent; color: var(--fg); border: 1px solid #6a6a6a; border-radius: 4px; padding: 2px 7px; }
+            :root[data-theme="dark"] #cig-button:hover { border-color: #9a9a9a; }
             .cig-box { display: inline-flex; flex-direction: column; align-items: center; }
             #cig { display: block; width: 260px; max-width: 100%; aspect-ratio: 4 / 5; object-fit: cover; margin-top: 12px; }
         </style>
@@ -25,10 +43,11 @@
                 <a href="/ideology.html">Ideology</a>
                 <a href="/projects.html">Projects</a>
                 <a href="/contact.html">Contact</a>
+                <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode"><svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button>
             </nav>
             <img id="milady" src="./assets/milady.jpg" alt="Milady">
             <div class="cig-box">
-                <button onclick="
+                <button id="cig-button" onclick="
                     const btn = this;
                     btn.disabled = true;
                     fetch('/image')
