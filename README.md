@@ -11,6 +11,11 @@ serves the HTML/images from the edge; an
 ## Layout
 
 - `public/` — static HTML and images served by Workers Static Assets.
+- `public/assets/screensaver.js` — idle screensaver loaded by every page: the
+  `public/assets/xyz-logo/` mark bounces around after 5s without input. Set
+  `ENABLED = false` at the top of the file to turn it off.
+- `docs/screensaver/` — design log for the screensaver: screenshots and
+  recordings from each iteration. Not deployed.
 - `src/lib.rs` — the Worker code. Handles `GET /image` (random cig HTML) and
   `GET /cig/{id}` (R2 fetch + stream). Falls back to `404.html` for
   unmatched paths.
