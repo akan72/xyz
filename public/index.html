@@ -40,7 +40,11 @@
             nav a { color: var(--nav); margin-right: 14px; }
             #milady { display: block; width: 260px; max-width: 100%; height: auto; margin: 32px 0 16px; }
             button { font: inherit; cursor: pointer; }
-            #theme-toggle { color: var(--nav); background: none; border: 0; padding: 0; text-decoration: underline; }
+            .theme-toggle { color: var(--nav); background: none; border: 0; padding: 2px; margin-left: 0; cursor: pointer; line-height: 0; vertical-align: -4px; }
+            .theme-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+            .theme-toggle:hover { opacity: 0.7; }
+            .icon-sun, :root[data-theme="dark"] .icon-moon { display: none; }
+            :root[data-theme="dark"] .icon-sun { display: inline; }
             /* Dark mode: outline the cig button instead of the browser's gray fill; light mode keeps the native button */
             @media (prefers-color-scheme: dark) {
                 :root:not([data-theme="light"]) #cig-button { background: transparent; color: var(--fg); border: 1px solid #6a6a6a; border-radius: 4px; padding: 2px 7px; }
@@ -59,7 +63,7 @@
                 <a href="/ideology.html">Ideology</a>
                 <a href="/projects.html">Projects</a>
                 <a href="/contact.html">Contact</a>
-                <button id="theme-toggle" type="button" data-theme-toggle>Switch Mode</button>
+                <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode"><svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button>
             </nav>
             <img id="milady" src="./assets/milady.jpg" alt="Milady">
             <div class="cig-box">

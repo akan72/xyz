@@ -5,7 +5,8 @@
 // <html data-theme> always holds the theme in use: the visitor's saved choice
 // if they've switched, otherwise their system setting. Pages style dark mode
 // off it, and other scripts (like the screensaver) can read it and watch it
-// for changes. Any element with data-theme-toggle switches the theme on click.
+// for changes. Any element with data-theme-toggle switches the theme on click
+// and gets an aria-label/title describing what it will do.
 
 (() => {
     const STORAGE_KEY = 'theme';
@@ -27,6 +28,11 @@
         const theme = saved() ?? (systemDark.matches ? 'dark' : 'light');
         root.dataset.theme = theme;
         document.querySelector('meta[name="theme-color"]')?.setAttribute('content', BAR_COLORS[theme]);
+        const label = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+        for (const el of document.querySelectorAll('[data-theme-toggle]')) {
+            el.setAttribute('aria-label', label);
+            el.title = label;
+        }
     }
 
     function toggle() {
@@ -41,12 +47,12 @@
     systemDark.addEventListener('change', apply);
     // Another tab switched the theme
     addEventListener('storage', (e) => {
-        if (e.key === STORAGE_KEY) apply();
+        if (e.key === STORAGE_KEY || e.key === null) apply();
     });
     document.addEventListener('DOMContentLoaded', () => {
-        apply(); // the theme-color tag is parsed after this script runs
         for (const el of document.querySelectorAll('[data-theme-toggle]')) {
             el.addEventListener('click', toggle);
         }
+        apply(); // the theme-color tag and toggles are parsed after this script first runs
     });
 })();
