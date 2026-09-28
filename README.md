@@ -19,8 +19,7 @@ serves the HTML/images from the edge; an
 - `scripts/sitegen.py` — runs in the wrangler build. Copies `public/` to
   `dist/` (served by Workers Static Assets) and generates the files AI
   crawlers and agents read: `llms.txt`, `llms-full.txt`, a Markdown copy of
-  each page (`/ideology.md`, `/index.md`), `sitemap.xml` and the `/sitemap`
-  page.
+  each page (`/ideology.md`, `/index.md`) and `sitemap.xml`.
 - `src/lib.rs` — the Worker code. Handles `GET /image` (random cig HTML) and
   `GET /cig/{id}` (R2 fetch + stream), adds link-preview tags to pages, and
   serves a page's Markdown copy to requests sent with
@@ -34,7 +33,7 @@ serves the HTML/images from the edge; an
 
 Add an `.html` file to `public/` with a `<title>` and a
 `<meta name="description">`. The build adds it to `llms.txt`,
-`llms-full.txt`, both sitemaps and its own Markdown copy, dated by its last
+`llms-full.txt`, `sitemap.xml` and its own Markdown copy, dated by its last
 git commit. It fails if either tag is missing. Pages with
 `<meta name="robots" content="noindex">` (like `404.html`) are left out.
 
