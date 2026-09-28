@@ -117,20 +117,7 @@
     mctx.fillStyle = 'rgba(255,255,255,0.45)';
     for (const [lat, lon] of positions(sc, sc.all)) { const [x, y] = project(lat, lon, w, h); mctx.fillRect(Math.round(x) - 1, Math.round(y) - 1, 3, 3); }
     mctx.fillStyle = LINE[sc.route];
-    const R = 5, placed = [];
-    const clear = (x, y) => placed.every(([px, py]) => (px - x) ** 2 + (py - y) ** 2 >= (2 * R + 1) ** 2);
-    for (const [lat, lon] of mine) {
-      let [x, y] = project(lat, lon, w, h);
-      // Walk out in small rings until the dot no longer overlaps one already drawn.
-      for (let ring = 1, found = clear(x, y); !found && ring <= 4; ring++) {
-        for (let k = 0; k < 6 * ring && !found; k++) {
-          const a = (k / (6 * ring)) * 2 * Math.PI, nx = x + Math.cos(a) * (2 * R + 1) * ring, ny = y + Math.sin(a) * (2 * R + 1) * ring;
-          if (clear(nx, ny)) { x = nx; y = ny; found = true; }
-        }
-      }
-      placed.push([x, y]);
-      mctx.beginPath(); mctx.arc(x, y, R, 0, Math.PI * 2); mctx.fill();
-    }
+    for (const [lat, lon] of mine) { const [x, y] = project(lat, lon, w, h); mctx.beginPath(); mctx.arc(x, y, 5, 0, Math.PI * 2); mctx.fill(); }
   }
   function drawInputs(sc) {
     const pos = positions(sc);
