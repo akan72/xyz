@@ -1,9 +1,33 @@
 // Live "which train is running right now" figure for the istheldown.com entry.
-// Subscribes to istheldown's WebSocket, picks one subway line at random on every
-// page load, and renders it with hydra-synth: one band per train on that line,
-// bands turned to the line's geographic axis, the line's official color, and the
-// trains' positions (blurred) warping the shape. The figure stays hidden until a
-// snapshot arrives; if istheldown can't be reached, it is removed from the page.
+//
+// Subscribes to istheldown's WebSocket (subway trains and subway alerts only),
+// picks one subway line at random on every page load, and renders it with
+// hydra-synth. A second canvas beside it maps every subway train, with the chosen
+// line's trains in its color. The figure stays hidden until a snapshot arrives;
+// if istheldown can't be reached, it is removed from the page.
+//
+// A train counts as "running" once it has left its first stop (it has a
+// previousStopId). Scheduled trips still waiting at their origin terminal are
+// left out of every signal below and off the map.
+//
+// Signal -> knob. Every signal comes from the chosen line's running trains and
+// is recomputed when the socket's diffs arrive (at most every 20 s). See knobs().
+//
+//   signal                          value (example)        knob                  effect
+//   ------------------------------  ---------------------  --------------------  -----------------------------------------------
+//   trains on the line              17                     bands = n, 4..60      osc() frequency: one band per train
+//   trains' geographic axis         -42deg, via PCA        angle = axis + 90deg  bands run along the line's direction
+//   northbound vs southbound        9 / 8                  drift, +-0.04..0.34   band slide; sign = the busier direction
+//   share between stations          41% (ETA > 45 s)       speed, 0.08..0.33     global time rate
+//   alerts naming the line / trains 5 / 17                 morph, 0.3..1.8       how fast the warp noise changes shape
+//   alerts naming the line          5 of 15 max            jitter, 0.001..0.013  sub-pixel shimmer
+//   the line                        F                      palette[0]            blob color = the line's official color
+//   NYC hour (8 pm to 6 am = night) 19                     greys, bright         darker greys and brightness at night
+//   train positions                 17 lat/lon points      warp field (s1)       blurred density map pushes the bands
+//
+// Fixed knobs (not data-driven): warp-noise scale 4 with 50 x 1 steps, warp 1,
+// twist 1.57, pixel grid 112 x 140, feedback trail 0.12, three-tone thresholds
+// 0.1 / 0.8, scanlines with a 3 px period, grain 0.12 at scale 300.
 (function () {
   const canvas = document.getElementById('subway-vis');
   const caption = document.getElementById('subway-vis-caption');
@@ -53,17 +77,21 @@
   // snapshot only updates numbers. Two output programs: the feedback buffer and the colour/post pass.
   const K = { bands: 20, drift: 0.1, angle: 1.57, spin: 0, morph: 0.5, jitter: 0.002, bright: -0.1, lo: hex('#7c858c'), mid: hex('#525252'), hi: hex('#3d3d3d') };
   function buildGraph() {
-    const u = k => () => K[k], c = (k, i) => () => K[k][i];
+    const u = k => () => K[k], c = (k, i) => () => K[k][i];   // read at draw time, so hydra makes them uniforms
+    // 1. Shape: one band per train, turned to the line's axis, warped by noise and by where the trains are, snapped to a pixel grid.
     const shape = S.osc(u('bands'), u('drift'), 0).rotate(u('angle'), u('spin'))
       .modulate(S.noise(4, u('morph')).pixelate(50, 1).rotate(seed, 0.75), 1)
       .modulate(S.src(S.s1), 0.35)
       .modulateRotate(S.noise(1, u('morph')).rotate(seed, 0.75), 1.57)
       .pixelate(112, 140);
+    // 2. Feedback: o1 keeps 88% of the previous frame each frame, which smears the motion.
     S.src(S.o1).blend(shape, 0.12).out(S.o1);
+    // 3. Three tones by brightness: line color below 0.1, mid grey between, dark grey above 0.8.
     const L = () => S.src(S.o1);
     S.solid(c('lo', 0), c('lo', 1), c('lo', 2)).mult(L().thresh(0.1).invert())
       .add(S.solid(c('mid', 0), c('mid', 1), c('mid', 2)).mult(L().thresh(0.1).mult(L().thresh(0.8).invert())))
       .add(S.solid(c('hi', 0), c('hi', 1), c('hi', 2)).mult(L().thresh(0.8)))
+      // 4. Post: shimmer, scanlines, grain, overall brightness.
       .modulate(S.noise(1000, 5), u('jitter'))
       // Scanlines, locked to a 3 px period of the canvas so they never alias into wide bars
       .mult(S.osc(() => 2 * Math.PI * S.width / 3, 0, 0).color(0.35, 0.35, 0.35).add(S.solid(0.75, 0.75, 0.75)))
@@ -144,11 +172,14 @@
     const hour = +new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).format(new Date(now * 1000)) % 24;
     const night = hour < 6 || hour >= 20, alerts = sc.alerts;
     return {
-      bands: clamp(n, 4, 60), angle: axis + Math.PI / 2, spin: 0,
-      drift: (N >= Sn ? 1 : -1) * (0.04 + 0.6 * Math.abs(N / Math.max(1, N + Sn) - 0.5)),
-      morph: 0.3 + 1.5 * clamp(alerts / Math.max(1, n), 0, 1), speed: 0.08 + 0.25 * moving,
-      jitter: 0.001 + 0.012 * clamp(alerts / 15, 0, 1), bright: night ? -0.12 : -0.1,
-      pal: [LINE[sc.route], night ? '#404040' : '#525252', night ? '#2a2a2a' : '#3d3d3d'],
+      bands: clamp(n, 4, 60),                     // one band per running train
+      angle: axis + Math.PI / 2, spin: 0,         // bands run along the line's principal geographic axis
+      drift: (N >= Sn ? 1 : -1) * (0.04 + 0.6 * Math.abs(N / Math.max(1, N + Sn) - 0.5)),   // slide toward the busier direction
+      morph: 0.3 + 1.5 * clamp(alerts / Math.max(1, n), 0, 1),   // more alerts per train, faster-changing warp
+      speed: 0.08 + 0.25 * moving,                // share of trains between stations sets the time rate
+      jitter: 0.001 + 0.012 * clamp(alerts / 15, 0, 1),          // alerts naming the line add shimmer
+      bright: night ? -0.12 : -0.1,               // slightly darker at night (8 pm to 6 am NYC time)
+      pal: [LINE[sc.route], night ? '#404040' : '#525252', night ? '#2a2a2a' : '#3d3d3d'],   // line color, then two greys
       n, alerts, moving,
     };
   }
