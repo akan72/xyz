@@ -7,16 +7,43 @@
         <title>Projects | alexkan.xyz</title>
         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
         <meta name="description" content="Things I've built.">
+        <link rel="preconnect" href="https://istheldown.com">
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+        <script>
+            // Open the istheldown feed and fetch the station table right away, before the
+            // renderer has loaded; assets/subway-vis.js picks these up (messages are queued).
+            window.__subway = (function () {
+                try {
+                    var s = { ws: new WebSocket('wss://istheldown.com/ws?systems=subway&alerts=subway'), queue: [], closed: null, t0: performance.now() };
+                    s.onmsg = function (e) { s.queue.push(e.data); };
+                    s.ws.addEventListener('message', s.onmsg);
+                    s.ws.addEventListener('close', function (e) { s.closed = e.code; });
+                    s.stations = fetch('/assets/subway-stations.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+                    s.stations.catch(function () {});
+                    return s;
+                } catch (e) { return null; }
+            })();
+        </script>
+        <script id="hydra-script" src="https://cdn.jsdelivr.net/npm/hydra-synth@1.4.0/dist/hydra-synth.js" async onerror="window.__hydraFailed = true"></script>
+        <script src="/assets/subway-vis.js" defer></script>
         <script type="module" src="/assets/screensaver.js"></script>
         <style>
             :root { color-scheme: light; }
             @media (prefers-color-scheme: dark) {
-                :root:not([data-theme="light"]) { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --link: #8ab4f8; --visited: #c58af9; }
+                :root:not([data-theme="light"]) { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --link: #8ab4f8; --visited: #c58af9; --muted: #9a9a9a; }
             }
-            :root[data-theme="dark"] { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --link: #8ab4f8; --visited: #c58af9; }
+            :root[data-theme="dark"] { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --link: #8ab4f8; --visited: #c58af9; --muted: #9a9a9a; }
             body { max-width: 720px; margin: 40px auto; padding: 0 16px; background: var(--bg, Canvas); color: var(--fg, CanvasText); }
             a { color: var(--link, LinkText); }
             a:visited { color: var(--visited, VisitedText); }
+            /* The stack line under each description */
+            .meta { color: var(--muted, #666); font-size: 0.9em; margin-top: -0.4em; }
+            /* The live istheldown figure: same 260px width as the images on the homepage */
+            .figs { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; margin-top: 1em; }
+            .fig { width: 260px; max-width: 100%; aspect-ratio: 4 / 5; background: #111; }
+            .fig.map { background: #000; }
+            .fig canvas { display: block; width: 100%; height: 100%; }
+            .bullet { width: 1.4em; height: 1.4em; vertical-align: middle; }
         </style>
     </head>
     <body>
@@ -25,7 +52,15 @@
             <li> <a href="https://github.com/akan72/dotfiles" target="_blank">dotfiles</a> </li>
             <li> <a href="https://github.com/akan72/xyz" target="_blank">xyz</a> </li>
             <li> <a href="https://alexkan.xyz/mingus/" target="_blank">mingus</a> </li>
-            <li> <a href="https://istheldown.com" target="_blank">istheldown.com</a> </li>
+            <li> <a href="https://istheldown.com" target="_blank">istheldown.com</a>
+                <p hidden><small id="subway-vis-caption"></small></p>
+                <div class="figs" hidden>
+                    <div class="fig"><canvas id="subway-vis" aria-label="Generative figure driven by one subway line's live train positions"></canvas></div>
+                    <div class="fig map"><canvas id="subway-map" width="520" height="650" aria-label="Map of every subway train right now, with the chosen line highlighted"></canvas></div>
+                </div>
+                <p>A real-time map of transit across the NYC area. Includes live positions and alerts for the subway, buses, LIRR (and more!) from official sources. My attempt at vampire attacking isthelrunning.com.</p>
+                <p class="meta">Typescript &middot; Cloudflare Workers, Durable Objects, and R2 &middot; MapLibre GL</p>
+            </li>
             <li> <a href="https://github.com/akan72/cig_scraper" target="_blank">cig_scraper</a> </li>
         </ul>
         <br>
