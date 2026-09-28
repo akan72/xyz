@@ -10,15 +10,21 @@ main = "build/worker/shim.mjs"
 compatibility_date = "2026-05-01"
 
 [build]
-command = "command -v worker-build >/dev/null 2>&1 || cargo install worker-build; worker-build --release --no-opt"
+# sitegen.py writes dist/: public/ plus llms.txt, sitemaps and Markdown copies of pages
+command = "command -v worker-build >/dev/null 2>&1 || cargo install worker-build; worker-build --release --no-opt && python3 scripts/sitegen.py"
+watch_dir = ["src", "public", "scripts"]
 
 [assets]
-directory = "./public"
+# Built from public/ by scripts/sitegen.py (see [build])
+directory = "./dist"
 binding = "ASSETS"
-not_found_handling = "none"
-# Pages go through the Worker so it can add link-preview tags (src/link_preview.rs);
-# assets are still served straight from the edge
-run_worker_first = ["/*", "!/assets/*", "!/pgp.txt"]
+# Missing paths get 404.html with a 404 status
+not_found_handling = "404-page"
+# Paths without a file extension (pages, /image, /cig/*) run the Worker first,
+# so it can add link-preview tags (src/link_preview.rs) and answer
+# `Accept: text/markdown` with a page's Markdown copy. Paths with one
+# (images, .md, .txt, .xml) are served straight from assets.
+run_worker_first = ["/*", "!/*.*"]
 
 [[r2_buckets]]
 binding = "BUCKET"

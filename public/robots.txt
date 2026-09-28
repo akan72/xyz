@@ -1,0 +1,9 @@
+# Everyone is welcome to read this site, AI crawlers included.
+# Content signals (https://contentsignals.org): search = search results,
+# ai-input = grounding AI answers (RAG), ai-train = training AI models.
+User-agent: *
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
+Allow: /
+
+# For LLMs: https://alexkan.xyz/llms.txt
+Sitemap: https://alexkan.xyz/sitemap.xml

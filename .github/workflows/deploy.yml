@@ -31,9 +31,25 @@ jobs:
 
       - run: cargo check --lib --target wasm32-unknown-unknown
 
+      - run: cargo test --lib
+
+  site:
+    name: Site files (sitegen)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          # sitegen reads each page's last commit date for sitemap.xml
+          fetch-depth: 0
+
+      - run: python3 -m unittest discover -s scripts
+
+      # Fails if a page is missing a <title> or <meta name="description">
+      - run: python3 scripts/sitegen.py
+
   deploy:
     name: Cloudflare Workers
-    needs: [rust]
+    needs: [rust, site]
     runs-on: ubuntu-latest
     # Secrets aren't exposed to PRs from forks; skip deploy there.
     if: |
@@ -50,6 +66,9 @@ jobs:
       WRANGLER_SEND_METRICS: "false"
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          # The wrangler build runs sitegen, which dates pages from git history
+          fetch-depth: 0
 
       - name: Add WebAssembly target
         run: rustup target add wasm32-unknown-unknown

@@ -17,11 +17,6 @@
             body { max-width: 720px; margin: 40px auto; padding: 0 16px; background: var(--bg, Canvas); color: var(--fg, CanvasText); }
             a { color: var(--link, LinkText); }
             a:visited { color: var(--visited, VisitedText); }
-            .theme-toggle { color: inherit; background: none; border: 0; padding: 2px; margin-left: 14px; cursor: pointer; line-height: 0; vertical-align: -4px; }
-            .theme-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-            .theme-toggle:hover { opacity: 0.7; }
-            .icon-sun, :root[data-theme="dark"] .icon-moon { display: none; }
-            :root[data-theme="dark"] .icon-sun { display: inline; }
         </style>
     </head>
     <body>
@@ -39,7 +34,6 @@
             <li> Modern Monetary Theory </li>
         </ul>
         <br>
-        <a href="/">[ Home ]</a>
-        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode"><svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button>
+        <nav><a href="/">Home</a></nav>
     </body>
 </html>
