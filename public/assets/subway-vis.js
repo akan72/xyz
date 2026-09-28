@@ -94,9 +94,12 @@
     const s = Math.min(w / wDeg, h / hDeg) * 0.94;
     return [(w - wDeg * s) / 2 + (lon - BBOX.lonMin) * KX * s, (h - hDeg * s) / 2 + (BBOX.latMax - lat) * s];
   }
+  // A train with no previous stop is a scheduled trip still waiting at its first terminal: not running yet.
+  const running = t => !!t.previousStopId;
   function positions(sc, trains) {
     const now = sc.serverTime + (performance.now() - sc.receivedAt) / 1000, out = [];
     for (const t of (trains || sc.trains).values()) {
+      if (!running(t)) continue;
       const n = sc.stations[parentOf(t.nextStopId)], p = sc.stations[parentOf(t.previousStopId)];
       if (!n && !p) continue;
       if (n && p && t.previousStopArrival && t.nextStopArrival && t.nextStopArrival > t.previousStopArrival) {
@@ -114,7 +117,20 @@
     mctx.fillStyle = 'rgba(255,255,255,0.45)';
     for (const [lat, lon] of positions(sc, sc.all)) { const [x, y] = project(lat, lon, w, h); mctx.fillRect(Math.round(x) - 1, Math.round(y) - 1, 3, 3); }
     mctx.fillStyle = LINE[sc.route];
-    for (const [lat, lon] of mine) { const [x, y] = project(lat, lon, w, h); mctx.beginPath(); mctx.arc(x, y, 5, 0, Math.PI * 2); mctx.fill(); }
+    const R = 5, placed = [];
+    const clear = (x, y) => placed.every(([px, py]) => (px - x) ** 2 + (py - y) ** 2 >= (2 * R + 1) ** 2);
+    for (const [lat, lon] of mine) {
+      let [x, y] = project(lat, lon, w, h);
+      // Walk out in small rings until the dot no longer overlaps one already drawn.
+      for (let ring = 1, found = clear(x, y); !found && ring <= 4; ring++) {
+        for (let k = 0; k < 6 * ring && !found; k++) {
+          const a = (k / (6 * ring)) * 2 * Math.PI, nx = x + Math.cos(a) * (2 * R + 1) * ring, ny = y + Math.sin(a) * (2 * R + 1) * ring;
+          if (clear(nx, ny)) { x = nx; y = ny; found = true; }
+        }
+      }
+      placed.push([x, y]);
+      mctx.beginPath(); mctx.arc(x, y, R, 0, Math.PI * 2); mctx.fill();
+    }
   }
   function drawInputs(sc) {
     const pos = positions(sc);
@@ -127,7 +143,7 @@
     return pos;
   }
   function knobs(sc) {
-    const ts = [...sc.trains.values()], n = ts.length, now = sc.serverTime;
+    const ts = [...sc.trains.values()].filter(running), n = ts.length, now = sc.serverTime;
     const N = ts.filter(t => t.direction === 'N').length, Sn = ts.filter(t => t.direction === 'S').length;
     const eta = ts.filter(t => t.nextStopArrival), moving = eta.filter(t => t.nextStopArrival - now > 45).length / Math.max(1, eta.length);
     const pos = positions(sc); let axis = 0;
@@ -177,7 +193,7 @@
       let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
       if (m.type === 'snapshot' && !scene) {
         clearTimeout(timer);
-        const counts = {}; m.trains.filter(subway).forEach(t => { counts[t.routeId] = (counts[t.routeId] || 0) + 1; });
+        const counts = {}; m.trains.filter(t => subway(t) && running(t)).forEach(t => { counts[t.routeId] = (counts[t.routeId] || 0) + 1; });
         const pool = CANDIDATES.filter(r => (counts[r] || 0) >= 3);
         if (!pool.length) { try { ws.close(); } catch (e) {} return remove('no line with 3+ trains in the snapshot'); }
         const route = pool[Math.floor(Math.random() * pool.length)];
