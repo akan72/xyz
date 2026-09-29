@@ -1,0 +1,638 @@
+/* Black metal ("kvlt"): the homepage as a black metal album cover, the
+   subpages as its liner notes. theme.js loads this sheet only while
+   <html data-remix="kvlt"> is set.
+
+   Every rule sits under html:root[data-remix="kvlt"]. theme.js inserts this
+   sheet before each page's inline <style>, so ties would lose; the doubled
+   html:root outranks the strongest inline rule
+   (:root[data-theme="dark"] #cig-button).
+
+   Asset hooks. Each is none until its asset exists; setting it to url("...")
+   (relative to this file) is the whole change:
+     --kvlt-logo           spiky "ALEX KAN" logo (SVG), drawn in the name's place on
+                           the homepage (.cig-box::after). Once set, a zero-size mask
+                           hides the generated name, which stays the accessible text.
+     --kvlt-hero           restyled grayscale hero (4:5), laid exactly over #milady's
+                           pixels (.cig-box::before); the img keeps its alt and frame.
+     --kvlt-cover-texture  dark cover/paper texture, a seamless tile repeated on the
+                           panel (main on the homepage, body elsewhere).
+     --kvlt-forest         misty forest silhouette strip, full width along the bottom
+                           of the panel. */
+
+@font-face {
+    font-family: "kvlt Metal Mania";
+    src: url("fonts/metal-mania.woff2") format("woff2"); /* capitals only: always uppercase it */
+    font-display: block;
+}
+
+html:root[data-remix="kvlt"] {
+    --kvlt-logo: none;
+    --kvlt-hero: none;
+    --kvlt-cover-texture: none;
+    --kvlt-forest: none;
+
+    --kvlt-page: #0b0b0b;
+    --kvlt-panel: #101010;
+    --kvlt-rule: #2a2a2a;
+    --kvlt-bone: #d9d4c7;
+    --kvlt-ash: #8c877d; /* secondary real text: 5:1 on the panel */
+    --kvlt-dim: #6d6a64; /* flavor text and markers only: too faint for text that matters */
+    --kvlt-blood: #8e1b1b;
+    --kvlt-mono: "Courier New", Courier, monospace;
+    --kvlt-display: "kvlt Metal Mania", "Courier New", serif;
+    --kvlt-glow: 0 0 1px rgb(217 212 199 / 0.6), 0 0 22px rgb(217 212 199 / 0.12);
+    /* Photocopy grain: white specks where the noise is high, black where it's low,
+       clear in between, so it roughens without lifting the blacks */
+    --kvlt-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='2' stitchTiles='stitch' result='n'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 6 0 0 0 -3.6' result='w'/%3E%3CfeColorMatrix in='n' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -6 0 0 0 2.4'/%3E%3CfeMerge%3E%3CfeMergeNode in='w'/%3E%3CfeMergeNode/%3E%3C/feMerge%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23g)'/%3E%3C/svg%3E");
+
+    color-scheme: dark;
+    position: relative; /* the grain's containing block: the whole document, not the viewport */
+    min-height: 100%;
+    background: var(--kvlt-page);
+    scrollbar-color: var(--kvlt-rule) var(--kvlt-page);
+
+    /* Grain over the whole page, art included; under the screensaver */
+    &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 100;
+        pointer-events: none;
+        background: var(--kvlt-grain) 0 0 / 240px;
+        opacity: 0.12;
+    }
+
+    & ::selection {
+        background: var(--kvlt-blood);
+        color: var(--kvlt-bone);
+        text-shadow: none;
+    }
+
+    & :focus-visible {
+        outline: 1px dotted var(--kvlt-bone);
+        outline-offset: 3px;
+    }
+
+    & body {
+        background: none;
+        color: var(--kvlt-bone);
+        font-family: var(--kvlt-mono);
+    }
+
+    /* The cover panel: main on the homepage, body everywhere else. The negative
+       outline is the inner line of the double frame. */
+    &[data-page="home"] main,
+    &:not([data-page="home"]) body {
+        box-sizing: border-box;
+        width: min(620px, 100% - 32px);
+        max-width: none;
+        margin: 40px auto;
+        padding: 40px 40px 32px;
+        border: 1px solid var(--kvlt-rule);
+        border-radius: 0;
+        outline: 1px solid var(--kvlt-rule);
+        outline-offset: -9px;
+        box-shadow: none;
+        background:
+            var(--kvlt-forest) center bottom / 100% auto no-repeat,
+            var(--kvlt-cover-texture) 0 0 / 512px repeat,
+            var(--kvlt-panel);
+        text-align: center;
+    }
+
+    /* Page titles, in Metal Mania. Ideology has no title of its own, so it gets a generated one. */
+    &[data-page="ideology"] body::before,
+    &:is([data-page="projects"], [data-page="contact"]) h2:first-of-type,
+    &[data-page="404"] h1 {
+        margin: 0;
+        font: 400 58px/1 var(--kvlt-display);
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: var(--kvlt-bone);
+        text-shadow: var(--kvlt-glow);
+    }
+
+    /* The tagline under every title (flavor, so screen readers skip it) */
+    &[data-page="home"] main::after,
+    &:is([data-page="ideology"], [data-page="projects"], [data-page="contact"]) body::after,
+    &[data-page="404"] .container::before {
+        content: "raw · trve · self-hosted" / "";
+        margin-top: 12px;
+        padding-left: 0.42em; /* balances the trailing letter-spacing so it centers */
+        font: 400 10.5px/1.4 var(--kvlt-mono);
+        letter-spacing: 0.42em;
+        color: var(--kvlt-dim);
+    }
+
+    /* --- Homepage: the cover ------------------------------------------------ */
+
+    &[data-page="home"] {
+        & main {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-areas: "site" "name" "tagline" "art" "tracks" "cig" "back";
+            justify-items: center;
+            counter-reset: track;
+        }
+
+        & main > h2 {
+            grid-area: site;
+            margin: 0 0 14px;
+            padding-left: 0.5em;
+            font: 400 11px/1.4 var(--kvlt-mono);
+            letter-spacing: 0.5em;
+            color: var(--kvlt-ash);
+        }
+
+        /* The name stands in for the logo. With --kvlt-logo set, the zero-size
+           mask hides it (none masks nothing) and .cig-box::after draws the logo. */
+        & main::before {
+            content: "ALEX KAN";
+            grid-area: name;
+            font: 400 64px/1 var(--kvlt-display);
+            letter-spacing: 0.03em;
+            color: var(--kvlt-bone);
+            text-shadow: var(--kvlt-glow);
+            mask: var(--kvlt-logo) 0 0 / 0 0 no-repeat;
+        }
+
+        & main::after {
+            grid-area: tagline;
+        }
+
+        /* Lets the cig button, #cig and these pseudo-elements be placed on main's grid */
+        & .cig-box {
+            display: contents;
+        }
+
+        & .cig-box::after {
+            content: "";
+            grid-area: name;
+            justify-self: stretch;
+            align-self: stretch;
+            z-index: 1;
+            background: var(--kvlt-logo) center / contain no-repeat;
+            pointer-events: none;
+        }
+
+        /* The cover art, and the --kvlt-hero slot sized to cover it exactly */
+        & #milady,
+        & .cig-box::before {
+            grid-area: art;
+            align-self: start;
+            width: 100%;
+            max-width: none;
+            height: auto;
+            aspect-ratio: 410 / 512;
+            margin: 30px 0 0;
+        }
+
+        & #milady {
+            object-fit: cover;
+            filter: grayscale(1) contrast(1.45) brightness(0.88);
+            outline: 1px dotted #57544e;
+            outline-offset: 6px;
+        }
+
+        /* z-index, since #milady's filter lifts it above later unpositioned items */
+        & .cig-box::before {
+            content: "";
+            z-index: 1;
+            background: var(--kvlt-hero) center / cover no-repeat;
+            pointer-events: none;
+        }
+
+        /* The cig, pasted over the art's corner. Fixed 4:5 box whatever image the button loads. */
+        & #cig {
+            grid-area: art;
+            justify-self: end;
+            align-self: end;
+            z-index: 2;
+            width: 34%;
+            max-width: none;
+            height: auto;
+            aspect-ratio: 4 / 5;
+            object-fit: cover;
+            margin: 0 -12px -20px 0;
+            border: 5px solid #d4cfc2;
+            box-shadow: 0 10px 28px rgb(0 0 0 / 0.75);
+            transform: rotate(-2.5deg);
+            filter: grayscale(1) contrast(1.1);
+        }
+
+        /* The tracklist: nav links, then the cig button as the next track */
+        & nav {
+            grid-area: tracks;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 42px 0 0;
+        }
+
+        & nav::before {
+            content: "side a — recorded live at the edge" / "";
+            margin-bottom: 12px;
+            padding-left: 0.32em;
+            font: 400 10.5px/1.4 var(--kvlt-mono);
+            letter-spacing: 0.32em;
+            color: var(--kvlt-dim);
+        }
+
+        & .theme-toggle {
+            display: none;
+        }
+
+        & nav a,
+        & #cig-button {
+            display: block;
+            margin: 0;
+            padding: 4px 10px;
+            border: 0;
+            border-radius: 0;
+            background: none;
+            font: 400 15px/24px var(--kvlt-mono);
+            letter-spacing: 0.14em;
+            text-transform: lowercase;
+            text-decoration: none;
+            color: var(--kvlt-bone);
+            counter-increment: track;
+            cursor: pointer;
+        }
+
+        & nav a::before,
+        & #cig-button::before {
+            content: counter(track, lower-roman) ". " / "";
+            color: var(--kvlt-dim);
+        }
+
+        & nav a:hover,
+        & #cig-button:hover {
+            color: #fff;
+            text-shadow: 0 0 10px rgb(217 212 199 / 0.35);
+        }
+
+        & #cig-button {
+            grid-area: cig;
+        }
+
+        & #cig-button:disabled {
+            cursor: progress;
+            opacity: 0.55;
+        }
+
+        /* Back cover: small print, then the style picker as one hairline segmented control */
+        & .remix {
+            grid-area: back;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: stretch;
+            margin: 30px 0 0;
+            font: 400 11px/1 var(--kvlt-mono);
+            color: var(--kvlt-ash);
+        }
+
+        & .remix[hidden] {
+            display: none;
+        }
+
+        & .remix::before {
+            content: "no clean vocals · no cookies" / "";
+            flex-basis: 100%;
+            margin-bottom: 22px;
+            padding-left: 0.32em;
+            font-size: 10.5px;
+            line-height: 1.4;
+            letter-spacing: 0.32em;
+            color: var(--kvlt-dim);
+        }
+
+        & .remix label {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding-left: 12px;
+            border: 1px solid var(--kvlt-rule);
+            background: var(--kvlt-page);
+            letter-spacing: 0.2em;
+        }
+
+        & .remix select {
+            appearance: none;
+            height: 34px;
+            margin: 0;
+            padding: 0 30px 0 12px;
+            border: 0;
+            border-left: 1px solid var(--kvlt-rule);
+            border-radius: 0;
+            background:
+                linear-gradient(45deg, transparent 50%, var(--kvlt-ash) 50%) right 15px center / 5px 5px no-repeat,
+                linear-gradient(-45deg, transparent 50%, var(--kvlt-ash) 50%) right 10px center / 5px 5px no-repeat,
+                transparent;
+            font: 400 12px/1 var(--kvlt-mono);
+            letter-spacing: 0.08em;
+            color: var(--kvlt-bone);
+            cursor: pointer;
+        }
+
+        /* Overlaps the label's border rather than dropping its own, so it still looks whole if it wraps */
+        & .remix button {
+            margin: 0 0 0 -1px;
+            padding: 0 14px;
+            border: 1px solid var(--kvlt-rule);
+            border-radius: 0;
+            background: var(--kvlt-page);
+            font: 400 12px/1 var(--kvlt-mono);
+            letter-spacing: 0.2em;
+            color: var(--kvlt-bone);
+            cursor: pointer;
+        }
+
+        & .remix select:hover,
+        & .remix button:hover {
+            color: #fff;
+            background-color: #161616;
+        }
+    }
+
+    /* --- Subpages: the liner notes -------------------------------------------- */
+
+    &:is([data-page="ideology"], [data-page="projects"], [data-page="contact"]) {
+        & body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font: 400 14px/1.8 var(--kvlt-mono);
+            letter-spacing: 0.06em;
+        }
+
+        /* Title first, tagline second, then the page in its own order */
+        & body::after {
+            order: -1;
+            margin-bottom: 26px;
+        }
+
+        & body > br {
+            display: none;
+        }
+
+        & h2 {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin: 34px 0 10px;
+            font: 400 26px/1.1 var(--kvlt-display);
+            font-variant-caps: small-caps;
+            letter-spacing: 0.06em;
+            color: var(--kvlt-bone);
+        }
+
+        /* Hairline rules either side of a section heading */
+        & h2::before,
+        & h2::after {
+            content: "";
+            width: 36px;
+            border-top: 1px solid var(--kvlt-rule);
+        }
+
+        & ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        /* A plain space, so it merges with the space each li starts with */
+        & li::before {
+            content: "† " / "";
+            color: var(--kvlt-dim);
+        }
+
+        & a,
+        & a:visited {
+            color: var(--kvlt-bone);
+            text-decoration: underline dotted var(--kvlt-dim);
+            text-decoration-thickness: 1px;
+            text-underline-offset: 4px;
+        }
+
+        /* At least 32px each way, for thumbs */
+        & li > a {
+            display: inline-block;
+            padding: 7px 6px;
+            line-height: 18px;
+        }
+
+        & a:hover {
+            color: #fff;
+            text-decoration-color: currentColor;
+        }
+
+        & nav {
+            margin-top: 36px;
+        }
+
+        & nav a,
+        & nav a:visited {
+            display: inline-block;
+            padding: 8px 12px 8px calc(12px + 0.3em);
+            font-size: 12px;
+            line-height: 16px;
+            letter-spacing: 0.3em;
+            text-transform: lowercase;
+            text-decoration: underline solid var(--kvlt-ash);
+            color: var(--kvlt-ash);
+        }
+    }
+
+    &[data-page="ideology"] {
+        & body::before {
+            content: "Ideology";
+            order: -2;
+        }
+
+        & h2:first-of-type {
+            margin-top: 4px;
+        }
+
+        /* Dislikes get a blood-red cross instead of the dagger */
+        & ul:last-of-type li::before {
+            content: "✗ " / "";
+            color: var(--kvlt-blood);
+        }
+    }
+
+    &:is([data-page="projects"], [data-page="contact"]) {
+        & h2:first-of-type {
+            display: block;
+            order: -2;
+        }
+
+        & h2:first-of-type::before,
+        & h2:first-of-type::after {
+            content: none;
+        }
+    }
+
+    &[data-page="projects"] {
+        & li + li {
+            margin-top: 2px;
+        }
+
+        /* The live figure, framed like the cover art. hidden has to win over .figs' display: flex. */
+        & .figs {
+            justify-content: center;
+            margin: 18px 0 8px;
+        }
+
+        & .figs[hidden] {
+            display: none;
+        }
+
+        & .fig {
+            outline: 1px dotted #57544e;
+            outline-offset: 5px;
+        }
+
+        /* Liner notes: centered, but short, balanced lines so they stay readable */
+        & li p {
+            max-width: 46ch;
+            margin: 14px auto 0;
+            font-size: 13px;
+            line-height: 1.75;
+            letter-spacing: 0.02em;
+            text-wrap: balance;
+            color: #bdb8ac;
+        }
+
+        & li p small {
+            font-size: 12px;
+            color: var(--kvlt-ash);
+        }
+
+        & .meta {
+            margin-top: 6px;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            color: var(--kvlt-ash);
+        }
+    }
+
+    /* --- 404 -------------------------------------------------------------- */
+
+    &[data-page="404"] {
+        padding: 0;
+        font-size: 16px;
+        line-height: 1.6;
+        background: var(--kvlt-page);
+
+        & body {
+            font: 400 14px/1.75 var(--kvlt-mono);
+            letter-spacing: 0.04em;
+        }
+
+        & .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 420px;
+        }
+
+        & h1 {
+            order: -2;
+        }
+
+        & h1 span {
+            color: var(--kvlt-dim);
+        }
+
+        & .container::before {
+            order: -1;
+        }
+
+        & img {
+            display: block;
+            width: min(280px, 100%);
+            height: auto;
+            margin: 30px 0 26px;
+            object-fit: cover;
+            filter: grayscale(1) contrast(1.2) brightness(0.9);
+            outline: 1px dotted #57544e;
+            outline-offset: 6px;
+        }
+
+        & p {
+            margin: 0 0 12px;
+            text-wrap: balance;
+            color: #bdb8ac;
+        }
+
+        & ul {
+            margin: 4px 0 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        & li::before {
+            content: "† " / "";
+            color: var(--kvlt-dim);
+        }
+    }
+
+    /* --- Contrast ---------------------------------------------------------- */
+
+    /* Asked for more contrast: no grain, and flavor text as bright as other secondary text */
+    @media (prefers-contrast: more) {
+        --kvlt-dim: var(--kvlt-ash);
+
+        &::after {
+            display: none;
+        }
+    }
+
+    @media (forced-colors: active) {
+        &::after {
+            display: none;
+        }
+    }
+
+    /* --- Phones ------------------------------------------------------------- */
+
+    @media (max-width: 520px) {
+        &[data-page="home"] main,
+        &:not([data-page="home"]) body {
+            margin: 16px auto;
+            padding: 30px 18px 26px;
+        }
+
+        &[data-page="ideology"] body::before,
+        &:is([data-page="projects"], [data-page="contact"]) h2:first-of-type,
+        &[data-page="404"] h1 {
+            font-size: 44px;
+        }
+
+        &[data-page="home"] {
+            & main::before {
+                font-size: 50px;
+            }
+
+            & #cig {
+                margin: 0 -6px -14px 0;
+                border-width: 4px;
+            }
+
+            & nav {
+                margin-top: 34px;
+            }
+
+            & nav::before {
+                padding-left: 0.2em;
+                letter-spacing: 0.2em;
+            }
+
+            & nav a,
+            & #cig-button {
+                font-size: 14px;
+            }
+        }
+    }
+}

@@ -1,0 +1,29 @@
+{
+  "gm": {
+    "files": {},
+    "bytes": 0
+  },
+  "kvlt": {
+    "files": {
+      "fonts/metal-mania.woff2": 18960,
+      "kvlt.css": 19232
+    },
+    "bytes": 38192
+  },
+  "takeout": {
+    "files": {
+      "fonts/archivo-black.woff2": 6388,
+      "fonts/zen-antique.woff2": 1576,
+      "takeout.css": 23450
+    },
+    "bytes": 31414
+  },
+  "tvdinner": {
+    "files": {
+      "fonts/righteous.woff2": 9040,
+      "fonts/yellowtail.woff2": 12116,
+      "tvdinner.css": 30618
+    },
+    "bytes": 51774
+  }
+}
