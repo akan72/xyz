@@ -16,6 +16,18 @@ serves the HTML/images from the edge; an
   `ENABLED = false` at the top of the file to turn it off.
 - `docs/screensaver/` — design log for the screensaver: screenshots and
   recordings from each iteration. Not deployed.
+- `public/assets/theme.js` — light/dark theme and remix styles, loaded by
+  every page. The homepage's style picker switches between gm (the default
+  look) and the remix styles in `public/assets/remix/`: black metal
+  (`kvlt.css`), takeout menu (`takeout.css`) and tv dinner (`tvdinner.css`).
+  A style's CSS, fonts and images load only while it's picked.
+- `modal_assets/` — generates the remix styles' images on the Qwen-Image
+  endpoints. Not deployed.
+- `docs/theme-remix/` — design log for the remix styles: the brief, and
+  screenshots of every page in every style. Not deployed.
+- `scripts/remix_check.py` — serves `public/` locally and checks the remix
+  styles in Chromium: `uv run scripts/remix_check.py test` for switching,
+  persistence and console errors, `shots` for screenshots and bytes per style.
 - `scripts/sitegen.py` — runs in the wrangler build. Copies `public/` to
   `dist/` (served by Workers Static Assets) and generates the files AI
   crawlers and agents read: `llms.txt`, `llms-full.txt`, a Markdown copy of
