@@ -3,8 +3,8 @@
 // Subscribes to istheldown's WebSocket (subway trains and subway alerts only),
 // picks one subway line at random on every page load, and renders it with
 // hydra-synth. A second canvas beside it maps every subway train, with the chosen
-// line's trains in its color. The figure stays hidden until a snapshot arrives;
-// if istheldown can't be reached, it is removed from the page.
+// line's trains in its color. Its space is reserved before the snapshot arrives;
+// if istheldown can't be reached, the same space shows an unavailable state.
 //
 // A train counts as "running" once it has left its first stop (it has a
 // previousStopId). Scheduled trips still waiting at their origin terminal are
@@ -59,8 +59,13 @@
   // --- renderer (created only once a snapshot has arrived, so a dead feed never shows a black box) ---
   let hydra = null, S = null;
   const wrap = box.closest('.figs') || box;
-  function show() { wrap.hidden = false; captionBlock.hidden = false; }
-  function remove(reason) { stop(); wrap.hidden = true; captionBlock.hidden = true; hide(reason || 'unknown'); }
+  function show() { wrap.dataset.state = 'ready'; }
+  function remove(reason) {
+    stop();
+    wrap.dataset.state = 'unavailable';
+    caption.textContent = 'Live transit preview unavailable. Visit istheldown.com for the current map.';
+    hide(reason || 'unknown');
+  }
   function createRenderer() {
     const W = Math.max(2, Math.min(260, Math.round(box.parentElement.clientWidth || 260))), H = Math.round(W * 1.25);
     hydra = new Hydra({ canvas, width: W, height: H, detectAudio: false, makeGlobal: false, autoLoop: false, enableStreamCapture: false });
