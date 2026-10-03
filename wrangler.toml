@@ -1,6 +1,22 @@
+# The Worker's only config. Pushes to master deploy it to production with
+# `wrangler deploy`, and each PR gets a Worker Preview of it with
+# `wrangler preview --name pr-<N>` (.github/workflows/deploy.yml). The
+# [[routes]] below only ever apply to production; previews answer only at
+# their own workers.dev URL. Previews inherit none of the bindings, so the
+# [previews] block at the end declares them again (scripts/test_previews.py
+# checks it).
 name = "xyz"
 main = "build/worker/shim.mjs"
 compatibility_date = "2026-05-01"
+
+# Production answers only at the custom domains in [[routes]], not at
+# xyz.<subdomain>.workers.dev. Preview URLs stay on, because a Worker Preview
+# only gets its pr-<N>-xyz.<subdomain>.workers.dev URL when they are; with
+# custom domains, both would default to off. Production deploys (and
+# `wrangler triggers deploy`) apply these two settings; `wrangler preview`
+# doesn't.
+workers_dev = false
+preview_urls = true
 
 [build]
 # sitegen.py writes dist/: public/ plus llms.txt, sitemaps and Markdown copies of pages
@@ -33,3 +49,12 @@ custom_domain = true
 
 [observability]
 enabled = true
+
+# Worker Previews (one per PR). They get the assets and observability settings
+# above but none of the bindings, so each binding is declared again here. The
+# Worker only reads the cig packs, so previews share production's bucket.
+[previews]
+
+[[previews.r2_buckets]]
+binding = "BUCKET"
+bucket_name = "cigawrette-packs"
