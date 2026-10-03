@@ -29,6 +29,8 @@ serves the HTML/images from the edge; an
   domain routes, and the `[previews]` block with the bindings PR previews get.
 - `scripts/preview-url.sh`, `scripts/delete-preview.sh` — read a PR
   preview's URL and delete it, for the workflows in `.github/workflows/`.
+  `scripts/hide-emails.sh` hides email addresses in everything wrangler
+  prints there, since the Actions logs are public.
 - `Cargo.toml` — `workers-rs` deps; compiled to WASM by `worker-build`.
 
 ## Adding a page

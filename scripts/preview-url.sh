@@ -18,5 +18,5 @@ echo "::error::wrangler preview didn't report a preview URL" >&2
 if printf '%s\n' "$json" | jq -e '.preview' >/dev/null 2>&1; then
   echo "::error::The Preview deployed without a URL, so Preview URLs are off for the Worker. preview_urls = true in wrangler.toml turns them on at the next production deploy." >&2
 fi
-sed -E 's/[[:alnum:]._%+-]+@[[:alnum:].-]+\.[[:alpha:]]{2,}/<email hidden>/g' "$file" >&2
+sh "$(dirname "$0")/hide-emails.sh" <"$file" >&2
 exit 1

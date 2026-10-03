@@ -17,10 +17,12 @@ case "$pr" in
 esac
 wrangler="${WRANGLER:-npx --yes wrangler}"
 
-# $wrangler is split into words on purpose.
+# $wrangler is split into words on purpose. Its output is shown with every
+# email address hidden: after an authentication error it names the email of
+# the account that owns the token.
 out=$($wrangler preview delete --name "pr-$pr" --skip-confirmation 2>&1)
 code=$?
-printf '%s\n' "$out"
+printf '%s\n' "$out" | sh "$(dirname "$0")/hide-emails.sh"
 if [ "$code" -eq 0 ]; then
   deleted=true
 elif printf '%s' "$out" | grep -qi -e 'not found' -e 'does not exist'; then

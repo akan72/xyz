@@ -143,6 +143,40 @@ class DeletePreviewTests(unittest.TestCase):
             self.assertNotIn("args:", result.stdout)
             self.assertEqual(outputs, "")
 
+    def test_hides_the_token_owners_email_after_an_authentication_error(self):
+        result, _ = self.delete_preview(
+            'echo "Authentication error [code: 10000]"; '
+            'echo "You are logged in with an API Token, associated with the email someone@example.com."; exit 1'
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertNotIn("example.com", result.stdout + result.stderr)
+        self.assertIn("associated with the email <email hidden>.", result.stdout)
+
+
+class HideEmailsTests(unittest.TestCase):
+    def hide_emails(self, text):
+        return subprocess.run(
+            ["sh", "scripts/hide-emails.sh"], cwd=ROOT, input=text, capture_output=True, text=True, check=True
+        ).stdout
+
+    def test_hides_every_email_address(self):
+        out = self.hide_emails(
+            "\U0001f44b You are logged in with an API Token, associated with the email someone@example.com.\n"
+            '{ "author_email": "some.one+tag@example.co.uk", "other": "x_y@mail.example.org" }\n'
+        )
+        self.assertEqual(
+            out,
+            "\U0001f44b You are logged in with an API Token, associated with the email <email hidden>.\n"
+            '{ "author_email": "<email hidden>", "other": "<email hidden>" }\n',
+        )
+
+    def test_leaves_everything_else_alone_urls_included(self):
+        text = (
+            "✨ Uploaded xyz\nhttps://pr-7-xyz.akan72.workers.dev\n"
+            "  env.BUCKET (cigawrette-packs)  R2 Bucket\nhttps://alexkan.xyz/cig/1?a=b@c\n"
+        )
+        self.assertEqual(self.hide_emails(text), text)
+
 
 # Binding types a Worker Preview doesn't inherit from production
 BINDING_KEYS = [
@@ -181,8 +215,14 @@ class WorkflowTests(unittest.TestCase):
 
     def test_pr_previews_never_run_wrangler_deploy_or_print_the_preview_json(self):
         preview = dict(steps(DEPLOY))["Deploy PR preview"]
-        self.assertIn("preview --name \"pr-${PR_NUMBER}\" --json >/tmp/preview.log", preview)
         self.assertNotRegex(preview, r"\bdeploy\b")
+        # wrangler's own messages (which name that email after an
+        # authentication error) reach the log only through the filter
+        self.assertIn("set -euo pipefail", preview)
+        self.assertIn(
+            'preview --name "pr-${PR_NUMBER}" --json 2>&1 >/tmp/preview.log | sh scripts/hide-emails.sh >&2 || status=$?',
+            preview,
+        )
         # The JSON names the email of the account that owns the token; only
         # scripts/preview-url.sh reads it, and it hides every email address
         self.assertIn("sh scripts/preview-url.sh /tmp/preview.log", preview)
@@ -194,6 +234,11 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(deploys, ["Deploy to production"])
         production = dict(steps(DEPLOY))["Deploy to production"]
         self.assertIn("if: github.event_name == 'push'", production)
+
+    def test_production_hides_emails_and_still_fails_when_the_deploy_does(self):
+        production = dict(steps(DEPLOY))["Deploy to production"]
+        self.assertIn("set -euo pipefail", production)
+        self.assertIn('npx --yes "wrangler@${WRANGLER_VERSION}" deploy 2>&1 | sh scripts/hide-emails.sh', production)
 
     def test_cleanup_deletes_through_the_script(self):
         self.assertIn('sh scripts/delete-preview.sh "${PR_NUMBER}"', dict(steps(CLEANUP))["Delete preview"])

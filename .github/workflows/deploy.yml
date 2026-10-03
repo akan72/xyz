@@ -106,7 +106,11 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx --yes "wrangler@${WRANGLER_VERSION}" deploy
+        # Emails hidden, as in the preview step. pipefail keeps a failed
+        # deploy failing the step.
+        run: |
+          set -euo pipefail
+          npx --yes "wrangler@${WRANGLER_VERSION}" deploy 2>&1 | sh scripts/hide-emails.sh
 
       # Pull requests: a Worker Preview of the one xyz Worker, named pr-<N>,
       # at its own pr-<N>-xyz.<subdomain>.workers.dev URL. It builds from
@@ -121,17 +125,18 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+        # wrangler names the email of the account that owns the token in its
+        # JSON and after an authentication error, and these logs are public.
+        # The JSON goes to a file that only scripts/preview-url.sh reads (it
+        # hides every email address on failure); wrangler's messages reach the
+        # log with emails hidden.
         run: |
           set -euo pipefail
-          # The JSON names the email of the account that owns the token and
-          # these logs are public, so it goes to a file that only
-          # scripts/preview-url.sh reads. On failure that script shows it with
-          # every email address hidden.
-          STATUS=0
-          npx --yes "wrangler@${WRANGLER_VERSION}" preview --name "pr-${PR_NUMBER}" --json >/tmp/preview.log || STATUS=$?
+          status=0
+          npx --yes "wrangler@${WRANGLER_VERSION}" preview --name "pr-${PR_NUMBER}" --json 2>&1 >/tmp/preview.log | sh scripts/hide-emails.sh >&2 || status=$?
           URL="$(sh scripts/preview-url.sh /tmp/preview.log)"
-          if [ "${STATUS}" -ne 0 ]; then
-            echo "::error::wrangler preview exited ${STATUS}"
+          if [ "$status" -ne 0 ]; then
+            echo "::error::wrangler preview exited ${status}"
             exit 1
           fi
           echo "preview_name=pr-${PR_NUMBER}" >>"$GITHUB_OUTPUT"
