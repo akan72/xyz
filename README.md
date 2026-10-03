@@ -26,7 +26,9 @@ serves the HTML/images from the edge; an
   `Accept: text/markdown`. Unmatched paths get `404.html`.
 - `src/link_preview.rs` — adds Open Graph / Twitter tags to every HTML page.
 - `wrangler.toml` — build command, assets directory, R2 binding, custom
-  domain routes.
+  domain routes, and the `[previews]` block with the bindings PR previews get.
+- `scripts/preview-url.sh`, `scripts/delete-preview.sh` — read a PR
+  preview's URL and delete it, for the workflows in `.github/workflows/`.
 - `Cargo.toml` — `workers-rs` deps; compiled to WASM by `worker-build`.
 
 ## Adding a page
@@ -64,9 +66,21 @@ Pushes to `master` deploy via GitHub Actions
 
     wrangler deploy
 
+Each PR gets a [Worker Preview](https://developers.cloudflare.com/workers/previews/)
+of the `xyz` Worker, named `pr-<N>`, made with
+`wrangler preview --name pr-<N>`, and CI comments its URL
+(`https://pr-<N>-xyz.<subdomain>.workers.dev`) on the PR. Previews use
+`wrangler.toml` too: they never get its custom-domain routes, and they
+inherit none of its bindings, so its `[previews]` block declares them again
+(`scripts/test_previews.py` checks it). A preview only gets a URL while
+Preview URLs are on for the Worker (`preview_urls = true`, which production
+deploys apply). `.github/workflows/pr-preview-cleanup.yml` deletes the
+preview when the PR closes.
+
 First-time setup:
 
-1. Set `bucket_name` in `wrangler.toml` to your R2 bucket.
+1. Set `bucket_name` in `wrangler.toml` (under `[[r2_buckets]]` and
+   `[[previews.r2_buckets]]`) to your R2 bucket.
 2. `wrangler login` (or set `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`).
 3. Add repo secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` for
    GitHub Actions.
