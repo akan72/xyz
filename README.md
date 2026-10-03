@@ -29,8 +29,6 @@ serves the HTML/images from the edge; an
   domain routes, and the `[previews]` block with the bindings PR previews get.
 - `scripts/preview-url.sh`, `scripts/delete-preview.sh` — read a PR
   preview's URL and delete it, for the workflows in `.github/workflows/`.
-  `scripts/hide-emails.sh` hides email addresses in everything wrangler
-  prints there, since the Actions logs are public.
 - `Cargo.toml` — `workers-rs` deps; compiled to WASM by `worker-build`.
 
 ## Adding a page
@@ -84,8 +82,12 @@ First-time setup:
 1. Set `bucket_name` in `wrangler.toml` (under `[[r2_buckets]]` and
    `[[previews.r2_buckets]]`) to your R2 bucket.
 2. `wrangler login` (or set `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`).
-3. Add repo secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` for
-   GitHub Actions.
+3. Add repo secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` and
+   `CLOUDFLARE_EMAIL` for GitHub Actions. `CLOUDFLARE_EMAIL` is the email of
+   the Cloudflare account that owns the token: wrangler prints it, and the
+   Actions logs are public, but GitHub masks a secret in the log of any job
+   that uses it. So each step that uses the token gets it too, and stops if
+   it's missing.
 4. Add your custom domain to Clodufalre.
 
 ## Generate Zyn Favicon

@@ -75,12 +75,13 @@ class PreviewUrlTests(unittest.TestCase):
         self.assertEqual(result.stderr, "")
 
     def test_fails_on_stderr_when_there_is_no_preview_url(self):
-        # stderr, because the workflow captures stdout as the URL
+        # stderr, because the workflow captures stdout as the URL. wrangler's
+        # own output is already in the log, so this doesn't show it again.
         result = self.preview_url("✘ [ERROR] Authentication error [code: 10000]\n")
         self.assertEqual(result.returncode, 1)
         self.assertEqual(result.stdout, "")
         self.assertIn("didn't report a preview URL", result.stderr)
-        self.assertIn("Authentication error", result.stderr)
+        self.assertNotIn("Authentication error", result.stderr)
 
     def test_says_preview_urls_are_off_when_the_preview_has_no_url(self):
         no_urls = '{\n  "preview": { "name": "pr-7", "urls": [] },\n  "deployment": { "urls": [] }\n}\n'
@@ -88,16 +89,6 @@ class PreviewUrlTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertEqual(result.stdout, "")
         self.assertIn("Preview URLs are off", result.stderr)
-
-    def test_never_shows_an_email_address(self):
-        # The deployment record names the email of the account that owns the token
-        leaky = '✘ [ERROR] something broke\n{ "deployment": { "author_email": "some.one+tag@example.co.uk" } }\n'
-        result = self.preview_url(leaky)
-        self.assertEqual(result.returncode, 1)
-        self.assertNotIn("example.co.uk", result.stderr)
-        self.assertIn('"author_email": "<email hidden>"', result.stderr)
-        self.assertIn("something broke", result.stderr)
-
 
 DELETED = 'echo "Preview \\"pr-7\\" deleted successfully."; exit 0'
 MISSING = 'echo "The Preview \\"pr-7\\" was not found."; exit 1'
@@ -143,41 +134,6 @@ class DeletePreviewTests(unittest.TestCase):
             self.assertNotIn("args:", result.stdout)
             self.assertEqual(outputs, "")
 
-    def test_hides_the_token_owners_email_after_an_authentication_error(self):
-        result, _ = self.delete_preview(
-            'echo "Authentication error [code: 10000]"; '
-            'echo "You are logged in with an API Token, associated with the email someone@example.com."; exit 1'
-        )
-        self.assertEqual(result.returncode, 1)
-        self.assertNotIn("example.com", result.stdout + result.stderr)
-        self.assertIn("associated with the email <email hidden>.", result.stdout)
-
-
-class HideEmailsTests(unittest.TestCase):
-    def hide_emails(self, text):
-        return subprocess.run(
-            ["sh", "scripts/hide-emails.sh"], cwd=ROOT, input=text, capture_output=True, text=True, check=True
-        ).stdout
-
-    def test_hides_every_email_address(self):
-        out = self.hide_emails(
-            "\U0001f44b You are logged in with an API Token, associated with the email someone@example.com.\n"
-            '{ "author_email": "some.one+tag@example.co.uk", "other": "x_y@mail.example.org" }\n'
-        )
-        self.assertEqual(
-            out,
-            "\U0001f44b You are logged in with an API Token, associated with the email <email hidden>.\n"
-            '{ "author_email": "<email hidden>", "other": "<email hidden>" }\n',
-        )
-
-    def test_leaves_everything_else_alone_urls_included(self):
-        text = (
-            "✨ Uploaded xyz\nhttps://pr-7-xyz.akan72.workers.dev\n"
-            "  env.BUCKET (cigawrette-packs)  R2 Bucket\nhttps://alexkan.xyz/cig/1?a=b@c\n"
-        )
-        self.assertEqual(self.hide_emails(text), text)
-
-
 # Binding types a Worker Preview doesn't inherit from production
 BINDING_KEYS = [
     "ai", "analytics_engine_datasets", "browser", "d1_databases", "durable_objects", "hyperdrive",
@@ -216,18 +172,12 @@ class WorkflowTests(unittest.TestCase):
     def test_pr_previews_never_run_wrangler_deploy_or_print_the_preview_json(self):
         preview = dict(steps(DEPLOY))["Deploy PR preview"]
         self.assertNotRegex(preview, r"\bdeploy\b")
-        # wrangler's own messages (which name that email after an
-        # authentication error) reach the log only through the filter
+        # The JSON reaches the log, where GitHub masks the token owner's
+        # email (CLOUDFLARE_EMAIL), and scripts/preview-url.sh reads the URL
+        # from it
         self.assertIn("set -euo pipefail", preview)
-        self.assertIn(
-            'preview --name "pr-${PR_NUMBER}" --json 2>&1 >/tmp/preview.log | sh scripts/hide-emails.sh >&2 || status=$?',
-            preview,
-        )
-        # The JSON names the email of the account that owns the token; only
-        # scripts/preview-url.sh reads it, and it hides every email address
-        self.assertIn("sh scripts/preview-url.sh /tmp/preview.log", preview)
-        script = preview.split("run: |", 1)[1]
-        self.assertNotRegex(script, r"\b(cat|tee|jq|less|head|tail)\b")
+        self.assertIn('preview --name "pr-${PR_NUMBER}" --json | tee /tmp/preview.log', preview)
+        self.assertIn('URL="$(sh scripts/preview-url.sh /tmp/preview.log)"', preview)
 
     def test_only_the_production_step_runs_wrangler_deploy(self):
         deploys = [name for name, text in steps(DEPLOY) if re.search(r"wrangler\S*\s+deploy\b(?! --dry-run)", text)]
@@ -235,10 +185,31 @@ class WorkflowTests(unittest.TestCase):
         production = dict(steps(DEPLOY))["Deploy to production"]
         self.assertIn("if: github.event_name == 'push'", production)
 
-    def test_production_hides_emails_and_still_fails_when_the_deploy_does(self):
-        production = dict(steps(DEPLOY))["Deploy to production"]
-        self.assertIn("set -euo pipefail", production)
-        self.assertIn('npx --yes "wrangler@${WRANGLER_VERSION}" deploy 2>&1 | sh scripts/hide-emails.sh', production)
+    def test_give_every_step_with_the_token_the_email_secret_and_stop_without_it(self):
+        # wrangler names the email of the account that owns the token, and
+        # GitHub masks a secret only in the log of a job that uses it
+        for path in (DEPLOY, CLEANUP):
+            for name, text in steps(path):
+                if "secrets.CLOUDFLARE_API_TOKEN" not in text:
+                    continue
+                self.assertIn("CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}", text, name)
+                guard = text.find(': "${CLOUDFLARE_EMAIL:?')
+                self.assertGreater(guard, -1, name)
+                first_wrangler = re.search(r"wrangler@\S*\s+(preview|deploy)|delete-preview\.sh", text)
+                self.assertLess(guard, first_wrangler.start(), f"{name}: the guard comes before wrangler")
+
+    def test_run_blocks_parse_as_bash(self):
+        # The shell GitHub runs them with; an apostrophe inside "${X:?...}"
+        # once broke a step this way
+        for path in (DEPLOY, CLEANUP):
+            for name, text in steps(path):
+                block = re.search(r"^ {6}[- ] run: \|\n((?: {10}.*\n?|\s*\n)+)", text + "\n", re.M)
+                line = re.search(r"^ {6}[- ] run: (?!\|)(.+)$", text, re.M)
+                if not (block or line):
+                    continue
+                body = re.sub(r"^ {10}", "", block.group(1), flags=re.M) if block else line.group(1)
+                check = subprocess.run(["bash", "-n"], input=body, capture_output=True, text=True)
+                self.assertEqual((check.returncode, check.stderr), (0, ""), f"{path.name}: {name}")
 
     def test_cleanup_deletes_through_the_script(self):
         self.assertIn('sh scripts/delete-preview.sh "${PR_NUMBER}"', dict(steps(CLEANUP))["Delete preview"])

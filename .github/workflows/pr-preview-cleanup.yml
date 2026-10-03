@@ -40,8 +40,13 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # Masks the token owner's email, which wrangler prints after an
+          # authentication error.
+          CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: WRANGLER="npx --yes wrangler@${WRANGLER_VERSION}" sh scripts/delete-preview.sh "${PR_NUMBER}"
+        run: |
+          : "${CLOUDFLARE_EMAIL:?the CLOUDFLARE_EMAIL secret is missing, so the log could show the email of the account that owns the token}"
+          WRANGLER="npx --yes wrangler@${WRANGLER_VERSION}" sh scripts/delete-preview.sh "${PR_NUMBER}"
 
       - name: Update PR comment
         if: always()
