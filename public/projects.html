@@ -11,6 +11,14 @@
         <link rel="preconnect" href="https://istheldown.com">
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
         <script>
+            // Register before the first paint; defer WebGL work until the page fade is over.
+            window.__pageTransitionFinished = new Promise(function (resolve) {
+                if (!('onpagereveal' in window)) { resolve(); return; }
+                window.addEventListener('pagereveal', function (event) {
+                    if (event.viewTransition) event.viewTransition.finished.then(resolve, resolve);
+                    else resolve();
+                }, { once: true });
+            });
             // Open the istheldown feed and fetch the station table right away, before the
             // renderer has loaded; assets/subway-vis.js picks these up (messages are queued).
             window.__subway = (function () {
@@ -25,7 +33,7 @@
                 } catch (e) { return null; }
             })();
         </script>
-        <script id="hydra-script" src="https://cdn.jsdelivr.net/npm/hydra-synth@1.4.0/dist/hydra-synth.js" async onerror="window.__hydraFailed = true"></script>
+        <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/hydra-synth@1.4.0/dist/hydra-synth.js">
         <script src="/assets/subway-vis.js" defer></script>
         <script type="module" src="/assets/screensaver.js"></script>
         <style>

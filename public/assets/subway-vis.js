@@ -38,13 +38,20 @@
     try { console.info('[subway-vis] figure hidden: ' + reason); } catch (e) {}
     if (DEBUG) { captionBlock.hidden = false; caption.textContent = 'subway-vis hidden: ' + reason + ' | ' + navigator.userAgent; }
   };
-  // The renderer script loads async in <head>; wait for it, and try unpkg if the first CDN fails.
-  function loadScript(src) { return new Promise(res => { const sc = document.createElement('script'); sc.src = src; sc.onload = () => res(typeof Hydra !== 'undefined'); sc.onerror = () => res(false); document.head.appendChild(sc); }); }
+  // Fetches can start early, but evaluating Hydra and compiling shaders must not interrupt the fade.
+  function loadScript(src) {
+    return new Promise(resolve => {
+      const sc = document.createElement('script');
+      const finish = () => { clearTimeout(timer); resolve(typeof Hydra !== 'undefined'); };
+      const timer = setTimeout(finish, 5000);
+      sc.onload = finish; sc.onerror = finish; sc.src = src;
+      document.head.appendChild(sc);
+    });
+  }
   function ensureHydra() {
     if (typeof Hydra !== 'undefined') return Promise.resolve(true);
-    const tag = document.getElementById('hydra-script');
-    const primary = tag && !window.__hydraFailed ? new Promise(res => { tag.addEventListener('load', () => res(typeof Hydra !== 'undefined')); tag.addEventListener('error', () => res(false)); setTimeout(() => res(typeof Hydra !== 'undefined'), 5000); }) : Promise.resolve(false);
-    return primary.then(ok => ok || loadScript('https://unpkg.com/hydra-synth@1.4.0/dist/hydra-synth.js'));
+    return loadScript('https://cdn.jsdelivr.net/npm/hydra-synth@1.4.0/dist/hydra-synth.js')
+      .then(ok => ok || loadScript('https://unpkg.com/hydra-synth@1.4.0/dist/hydra-synth.js'));
   }
 
   const LINE = { '1': '#D82233', '2': '#D82233', '3': '#D82233', '4': '#009952', '5': '#009952', '6': '#009952', '7': '#9A38A1', A: '#0062CF', C: '#0062CF', E: '#0062CF', B: '#EB6800', D: '#EB6800', F: '#EB6800', M: '#EB6800', G: '#799534', J: '#8E5C33', Z: '#8E5C33', L: '#7C858C', N: '#F6BC26', Q: '#F6BC26', R: '#F6BC26', W: '#F6BC26' };
@@ -194,6 +201,7 @@
   }
 
   (async () => {
+    await window.__pageTransitionFinished;
     if (!(await ensureHydra())) return remove('hydra-synth did not load from jsDelivr or unpkg');
     // Create the renderer and compile the shader graph now, so the only work left when the snapshot lands is one rebuild with real numbers.
     try { createRenderer(); buildGraph(); hydra.tick(16); }
