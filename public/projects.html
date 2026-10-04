@@ -49,12 +49,12 @@
             .meta { color: var(--muted, #666); font-size: 0.9em; margin-top: -0.4em; }
             /* The live istheldown figure: same 260px width as the images on the homepage */
             .figs { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; margin-top: 1em; }
-            .fig { width: 260px; max-width: 100%; aspect-ratio: 4 / 5; background: #111; }
-            .fig.map { background: #000; }
-            .fig canvas { display: block; width: 100%; height: 100%; }
+            .fig { width: 260px; max-width: 100%; aspect-ratio: 4 / 5; background: color-mix(in srgb, currentColor 6%, var(--bg, Canvas)); box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 12%, transparent); }
+            .fig canvas { display: block; width: 100%; height: 100%; opacity: 0; transition: opacity 240ms ease-out; }
+            .figs[data-state="ready"] canvas { opacity: 1; }
+            @media (prefers-reduced-motion: reduce) { .fig canvas { transition: none; } }
             /* Keep the caption and both figures in flow while the feed loads or fails. */
             .live-caption small { display: block; min-height: 4.8em; line-height: 1.6; }
-            .figs:not([data-state="ready"]) .fig { background: color-mix(in srgb, currentColor 6%, var(--bg, Canvas)); box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 12%, transparent); }
             .figs:not([data-state="ready"]) canvas { visibility: hidden; }
             .bullet { width: 1.4em; height: 1.4em; vertical-align: middle; }
         </style>

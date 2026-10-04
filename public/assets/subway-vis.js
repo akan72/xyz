@@ -119,12 +119,27 @@
   }
 
   // --- frame loop: pauses offscreen, on hidden tabs, and for reduced motion ---
-  let raf = null, last = 0, visible = true, frameNo = 0, scene = null;
+  let raf = null, last = 0, visible = true, frameNo = 0, scene = null, warmup = 0;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function frame(t) { if (!hydra) { raf = null; return; } const dt = Math.min(t - last, 100); last = t; frameNo++; if (scene && frameNo % 30 === 0) drawInputs(scene); hydra.tick(dt); raf = requestAnimationFrame(frame); }
-  function start() { if (!hydra || raf || reduced || document.hidden || !visible) return; last = performance.now(); raf = requestAnimationFrame(frame); }
+  function frame(t) {
+    raf = null;
+    if (!hydra || document.hidden || !visible) return;
+    if (warmup) {
+      // Settle the feedback a frame at a time so navigation and scrolling stay responsive.
+      hydra.tick(16);
+      if (--warmup === 0) show();
+    } else {
+      const dt = Math.min(t - last, 100);
+      frameNo++;
+      if (scene && frameNo % 30 === 0) drawInputs(scene);
+      hydra.tick(dt);
+    }
+    last = t;
+    if (warmup || !reduced) raf = requestAnimationFrame(frame);
+  }
+  function start() { if (!hydra || !scene || raf !== null || (reduced && !warmup) || document.hidden || !visible) return; last = performance.now(); raf = requestAnimationFrame(frame); }
   function stop() { cancelAnimationFrame(raf); raf = null; }
-  const settle = () => { if (hydra) for (let k = 0; k < 24; k++) hydra.tick(16); };
+  const settle = () => { warmup = 24; start(); };
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? start() : stop(); }, { threshold: 0 }).observe(box);
   document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
 
@@ -231,7 +246,7 @@
         scene = { route, stations, trains: new Map(), all: new Map(), alerts: 0, serverTime: m.serverTime, receivedAt: performance.now() };
         m.trains.forEach(t => { if (!subway(t)) return; scene.all.set(t.tripId, t); if (t.routeId === route) scene.trains.set(t.tripId, t); });
         scene.alerts = m.alerts.filter(a => (a.system || 'subway') === 'subway' && a.routeIds.includes(route)).length;
-        drawInputs(scene); const k = knobs(scene); applyKnobs(k); describe(scene, k, true); settle(); show(); start(); lastBuild = performance.now();
+        drawInputs(scene); const k = knobs(scene); applyKnobs(k); describe(scene, k, true); settle(); lastBuild = performance.now();
       } else if (!scene) return;
       else if (m.type === 'trains') { m.updated.forEach(t => { if (!subway(t)) return; scene.all.set(t.tripId, t); if (t.routeId === scene.route) scene.trains.set(t.tripId, t); }); m.removed.forEach(id => { scene.trains.delete(id); scene.all.delete(id); }); dirty = true; }
       else if (m.type === 'alerts') { scene.alerts = m.alerts.filter(a => (a.system || 'subway') === 'subway' && a.routeIds.includes(scene.route)).length; dirty = true; }

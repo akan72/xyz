@@ -72,3 +72,72 @@ test('a failed CDN starts the fallback loader after the transition', async () =>
   assert.equal(p.scripts.length, 2);
   assert.match(p.scripts[1].src, /unpkg\.com/);
 });
+
+// Exercise the real frame scheduler without WebGL or a live network feed.
+function scheduler(reduced = false) {
+  const callbacks = new Map();
+  let next = 1, ticks = 0, shown = 0, intersect, visibility;
+  const context = vm.createContext({
+    hydra: { tick() { ticks++; } },
+    document: { hidden: false, addEventListener: (_, fn) => { visibility = fn; } },
+    matchMedia: () => ({ matches: reduced }), performance: { now: () => 0 },
+    requestAnimationFrame: fn => { const id = next++; callbacks.set(id, fn); return id; },
+    cancelAnimationFrame: id => callbacks.delete(id),
+    IntersectionObserver: class { constructor(fn) { intersect = fn; } observe() {} },
+    box: {}, show() { shown++; }, drawInputs() {},
+  });
+  const loop = renderer.slice(renderer.indexOf('  // --- frame loop:'), renderer.indexOf('  // --- data:'));
+  vm.runInContext(loop + '\nthis.begin = () => { scene = {}; settle(); }; this.start = start;', context);
+  return {
+    begin: () => context.begin(), start: () => context.start(),
+    step(t = 16) { const [id, fn] = callbacks.entries().next().value; callbacks.delete(id); fn(t); },
+    visible(value) { intersect([{ isIntersecting: value }]); },
+    hidden(value) { context.document.hidden = value; visibility(); },
+    get ticks() { return ticks; }, get shown() { return shown; }, get pending() { return callbacks.size; },
+  };
+}
+
+test('the preview settles across frames and reveals only when the feedback is ready', () => {
+  const s = scheduler();
+  s.start();
+  assert.equal(s.pending, 0, 'no animation before the first snapshot');
+  s.begin();
+  assert.equal(s.ticks, 0, 'startup must yield before rendering');
+  for (let i = 1; i <= 24; i++) {
+    s.step(i * 16);
+    assert.equal(s.ticks, i, 'one warmup tick per animation frame');
+    assert.equal(s.shown, i === 24 ? 1 : 0);
+    assert.equal(s.pending, 1, 'one loop, including after reveal');
+  }
+  s.step(400);
+  assert.equal(s.ticks, 25, 'normal animation continues');
+  assert.equal(s.shown, 1, 'no repeated reveal');
+});
+
+test('reduced motion settles a static preview and leaves no ongoing frame loop', () => {
+  const s = scheduler(true);
+  s.begin();
+  for (let i = 0; i < 24; i++) s.step();
+  assert.equal(s.ticks, 24);
+  assert.equal(s.shown, 1);
+  assert.equal(s.pending, 0);
+  s.hidden(true); s.hidden(false); s.visible(false); s.visible(true);
+  assert.equal(s.pending, 0);
+});
+
+test('warmup pauses offscreen and on hidden tabs, then resumes without a second loop', () => {
+  const s = scheduler();
+  s.begin(); s.step();
+  s.visible(false);
+  assert.equal(s.pending, 0);
+  assert.equal(s.ticks, 1);
+  s.visible(true); s.start();
+  assert.equal(s.pending, 1);
+  s.step(); s.hidden(true);
+  assert.equal(s.pending, 0);
+  s.hidden(false); s.start();
+  assert.equal(s.pending, 1);
+  for (let i = 2; i < 24; i++) s.step();
+  assert.equal(s.ticks, 24);
+  assert.equal(s.shown, 1);
+});
