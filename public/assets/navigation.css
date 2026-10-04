@@ -15,3 +15,11 @@ main > :first-child { margin-top: 0; }
 :root[data-theme="dark"] .icon-sun { display: inline; }
 :root[data-theme="dark"] .site-header { color: #e8e8e8; }
 :root[data-theme="dark"] .site-header a, :root[data-theme="dark"] .site-header .theme-toggle { color: #c8c8c8; }
+/* Mark the current page without changing link widths or moving the menu. */
+:root .site-header a[aria-current="page"], :root .site-header a[aria-current="page"]:visited {
+    background: var(--fg);
+    color: var(--bg);
+    box-shadow: 0 0 0 4px var(--fg);
+    border-radius: 2px;
+    text-decoration: none;
+}
