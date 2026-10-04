@@ -309,6 +309,49 @@ class SiteTests(unittest.TestCase):
             for p in pages:
                 self.assertTrue((Path(tmp) / p.markdown_path.lstrip("/")).is_file())
 
+class CriticalAssetTests(unittest.TestCase):
+    def test_inlines_only_small_render_blocking_assets_and_escapes_script_comments(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            public = Path(tmp)
+            (public / 'assets').mkdir()
+            theme = '// Example: </script>\nwindow.themeReady = true;'
+            (public / 'assets/theme.js').write_text(theme)
+            for name in sitegen.CRITICAL_STYLES:
+                (public / 'assets' / name).write_text('body { color: black; }')
+            source = '<head><script src="/assets/theme.js"></script>' + ''.join(
+                f'<link rel="stylesheet" href="/assets/{name}">' for name in sitegen.CRITICAL_STYLES
+            ) + '<script type="module" src="/assets/screensaver.js"></script></head>'
+            result = sitegen.with_critical_assets(source, public)
+            self.assertNotIn('<link rel="stylesheet"', result)
+            self.assertNotIn('<script src="/assets/theme.js">', result)
+            doc = sitegen.parse_html(result)
+            scripts = [el for el in doc.iter() if el.tag == 'script']
+            self.assertEqual(len(scripts), 2)
+            self.assertIn('window.themeReady = true;', scripts[0].text())
+            self.assertEqual(scripts[1].attrs['src'], '/assets/screensaver.js')
+            self.assertEqual(scripts[1].attrs['type'], 'module')
+
+    def test_missing_critical_asset_fails_instead_of_building_a_broken_page(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(sitegen.SiteError):
+                sitegen.with_critical_assets('<script src="/assets/theme.js"></script>', Path(tmp))
+
+    def test_all_real_pages_include_critical_styles_even_the_not_found_page(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dist = Path(tmp)
+            sitegen.build(sitegen.PUBLIC, dist, {})
+            for name in ['index', 'ideology', 'projects', 'contact', '404']:
+                html = (dist / (name + '.html')).read_text()
+                self.assertIn('data-inline-source="/assets/theme.js"', html)
+                for style in sitegen.CRITICAL_STYLES:
+                    self.assertIn(f'data-inline-source="/assets/{style}"', html)
+                doc = sitegen.parse_html(html)
+                headers = [el for el in doc.iter() if el.tag == 'header']
+                self.assertEqual(len(headers), 1)
+                links = [(el.text(), el.attrs.get('href')) for el in headers[0].iter() if el.tag == 'a']
+                self.assertEqual(links, [('Main', '/'), ('Ideology', '/ideology'), ('Projects', '/projects'), ('Contact', '/contact')])
+                self.assertNotIn('>Home</a>', html)
+
 
 if __name__ == "__main__":
     unittest.main()

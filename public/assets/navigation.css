@@ -1,0 +1,17 @@
+/* One position and appearance for navigation on every page. */
+:root { --bg: #f4f4f4; --fg: #111; }
+:root[data-theme="dark"] { --bg: #161616; --fg: #e8e8e8; }
+html { background: var(--bg); }
+body { background: var(--bg); color: var(--fg); max-width: 720px; margin: 40px auto; padding: 0 16px; }
+main > :first-child { margin-top: 0; }
+.site-header { margin-bottom: 32px; font-size: 16px; line-height: 1.2; color: #111; view-transition-name: site-header; }
+.site-header h2 { margin: 0 0 24px; font-size: 24px; line-height: 1.2; }
+.site-header nav { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.site-header a, .site-header a:visited { color: #333; }
+.site-header .theme-toggle { font: inherit; color: #333; background: none; border: 0; padding: 2px; cursor: pointer; line-height: 0; }
+.site-header .theme-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.site-header .theme-toggle:hover { opacity: 0.7; }
+.icon-sun, :root[data-theme="dark"] .icon-moon { display: none; }
+:root[data-theme="dark"] .icon-sun { display: inline; }
+:root[data-theme="dark"] .site-header { color: #e8e8e8; }
+:root[data-theme="dark"] .site-header a, :root[data-theme="dark"] .site-header .theme-toggle { color: #c8c8c8; }

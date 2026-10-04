@@ -1,17 +1,29 @@
 /* Progressive enhancement for ordinary same-origin page navigation. */
 @view-transition { navigation: auto; }
 
-/* Give the native opacity crossfade time to read, without geometry interpolation. */
-::view-transition-group(root) { animation: none; }
-::view-transition-old(root),
-::view-transition-new(root) {
-    animation-duration: 240ms;
-    animation-timing-function: ease-in-out;
+/* Keep the header fixed and reveal the new content beneath one fading snapshot. */
+::view-transition-group(root),
+::view-transition-group(site-header) { animation: none; }
+::view-transition-old(root) {
+    z-index: 1;
+    mix-blend-mode: normal;
+    animation: page-fade-out 240ms ease-out both;
 }
+::view-transition-new(root) {
+    z-index: 0;
+    mix-blend-mode: normal;
+    animation: none;
+}
+::view-transition-old(site-header) { animation: none; opacity: 0; }
+::view-transition-new(site-header) { animation: none; mix-blend-mode: normal; }
+@keyframes page-fade-out { from { opacity: 1; } to { opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
     @view-transition { navigation: none; }
     ::view-transition-group(root),
+    ::view-transition-group(site-header),
     ::view-transition-old(root),
-    ::view-transition-new(root) { animation: none; }
+    ::view-transition-new(root),
+    ::view-transition-old(site-header),
+    ::view-transition-new(site-header) { animation: none; }
 }
