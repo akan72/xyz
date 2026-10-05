@@ -371,6 +371,7 @@ class CriticalAssetTests(unittest.TestCase):
                 links = [(el.text(), el.attrs.get('href')) for el in headers[0].iter() if el.tag == 'a']
                 self.assertEqual(links, [('Main', '/'), ('Ideology', '/ideology'), ('Projects', '/projects'), ('Contact', '/contact')])
                 self.assertNotIn('>Home</a>', html)
+                self.assertEqual(html.count('src="/assets/page-navigation.js"'), 1)
 
 
 if __name__ == "__main__":

@@ -17,10 +17,10 @@ function page(supported = true) {
       getElementById: id => id === 'subway-vis' ? { parentElement: { closest: () => ({ dataset: {} }) } } : id === 'subway-vis-caption' ? { parentElement: {} } : null,
       createElement: kind => kind === 'canvas' ? { getContext: () => ({}) } : {},
       head: { appendChild: script => scripts.push(script) },
-      addEventListener() {}, hidden: false,
+      addEventListener() {}, removeEventListener() {}, hidden: false,
     },
     WebSocket: class { constructor() { throw new Error('No feed in lifecycle test'); } },
-    IntersectionObserver: class { observe() {} },
+    IntersectionObserver: class { observe() {} disconnect() {} },
     matchMedia: () => ({ matches: false }), location: { search: '' },
     setTimeout: () => 0, clearTimeout() {}, console,
   });
@@ -78,12 +78,13 @@ function scheduler(reduced = false) {
   const callbacks = new Map();
   let next = 1, ticks = 0, shown = 0, intersect, visibility;
   const context = vm.createContext({
-    hydra: { tick() { ticks++; } },
-    document: { hidden: false, addEventListener: (_, fn) => { visibility = fn; } },
+    hydra: { tick() { ticks++; }, regl: { destroy() {} } },
+    window: {}, disposed: false, suspended: false, activeSocket: null, socketTimer: null, retryTimer: null, clearTimeout() {},
+    document: { hidden: false, addEventListener: (_, fn) => { visibility = fn; }, removeEventListener() {} },
     matchMedia: () => ({ matches: reduced }), performance: { now: () => 0 },
     requestAnimationFrame: fn => { const id = next++; callbacks.set(id, fn); return id; },
     cancelAnimationFrame: id => callbacks.delete(id),
-    IntersectionObserver: class { constructor(fn) { intersect = fn; } observe() {} },
+    IntersectionObserver: class { constructor(fn) { intersect = fn; } observe() {} disconnect() {} },
     box: {}, show() { shown++; }, drawInputs() {},
   });
   const loop = renderer.slice(renderer.indexOf('  // --- frame loop:'), renderer.indexOf('  // --- data:'));
@@ -93,6 +94,7 @@ function scheduler(reduced = false) {
     step(t = 16) { const [id, fn] = callbacks.entries().next().value; callbacks.delete(id); fn(t); },
     visible(value) { intersect([{ isIntersecting: value }]); },
     hidden(value) { context.document.hidden = value; visibility(); },
+    pause: () => context.window.xyzPauseProjects(), dispose: () => context.window.xyzDisposeProjects(),
     get ticks() { return ticks; }, get shown() { return shown; }, get pending() { return callbacks.size; },
   };
 }
@@ -140,4 +142,18 @@ test('warmup pauses offscreen and on hidden tabs, then resumes without a second 
   for (let i = 2; i < 24; i++) s.step();
   assert.equal(s.ticks, 24);
   assert.equal(s.shown, 1);
+});
+
+test('leaving Projects cancels rendering permanently and returning creates a fresh scheduler', () => {
+  const first = scheduler();
+  first.begin(); first.step(); first.pause();
+  assert.equal(first.pending, 0);
+  first.visible(true); first.hidden(false);
+  assert.equal(first.pending, 0);
+  first.dispose(); first.dispose();
+  first.start();
+  assert.equal(first.pending, 0);
+  const second = scheduler(); second.begin(); second.step();
+  assert.equal(second.ticks, 1);
+  assert.equal(second.pending, 1);
 });

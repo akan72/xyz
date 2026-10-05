@@ -52,7 +52,7 @@ jobs:
         with:
           node-version: '22'
 
-      - run: node --test scripts/test_project_transition.cjs
+      - run: node --test scripts/test_project_transition.cjs scripts/test_page_navigation.cjs scripts/test_screensaver_navigation.cjs
 
       - run: python3 -m unittest discover -s scripts
 

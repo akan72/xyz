@@ -28,10 +28,12 @@
 // Fixed knobs (not data-driven): warp-noise scale 4 with 50 x 1 steps, warp 1,
 // twist 1.57, pixel grid 112 x 140, feedback trail 0.12, three-tone thresholds
 // 0.1 / 0.8, scanlines with a 3 px period, grain 0.12 at scale 300.
-(function () {
+window.xyzMountProjects = function () {
+  window.xyzDisposeProjects?.();
   const canvas = document.getElementById('subway-vis');
   const caption = document.getElementById('subway-vis-caption');
   if (!canvas) return;
+  let disposed = false, suspended = false, activeSocket = null, socketTimer, retryTimer;
   const DEBUG = /[?&]debug\b/.test(location.search);
   const box = canvas.parentElement, captionBlock = caption.parentElement;
   const hide = reason => {
@@ -50,8 +52,11 @@
   }
   function ensureHydra() {
     if (typeof Hydra !== 'undefined') return Promise.resolve(true);
-    return loadScript('https://cdn.jsdelivr.net/npm/hydra-synth@1.4.0/dist/hydra-synth.js')
-      .then(ok => ok || loadScript('https://unpkg.com/hydra-synth@1.4.0/dist/hydra-synth.js'));
+    if (window.xyzHydraLoading) return window.xyzHydraLoading;
+    window.xyzHydraLoading = loadScript('https://cdn.jsdelivr.net/npm/hydra-synth@1.4.0/dist/hydra-synth.js')
+      .then(ok => ok || loadScript('https://unpkg.com/hydra-synth@1.4.0/dist/hydra-synth.js'))
+      .then(ok => { if (!ok) window.xyzHydraLoading = null; return ok; });
+    return window.xyzHydraLoading;
   }
 
   const LINE = { '1': '#D82233', '2': '#D82233', '3': '#D82233', '4': '#009952', '5': '#009952', '6': '#009952', '7': '#9A38A1', A: '#0062CF', C: '#0062CF', E: '#0062CF', B: '#EB6800', D: '#EB6800', F: '#EB6800', M: '#EB6800', G: '#799534', J: '#8E5C33', Z: '#8E5C33', L: '#7C858C', N: '#F6BC26', Q: '#F6BC26', R: '#F6BC26', W: '#F6BC26' };
@@ -137,11 +142,32 @@
     last = t;
     if (warmup || !reduced) raf = requestAnimationFrame(frame);
   }
-  function start() { if (!hydra || !scene || raf !== null || (reduced && !warmup) || document.hidden || !visible) return; last = performance.now(); raf = requestAnimationFrame(frame); }
+  function start() { if (disposed || suspended || !hydra || !scene || raf !== null || (reduced && !warmup) || document.hidden || !visible) return; last = performance.now(); raf = requestAnimationFrame(frame); }
   function stop() { cancelAnimationFrame(raf); raf = null; }
   const settle = () => { warmup = 24; start(); };
-  new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? start() : stop(); }, { threshold: 0 }).observe(box);
-  document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+  const observer = new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? start() : stop(); }, { threshold: 0 });
+  observer.observe(box);
+  const onVisibility = () => (document.hidden ? stop() : start());
+  document.addEventListener('visibilitychange', onVisibility);
+  const pause = () => { suspended = true; stop(); };
+  window.xyzPauseProjects = pause;
+  window.xyzDisposeProjects = () => {
+    if (disposed) return;
+    disposed = true;
+    stop();
+    observer.disconnect();
+    document.removeEventListener('visibilitychange', onVisibility);
+    clearTimeout(socketTimer); clearTimeout(retryTimer);
+    if (activeSocket) { activeSocket.onclose = null; activeSocket.onmessage = null; activeSocket.close(); }
+    if (window.__subway) {
+      window.__subway.ws.removeEventListener('message', window.__subway.onmsg);
+      if (window.__subway.ws !== activeSocket) window.__subway.ws.close();
+      delete window.__subway;
+    }
+    if (window.xyzPauseProjects === pause) window.xyzPauseProjects = null;
+    hydra?.regl.destroy();
+    hydra = null;
+  };
 
   // --- data: one random line from the live feed ---
   function project(lat, lon, w, h) {
@@ -217,25 +243,31 @@
 
   (async () => {
     await window.__pageTransitionFinished;
-    if (!(await ensureHydra())) return remove('hydra-synth did not load from jsDelivr or unpkg');
+    if (disposed) return;
+    if (!(await ensureHydra())) return disposed ? undefined : remove('hydra-synth did not load from jsDelivr or unpkg');
+    if (disposed) return;
     // Create the renderer and compile the shader graph now, so the only work left when the snapshot lands is one rebuild with real numbers.
     try { createRenderer(); buildGraph(); hydra.tick(16); }
     catch (e) { return remove('renderer failed (WebGL?): ' + e); }
     const pre = window.__subway || null;
     let stations;
     try { stations = await (pre && pre.stations ? pre.stations : fetch(STATIONS_URL).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })); } catch (e) { return remove('station file failed: ' + e); }
+    if (disposed) return;
     let attempts = 0;
     const connect = () => {
+    if (disposed) return;
     attempts++;
     // First attempt: adopt the socket the page opened in <head>, replaying anything it already queued.
     const early = attempts === 1 && pre && pre.ws && pre.closed === null ? pre : null;
     let ws;
     if (early) ws = early.ws; else { try { ws = new WebSocket(WS_URL); } catch (e) { return remove('WebSocket constructor failed: ' + e); } }
+    activeSocket = ws;
     const elapsed = early ? performance.now() - early.t0 : 0;
-    const timer = setTimeout(() => { if (!scene) { try { ws.close(); } catch (e) {} remove('no snapshot within 20 s'); } }, Math.max(2000, 20000 - elapsed));
+    const timer = socketTimer = setTimeout(() => { if (!disposed && !scene) { try { ws.close(); } catch (e) {} remove('no snapshot within 20 s'); } }, Math.max(2000, 20000 - elapsed));
     const subway = t => (t.system || 'subway') === 'subway';
     let lastBuild = 0, dirty = false;
     ws.onmessage = ev => {
+      if (disposed) return;
       let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
       if (m.type === 'snapshot' && !scene) {
         clearTimeout(timer);
@@ -257,12 +289,14 @@
     // Before the first snapshot, any failure means "no figure". After it, the last state simply stays on screen.
     ws.onerror = () => {};
     ws.onclose = ev => {
+      if (disposed) return;
       if (scene) return describe(scene, knobs(scene), false);
       clearTimeout(timer);
-      if (attempts < 2) setTimeout(connect, 1500); else remove('socket closed before a snapshot (code ' + ev.code + ')');
+      if (attempts < 2) retryTimer = setTimeout(connect, 1500); else remove('socket closed before a snapshot (code ' + ev.code + ')');
     };
     if (early) { ws.removeEventListener('message', early.onmsg); const q = early.queue.splice(0); q.forEach(d => ws.onmessage({ data: d })); if (early.closed !== null && !scene) ws.onclose({ code: early.closed }); }
     };
     connect();
   })();
-})();
+};
+window.xyzMountProjects();

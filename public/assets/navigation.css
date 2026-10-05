@@ -23,3 +23,7 @@ main > :first-child { margin-top: 0; }
     text-decoration-line: underline;
     text-decoration-thickness: 2px;
 }
+
+/* Only outgoing page content fades; the real header remains mounted and clickable. */
+.page-shell { position: relative; }
+.page-shell > [data-outgoing-page] { position: absolute; top: 0; left: 0; width: 100%; pointer-events: none; background: var(--bg); z-index: 1; }
