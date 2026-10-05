@@ -1,5 +1,6 @@
 """Tests for sitegen.py. Run: python3 -m unittest discover -s scripts"""
 
+import re
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
@@ -296,6 +297,25 @@ Each link below is a Markdown copy of a page. Any page is also available as Mark
             ],
         )
         self.assertFalse(self.dist.exists())
+
+
+class ProjectsPageTests(unittest.TestCase):
+    """Every project on /projects needs its years, e.g. (2020-Present), (2020-2023) or (2025)."""
+
+    YEARS = re.compile(r"^\((\d{4})(?:-(\d{4}|Present))?\)$")
+
+    def test_every_project_has_years(self):
+        doc = sitegen.parse_html((sitegen.PUBLIC / "projects.html").read_text(encoding="utf-8"))
+        projects = [el for el in doc.iter() if el.tag == "li"]
+        self.assertTrue(projects)
+        for li in projects:
+            name = li.find("a").text().strip()
+            years = next((el for el in li.iter() if el.tag == "span" and el.attrs.get("class") == "years"), None)
+            self.assertIsNotNone(years, f'{name}: add <span class="years">(START-Present)</span> after its link')
+            m = self.YEARS.match(years.text().strip())
+            self.assertIsNotNone(m, f"{name}: years {years.text()!r} should look like (2020-Present), (2020-2023) or (2025)")
+            if m.group(2) and m.group(2) != "Present":
+                self.assertLess(int(m.group(1)), int(m.group(2)), f"{name}: start year must come before the end year")
 
 
 class SiteTests(unittest.TestCase):

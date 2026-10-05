@@ -51,20 +51,27 @@
     </head>
     <body>
         <h2> Projects </h2>
+        <!-- Each project is one <li>, in this shape:
+            <li> <a href="URL" target="_blank">NAME</a> <span class="years">(2020-Present)</span>
+                <p>One or two sentences about it.</p>
+                <p class="meta">Language &middot; tools &middot; platform</p>
+            </li>
+             Years: "(START-Present)" while active, "(START-END)" once it stops, "(YEAR)" for a single year.
+             scripts/test_sitegen.py fails if an entry is missing its years. -->
         <ul>
-            <li> <a href="https://github.com/akan72/dotfiles" target="_blank">dotfiles</a>
+            <li> <a href="https://github.com/akan72/dotfiles" target="_blank">dotfiles</a> <span class="years">(2020-Present)</span>
                 <p>My dotfiles! Easily installable config for my dev setup.</p>
                 <p class="meta">Lua &middot; shell &middot; Neovim &middot; tmux &middot; Ghostty &middot; Coding Agent Configs</p>
             </li>
-            <li> <a href="https://github.com/akan72/xyz" target="_blank">xyz</a>
+            <li> <a href="https://github.com/akan72/xyz" target="_blank">xyz</a> <span class="years">(2023-Present)</span>
                 <p>The code for this site. Mostly-static site written in Rust, compiled to WASM, and run on Cloudflare Workers, because why not?</p>
                 <p class="meta">Rust &middot; workers-rs &middot; Cloudflare Workers, R2</p>
             </li>
-            <li> <a href="https://alexkan.xyz/mingus/" target="_blank">mingus</a>
+            <li> <a href="https://alexkan.xyz/mingus/" target="_blank">mingus</a> <span class="years">(2026)</span>
                 <p>Interactive viz of my music taste over time since 2014. Ingests a Spotify streaming history export, and clusters artist by genre.</p>
                 <p class="meta">Python &middot; polars &middot; Modal &middot; WebGL</p>
             </li>
-            <li> <a href="https://istheldown.com" target="_blank">istheldown.com</a>
+            <li> <a href="https://istheldown.com" target="_blank">istheldown.com</a> <span class="years">(2026)</span>
                 <p hidden><small id="subway-vis-caption"></small></p>
                 <div class="figs" hidden>
                     <div class="fig"><canvas id="subway-vis" aria-label="Generative figure driven by one subway line's live train positions"></canvas></div>
@@ -73,7 +80,7 @@
                 <p>A real-time map of transit across the NYC area. Includes live positions and alerts for the subway, buses, LIRR (and more!) from official sources. My attempt at vampire attacking isthelrunning.com.</p>
                 <p class="meta">Typescript &middot; Cloudflare Workers, Durable Objects, and R2 &middot; MapLibre GL</p>
             </li>
-            <li> <a href="https://github.com/akan72/cig_scraper" target="_blank">cig_scraper</a>
+            <li> <a href="https://github.com/akan72/cig_scraper" target="_blank">cig_scraper</a> <span class="years">(2025)</span>
                 <p>Ingests all <a href="https://opensea.io/collection/cigawrettepacks" target="_blank">Cigawrette Packs</a> NFT images from IPFS and writes to an R2 bucket. Scale horizontally with Modal to ingest them more quickly. This is what powers the random-cig button on the homepage.</p>
                 <p class="meta">Python &middot; Modal &middot; Cloudflare R2</p>
             </li>
