@@ -155,10 +155,10 @@ mod tests {
 
     #[test]
     fn preview_host_gets_its_own_urls() {
-        let html = add_tags(&page(""), "https://xyz-pr-9.akan72.workers.dev", "/");
+        let html = add_tags(&page(""), "https://pr-9-xyz.akan72.workers.dev", "/");
         assert_eq!(
             meta(&html, "og:image").unwrap(),
-            "https://xyz-pr-9.akan72.workers.dev/assets/og.jpg"
+            "https://pr-9-xyz.akan72.workers.dev/assets/og.jpg"
         );
     }
 
