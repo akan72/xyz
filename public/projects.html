@@ -44,14 +44,26 @@
             .fig.map { background: #000; }
             .fig canvas { display: block; width: 100%; height: 100%; }
             .bullet { width: 1.4em; height: 1.4em; vertical-align: middle; }
+            /* Wrap descriptions at the right edge of the figure and map (2 x 260px + 16px gap),
+               and never past 70ch in case the font gets wider */
+            ul p { max-width: min(536px, 70ch); }
         </style>
     </head>
     <body>
         <h2> Projects </h2>
         <ul>
-            <li> <a href="https://github.com/akan72/dotfiles" target="_blank">dotfiles</a> </li>
-            <li> <a href="https://github.com/akan72/xyz" target="_blank">xyz</a> </li>
-            <li> <a href="https://alexkan.xyz/mingus/" target="_blank">mingus</a> </li>
+            <li> <a href="https://github.com/akan72/dotfiles" target="_blank">dotfiles</a>
+                <p>My dotfiles! Easily installable config for my dev setup.</p>
+                <p class="meta">Lua &middot; shell &middot; Neovim &middot; tmux &middot; Ghostty &middot; Coding Agent Configs</p>
+            </li>
+            <li> <a href="https://github.com/akan72/xyz" target="_blank">xyz</a>
+                <p>The code for this site. Mostly-static site written in Rust, compiled to WASM, and run on Cloudflare Workers, because why not?</p>
+                <p class="meta">Rust &middot; workers-rs &middot; Cloudflare Workers, R2</p>
+            </li>
+            <li> <a href="https://alexkan.xyz/mingus/" target="_blank">mingus</a>
+                <p>Interactive viz of my music taste over time since 2014. Ingests a Spotify streaming history export, and clusters artist by genre.</p>
+                <p class="meta">Python &middot; polars &middot; Modal &middot; WebGL</p>
+            </li>
             <li> <a href="https://istheldown.com" target="_blank">istheldown.com</a>
                 <p hidden><small id="subway-vis-caption"></small></p>
                 <div class="figs" hidden>
@@ -61,7 +73,10 @@
                 <p>A real-time map of transit across the NYC area. Includes live positions and alerts for the subway, buses, LIRR (and more!) from official sources. My attempt at vampire attacking isthelrunning.com.</p>
                 <p class="meta">Typescript &middot; Cloudflare Workers, Durable Objects, and R2 &middot; MapLibre GL</p>
             </li>
-            <li> <a href="https://github.com/akan72/cig_scraper" target="_blank">cig_scraper</a> </li>
+            <li> <a href="https://github.com/akan72/cig_scraper" target="_blank">cig_scraper</a>
+                <p>Ingests all <a href="https://opensea.io/collection/cigawrettepacks" target="_blank">Cigawrette Packs</a> NFT images from IPFS and writes to an R2 bucket. Scale horizontally with Modal to ingest them more quickly. This is what powers the random-cig button on the homepage.</p>
+                <p class="meta">Python &middot; Modal &middot; Cloudflare R2</p>
+            </li>
         </ul>
         <br>
         <nav><a href="/">Home</a></nav>
