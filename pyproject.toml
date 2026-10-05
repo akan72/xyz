@@ -1,0 +1,26 @@
+# Python here is build tooling only: scripts/ builds dist/ and checks it. The
+# build itself needs nothing beyond the standard library; these groups add the
+# type checker and the image tools.
+[project]
+name = "xyz"
+version = "0.1.0"
+description = "Build scripts for alexkan.xyz"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+# scripts/og.py and scripts/favicon.py
+images = ["pillow==12.3.0"]
+dev = ["ty==0.0.84", { include-group = "images" }]
+
+[tool.uv]
+package = false
+default-groups = ["dev"]
+
+[tool.ty.environment]
+# The scripts import each other as top-level modules (sitegen imports projects)
+root = ["scripts"]
+python-version = "3.11"
+
+[tool.ty.src]
+include = ["scripts"]

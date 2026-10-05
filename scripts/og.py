@@ -23,7 +23,7 @@ def font(name, size):
 
 def portrait(name, height):
     img = Image.open(os.path.join(assets, name)).convert('RGB')
-    return img.resize((round(img.width * height / img.height), height), Image.LANCZOS)
+    return img.resize((round(img.width * height / img.height), height), Image.Resampling.LANCZOS)
 
 
 img = Image.new('RGB', (W, H), BG)

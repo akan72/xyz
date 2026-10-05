@@ -17,9 +17,14 @@ serves the HTML/images from the edge; an
 - `docs/screensaver/` — design log for the screensaver: screenshots and
   recordings from each iteration. Not deployed.
 - `scripts/sitegen.py` — runs in the wrangler build. Copies `public/` to
-  `dist/` (served by Workers Static Assets) and generates the files AI
-  crawlers and agents read: `llms.txt`, `llms-full.txt`, a Markdown copy of
-  each page (`/ideology.md`, `/index.md`) and `sitemap.xml`.
+  `dist/` (served by Workers Static Assets), renders the project list on
+  `/projects`, and generates the files AI crawlers and agents read:
+  `llms.txt`, `llms-full.txt`, a Markdown copy of each page (`/ideology.md`,
+  `/index.md`) and `sitemap.xml`.
+- `scripts/projects.py` — the projects on `/projects`, as typed data.
+- `pyproject.toml`, `uv.lock` — Python tooling for `scripts/`: the ty type
+  checker and Pillow for the image scripts. The build itself uses only the
+  standard library.
 - `src/lib.rs` — the Worker code. Handles `GET /image` (random cig HTML) and
   `GET /cig/{id}` (R2 fetch + stream), adds link-preview tags to pages, and
   serves a page's Markdown copy to requests sent with
@@ -42,6 +47,21 @@ git commit. It fails if either tag is missing. Pages with
 Test the generator with:
 
     python3 -m unittest discover -s scripts
+
+## Adding a project
+
+Add a `Project` to `PROJECTS` in `scripts/projects.py`; don't edit the list in
+`public/projects.html`, which is a `<!-- sitegen:projects -->` marker the
+build fills in. Each project has a name, URL, years (`Since(2020)` while
+active, `Range(2020, 2023)` once it stops, `Single(2025)` for one year), a
+one- or two-sentence `about`, and a `stack` tuple shown as
+"Rust · workers-rs · Cloudflare Workers, R2".
+
+Mistakes fail before the site builds: ty rejects a missing field, a wrong
+type or a year that isn't one of the three shapes, and loading the file
+raises on impossible values such as a range that ends before it starts.
+
+    uv run ty check
 
 ## Local dev
 
@@ -92,7 +112,7 @@ First-time setup:
 
 ## Generate Zyn Favicon
 
-    python scripts/favicon.py
+    uv run scripts/favicon.py
 
 ## Link Previews
 
@@ -108,7 +128,7 @@ root-relative paths are fine:
 
 Regenerate the default card (uses macOS system Georgia):
 
-    uv run --with pillow python scripts/og.py          # add --dark for the dark card
+    uv run scripts/og.py          # add --dark for the dark card
 
 ## Inspiration
 

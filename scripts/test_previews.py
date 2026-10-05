@@ -196,6 +196,7 @@ class WorkflowTests(unittest.TestCase):
                 guard = text.find(': "${CLOUDFLARE_EMAIL:?')
                 self.assertGreater(guard, -1, name)
                 first_wrangler = re.search(r"wrangler@\S*\s+(preview|deploy)|delete-preview\.sh", text)
+                assert first_wrangler is not None, f"{name}: no wrangler call found"
                 self.assertLess(guard, first_wrangler.start(), f"{name}: the guard comes before wrangler")
 
     def test_run_blocks_parse_as_bash(self):
@@ -205,9 +206,12 @@ class WorkflowTests(unittest.TestCase):
             for name, text in steps(path):
                 block = re.search(r"^ {6}[- ] run: \|\n((?: {10}.*\n?|\s*\n)+)", text + "\n", re.M)
                 line = re.search(r"^ {6}[- ] run: (?!\|)(.+)$", text, re.M)
-                if not (block or line):
+                if block:
+                    body = re.sub(r"^ {10}", "", block.group(1), flags=re.M)
+                elif line:
+                    body = line.group(1)
+                else:
                     continue
-                body = re.sub(r"^ {10}", "", block.group(1), flags=re.M) if block else line.group(1)
                 check = subprocess.run(["bash", "-n"], input=body, capture_output=True, text=True)
                 self.assertEqual((check.returncode, check.stderr), (0, ""), f"{path.name}: {name}")
 
@@ -215,7 +219,8 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('sh scripts/delete-preview.sh "${PR_NUMBER}"', dict(steps(CLEANUP))["Delete preview"])
 
     def test_pin_the_same_wrangler_version(self):
-        versions = [re.search(r'WRANGLER_VERSION: "([^"]+)"', p.read_text()).group(1) for p in (DEPLOY, CLEANUP)]
+        pins = [re.search(r'WRANGLER_VERSION: "([^"]+)"', p.read_text()) for p in (DEPLOY, CLEANUP)]
+        versions = [m.group(1) if m else None for m in pins]
         self.assertEqual(versions, ["4.143.1", "4.143.1"])
 
     def test_dont_leave_the_github_token_in_git_config(self):

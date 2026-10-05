@@ -14,7 +14,7 @@ print(f"Generated optimized favicon at: {dest_path}")
 # so flatten onto the site background
 touch_path = os.path.join(base_dir, 'public', 'assets', 'apple-touch-icon.png')
 touch = Image.new('RGB', (180, 180), (244, 244, 244))
-zyn = img.convert('RGBA').resize((152, 152), Image.LANCZOS)
+zyn = img.convert('RGBA').resize((152, 152), Image.Resampling.LANCZOS)
 touch.paste(zyn, (14, 14), zyn)
 touch.save(touch_path, format='PNG', optimize=True)
 print(f"Generated apple-touch-icon at: {touch_path}")

@@ -18,14 +18,19 @@ type="text/markdown"> (its Markdown copy) and <link rel="describedby">
 
 Every page needs a <title> and a <meta name="description">; the build fails
 without them. Pages marked <meta name="robots" content="noindex"> are left
-out. Output depends only on public/ and git history, so the same commit
-always builds the same files.
+out. Output depends only on public/, scripts/projects.py and git history, so
+the same commit always builds the same files.
+
+The project list on /projects is data, not hand-written HTML: a line
+<!-- sitegen:projects ... --> in a page is replaced with the list rendered from
+scripts/projects.py (see that file to add a project).
 
 Usage: python3 scripts/sitegen.py
 """
 
 from __future__ import annotations
 
+import builtins
 import html
 import re
 import subprocess
@@ -36,6 +41,8 @@ from html.parser import HTMLParser
 from pathlib import Path, PurePosixPath
 from urllib.parse import quote, urljoin, urlsplit
 from xml.sax.saxutils import escape as xml_escape
+
+import projects
 
 SITE_URL = "https://alexkan.xyz"
 SITE_NAME = "alexkan.xyz"
@@ -234,7 +241,7 @@ class MarkdownRenderer:
             url = self.page_urls[parts.path] + url
         return quote(url, safe=":/?#[]@!$&'*+,;=%~")
 
-    def blocks(self, nodes) -> list:
+    def blocks(self, nodes) -> builtins.list:
         out, inline = [], []
 
         def flush():
@@ -256,7 +263,7 @@ class MarkdownRenderer:
         flush()
         return out
 
-    def block(self, el: Element) -> list:
+    def block(self, el: Element) -> builtins.list:
         if el.tag in HEADINGS:
             text = clean_inline(self.inline_children(el)).replace("\n", " ")
             level = min(6, HEADINGS[el.tag] + self.heading_shift)
@@ -404,6 +411,14 @@ def html_sources(public: Path) -> list:
     return sorted(PurePosixPath(p.relative_to(public).as_posix()) for p in public.rglob("*.html"))
 
 
+PROJECTS_MARKER = re.compile(r"^[ \t]*<!-- sitegen:projects\b.*?-->[ \t]*$", re.M)
+
+
+def with_projects(text: str) -> str:
+    """Replace the projects marker line, if the page has one, with the rendered list."""
+    return PROJECTS_MARKER.sub(lambda _: projects.render(), text)
+
+
 def load_pages(public: Path, lastmods: dict) -> list:
     """Parse every indexable page in public/, homepage first.
 
@@ -412,7 +427,7 @@ def load_pages(public: Path, lastmods: dict) -> list:
     """
     docs = {}
     for source in html_sources(public):
-        doc = parse_html((public / source).read_text(encoding="utf-8"))
+        doc = parse_html(with_projects((public / source).read_text(encoding="utf-8")))
         if "noindex" not in meta_content(doc, "robots").lower().replace(",", " ").split():
             docs[source] = doc
 
@@ -551,7 +566,7 @@ def build(public: Path, dist: Path, lastmods: dict) -> list:
         rel = PurePosixPath(path.relative_to(public).as_posix())
         data = path.read_bytes()
         if rel in by_source:
-            data = with_head_links(data.decode("utf-8"), by_source[rel]).encode("utf-8")
+            data = with_head_links(with_projects(data.decode("utf-8")), by_source[rel]).encode("utf-8")
         files[rel] = data
 
     headers = files.pop(PurePosixPath("_headers"), b"").decode("utf-8")

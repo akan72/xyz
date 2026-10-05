@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 
+import projects
 import sitegen
 
 PAGE = """<!DOCTYPE html>
@@ -299,23 +300,53 @@ Each link below is a Markdown copy of a page. Any page is also available as Mark
         self.assertFalse(self.dist.exists())
 
 
-class ProjectsPageTests(unittest.TestCase):
-    """Every project on /projects needs its years, e.g. (2020-Present), (2020-2023) or (2025)."""
+class ProjectsTests(unittest.TestCase):
+    """scripts/projects.py: the typed project data behind /projects."""
 
-    YEARS = re.compile(r"^\((\d{4})(?:-(\d{4}|Present))?\)$")
+    def test_year_labels(self):
+        self.assertEqual(projects.Since(2020).label(), "(2020-Present)")
+        self.assertEqual(projects.Range(2020, 2023).label(), "(2020-2023)")
+        self.assertEqual(projects.Single(2025).label(), "(2025)")
 
-    def test_every_project_has_years(self):
-        doc = sitegen.parse_html((sitegen.PUBLIC / "projects.html").read_text(encoding="utf-8"))
-        projects = [el for el in doc.iter() if el.tag == "li"]
-        self.assertTrue(projects)
-        for li in projects:
-            name = li.find("a").text().strip()
-            years = next((el for el in li.iter() if el.tag == "span" and el.attrs.get("class") == "years"), None)
-            self.assertIsNotNone(years, f'{name}: add <span class="years">(START-Present)</span> after its link')
-            m = self.YEARS.match(years.text().strip())
-            self.assertIsNotNone(m, f"{name}: years {years.text()!r} should look like (2020-Present), (2020-2023) or (2025)")
-            if m.group(2) and m.group(2) != "Present":
-                self.assertLess(int(m.group(1)), int(m.group(2)), f"{name}: start year must come before the end year")
+    def test_impossible_values_raise(self):
+        bad = [
+            lambda: projects.Range(2023, 2021),  # backwards
+            lambda: projects.Range(2023, 2023),  # one year: use Single
+            lambda: projects.Since(1999),
+            lambda: projects.Single(20025),
+            lambda: projects.Project("x", "http://x", projects.Since(2020), "About.", ("Rust",)),  # not https
+            lambda: projects.Project("x", "https://x", projects.Since(2020), " ", ("Rust",)),  # no about
+            lambda: projects.Project("x", "https://x", projects.Since(2020), "About.", ()),  # no stack
+        ]
+        for make in bad:
+            with self.assertRaises(ValueError):
+                make()
+
+    def test_render(self):
+        project = projects.Project(
+            "dotfiles", "https://github.com/akan72/dotfiles", projects.Since(2020),
+            'My <a href="https://x">dotfiles</a>!', ("Lua", "shell, zsh"), media="<p>fig</p>",
+        )
+        self.assertEqual(
+            projects.render_project(project, indent=""),
+            '<li> <a href="https://github.com/akan72/dotfiles" target="_blank">dotfiles</a> <span class="years">(2020-Present)</span>\n'
+            "    <p>fig</p>\n"
+            '    <p>My <a href="https://x">dotfiles</a>!</p>\n'
+            '    <p class="meta">Lua &middot; shell, zsh</p>\n'
+            "</li>",
+        )
+
+    def test_projects_page_lists_every_project(self):
+        page = (sitegen.PUBLIC / "projects.html").read_text(encoding="utf-8")
+        self.assertRegex(page, sitegen.PROJECTS_MARKER, "public/projects.html needs a <!-- sitegen:projects --> line")
+        with tempfile.TemporaryDirectory() as tmp:
+            sitegen.build(sitegen.PUBLIC, Path(tmp), {})
+            built = (Path(tmp) / "projects.html").read_text(encoding="utf-8")
+            markdown = (Path(tmp) / "projects.md").read_text(encoding="utf-8")
+        self.assertNotRegex(built, sitegen.PROJECTS_MARKER)
+        for p in projects.PROJECTS:
+            self.assertIn(f">{p.name}</a> <span class=\"years\">{p.years.label()}</span>", built)
+            self.assertIn(f"[{p.name}]({p.url}) {p.years.label()}", markdown)
 
 
 class SiteTests(unittest.TestCase):

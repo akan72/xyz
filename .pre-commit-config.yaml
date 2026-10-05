@@ -11,6 +11,12 @@ repos:
         entry: cargo check --target wasm32-unknown-unknown
         language: system
         pass_filenames: false
+      - id: ty
+        name: ty check (scripts/)
+        entry: uv run --locked ty check
+        language: system
+        pass_filenames: false
+        files: ^(scripts/|pyproject\.toml$|uv\.lock$)
       - id: sitegen
         name: sitegen (tests + build dist/)
         entry: sh -c 'python3 -m unittest discover -s scripts -q && python3 scripts/sitegen.py'
