@@ -243,19 +243,19 @@ window.xyzMountProjects = function () {
 
   (async () => {
     await window.__pageTransitionFinished;
-    if (disposed) return;
+    if (disposed || suspended) return;
     if (!(await ensureHydra())) return disposed ? undefined : remove('hydra-synth did not load from jsDelivr or unpkg');
-    if (disposed) return;
+    if (disposed || suspended) return;
     // Create the renderer and compile the shader graph now, so the only work left when the snapshot lands is one rebuild with real numbers.
     try { createRenderer(); buildGraph(); hydra.tick(16); }
     catch (e) { return remove('renderer failed (WebGL?): ' + e); }
     const pre = window.__subway || null;
     let stations;
     try { stations = await (pre && pre.stations ? pre.stations : fetch(STATIONS_URL).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })); } catch (e) { return remove('station file failed: ' + e); }
-    if (disposed) return;
+    if (disposed || suspended) return;
     let attempts = 0;
     const connect = () => {
-    if (disposed) return;
+    if (disposed || suspended) return;
     attempts++;
     // First attempt: adopt the socket the page opened in <head>, replaying anything it already queued.
     const early = attempts === 1 && pre && pre.ws && pre.closed === null ? pre : null;
@@ -267,7 +267,7 @@ window.xyzMountProjects = function () {
     const subway = t => (t.system || 'subway') === 'subway';
     let lastBuild = 0, dirty = false;
     ws.onmessage = ev => {
-      if (disposed) return;
+      if (disposed || suspended) return;
       let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
       if (m.type === 'snapshot' && !scene) {
         clearTimeout(timer);
@@ -289,7 +289,7 @@ window.xyzMountProjects = function () {
     // Before the first snapshot, any failure means "no figure". After it, the last state simply stays on screen.
     ws.onerror = () => {};
     ws.onclose = ev => {
-      if (disposed) return;
+      if (disposed || suspended) return;
       if (scene) return describe(scene, knobs(scene), false);
       clearTimeout(timer);
       if (attempts < 2) retryTimer = setTimeout(connect, 1500); else remove('socket closed before a snapshot (code ' + ev.code + ')');

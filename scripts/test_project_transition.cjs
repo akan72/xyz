@@ -22,11 +22,11 @@ function page(supported = true) {
     WebSocket: class { constructor() { throw new Error('No feed in lifecycle test'); } },
     IntersectionObserver: class { observe() {} disconnect() {} },
     matchMedia: () => ({ matches: false }), location: { search: '' },
-    setTimeout: () => 0, clearTimeout() {}, console,
+    setTimeout: () => 0, clearTimeout() {}, cancelAnimationFrame() {}, console,
   });
   vm.runInContext(head, context);
   vm.runInContext(renderer, context);
-  return { scripts, reveal: event => reveal(event) };
+  return { scripts, reveal: event => reveal(event), pause: () => context.window.xyzPauseProjects() };
 }
 const flush = () => new Promise(resolve => setImmediate(resolve));
 
@@ -42,6 +42,14 @@ test('Hydra is not evaluated while the incoming page is fading', async () => {
   await flush();
   assert.equal(p.scripts.length, 1);
   assert.match(p.scripts[0].src, /cdn\.jsdelivr\.net/);
+});
+
+test('leaving before reveal prevents late renderer startup during the outgoing fade', async () => {
+  const p = page();
+  p.pause();
+  p.reveal({ viewTransition: null });
+  await flush();
+  assert.equal(p.scripts.length, 0);
 });
 
 test('a skipped transition still starts the live preview', async () => {
@@ -76,9 +84,9 @@ test('a failed CDN starts the fallback loader after the transition', async () =>
 // Exercise the real frame scheduler without WebGL or a live network feed.
 function scheduler(reduced = false) {
   const callbacks = new Map();
-  let next = 1, ticks = 0, shown = 0, intersect, visibility;
+  let next = 1, ticks = 0, shown = 0, destroyed = 0, intersect, visibility;
   const context = vm.createContext({
-    hydra: { tick() { ticks++; }, regl: { destroy() {} } },
+    hydra: { tick() { ticks++; }, regl: { destroy() { destroyed++; } } },
     window: {}, disposed: false, suspended: false, activeSocket: null, socketTimer: null, retryTimer: null, clearTimeout() {},
     document: { hidden: false, addEventListener: (_, fn) => { visibility = fn; }, removeEventListener() {} },
     matchMedia: () => ({ matches: reduced }), performance: { now: () => 0 },
@@ -95,7 +103,7 @@ function scheduler(reduced = false) {
     visible(value) { intersect([{ isIntersecting: value }]); },
     hidden(value) { context.document.hidden = value; visibility(); },
     pause: () => context.window.xyzPauseProjects(), dispose: () => context.window.xyzDisposeProjects(),
-    get ticks() { return ticks; }, get shown() { return shown; }, get pending() { return callbacks.size; },
+    get destroyed() { return destroyed; }, get ticks() { return ticks; }, get shown() { return shown; }, get pending() { return callbacks.size; },
   };
 }
 
@@ -151,6 +159,7 @@ test('leaving Projects cancels rendering permanently and returning creates a fre
   first.visible(true); first.hidden(false);
   assert.equal(first.pending, 0);
   first.dispose(); first.dispose();
+  assert.equal(first.destroyed, 1, "paused renderer releases WebGL resources exactly once");
   first.start();
   assert.equal(first.pending, 0);
   const second = scheduler(); second.begin(); second.step();
