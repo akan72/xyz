@@ -1,0 +1,748 @@
+@charset "UTF-8";
+/* Takeout menu: the site printed as a Chinese-American takeout menu. theme.js
+   loads this only while <html data-remix="takeout">, and inserts it before each
+   page's inline <style>, so every rule sits under html:root[data-remix="takeout"]
+   to outrank those.
+
+   The homepage's <main> and every other page's <body> is the menu card. All the
+   menu copy (菜單, ALEX KAN, prices, THANK YOU…) is generated content with empty
+   alt text, so screen readers get the page's own text only.
+
+   Asset hooks, `none` until the asset pass; pointing one at url(…) is the whole change:
+     --takeout-page          texture for the page behind the card
+     --takeout-paper         paper texture for the menu card
+     --takeout-ornament      red-ink header ornament (pagoda, cloud scroll) behind 菜單
+     --takeout-spot-top-l    red-ink dish spot illustrations (dumplings, noodles, takeout
+     --takeout-spot-top-r      box, fortune cookie…): the card's top corners, and beside
+     --takeout-spot-foot-l     THANK YOU on the homepage or the card's bottom corners
+     --takeout-spot-foot-r     on the other pages */
+
+/* Archivo Black: printable ASCII plus · • — ’ */
+@font-face {
+    font-family: "Takeout Archivo";
+    src: url("fonts/archivo-black.woff2") format("woff2");
+    font-weight: 900;
+    font-display: block;
+}
+
+/* Zen Antique: only 菜 and 單. The range keeps its space glyph out of mixed strings. */
+@font-face {
+    font-family: "Takeout Zen";
+    src: url("fonts/zen-antique.woff2") format("woff2");
+    font-display: block;
+    unicode-range: U+83DC, U+55AE;
+}
+
+html:root[data-remix="takeout"] {
+    --tk-page: #f1ede4;
+    --tk-card: #fffdf8;
+    --tk-red: #c8102e;
+    --tk-ink: #1c1c1c;
+    --tk-note: #4f483f; /* chef's notes and captions */
+    --tk-gold: #b88a2a;
+    --tk-gold-text: #8f6a1c; /* the gold, darkened to 4.8:1 for small text */
+    --tk-serif: Georgia, "Times New Roman", serif;
+    --tk-display: "Takeout Archivo", "Arial Black", Arial, sans-serif;
+    --tk-cjk: "Takeout Zen", serif;
+    --tk-spot: 56px;
+    /* Dot leader in the leader gray, #b9b3a8. An SVG without a viewBox tiles its
+       pattern in CSS px at any background-size, so the dots can stop short of the
+       price instead of being painted over it. */
+    --tk-leader: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cpattern id='d' width='5' height='3' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='1.5' cy='1.5' r='1' fill='%23b9b3a8'/%3E%3C/pattern%3E%3Crect width='100%25' height='100%25' fill='url(%23d)'/%3E%3C/svg%3E");
+    --tk-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23c8102e' stroke-width='1.6'/%3E%3C/svg%3E");
+
+    --takeout-page: none;
+    --takeout-paper: none;
+    --takeout-ornament: none;
+    --takeout-spot-top-l: none;
+    --takeout-spot-top-r: none;
+    --takeout-spot-foot-l: none;
+    --takeout-spot-foot-r: none;
+
+    color-scheme: light;
+    background: var(--takeout-page), var(--tk-page);
+
+    & ::selection {
+        background: rgb(200 16 46 / 0.16);
+    }
+
+    & :focus-visible {
+        outline: 2px solid var(--tk-red);
+        outline-offset: 3px;
+    }
+
+    /* ---- The card: double crimson border, thick outside and thin inside ---- */
+
+    &[data-page="home"] main,
+    &:not([data-page="home"]) body {
+        box-sizing: border-box;
+        width: min(520px, 100% - 24px);
+        max-width: none;
+        margin: 36px auto 40px;
+        padding: 30px 38px 34px;
+        border: 3px solid var(--tk-red);
+        border-radius: 0;
+        outline: 1px solid var(--tk-red);
+        outline-offset: -10px;
+        background:
+            var(--takeout-spot-top-l) left 22px top 22px / var(--tk-spot) no-repeat,
+            var(--takeout-spot-top-r) right 22px top 22px / var(--tk-spot) no-repeat,
+            var(--tk-foot-l, none) left 22px bottom 22px / var(--tk-spot) no-repeat,
+            var(--tk-foot-r, none) right 22px bottom 22px / var(--tk-spot) no-repeat,
+            var(--takeout-paper),
+            var(--tk-card);
+        box-shadow: 0 1px 2px rgb(60 40 20 / 0.08), 0 14px 30px -16px rgb(60 40 20 / 0.4);
+        color: var(--tk-ink);
+        font: 17px/1.5 var(--tk-serif);
+    }
+
+    /* The foot spots take the card's bottom corners, except on the homepage,
+       which puts them beside THANK YOU */
+    &:not([data-page="home"]) body {
+        --tk-foot-l: var(--takeout-spot-foot-l);
+        --tk-foot-r: var(--takeout-spot-foot-r);
+    }
+
+    /* The address line and thick rule under every page's title */
+    &[data-page="home"] nav::before,
+    &:is([data-page="projects"], [data-page="contact"]) h2:first-of-type::after,
+    &[data-page="ideology"] h2:first-of-type::after,
+    &[data-page="404"] h1::after {
+        content: "SoHo, New York • Free Delivery (over HTTPS) • Open 24 Hrs" / "";
+        display: block;
+        margin: 10px 0 18px;
+        padding-bottom: 16px;
+        background: linear-gradient(var(--tk-ink) 0 0) bottom / 80% 3px no-repeat;
+        color: var(--tk-ink);
+        font: italic 13.5px/1.45 var(--tk-serif);
+        letter-spacing: normal;
+        text-align: center;
+        text-transform: none;
+        text-wrap: balance;
+    }
+
+    /* ---- Homepage ---- */
+
+    /* Lets the page color through around the card */
+    &[data-page="home"] body {
+        background: none;
+    }
+
+    &[data-page="home"] main {
+        display: grid;
+        grid-template-columns: 16px 1fr 12px 1fr 16px;
+        grid-template-areas:
+            "head   head   head   head   head"
+            "menu   menu   menu   menu   menu"
+            "legend legend legend legend legend"
+            ".      milady .      cig    ."
+            ".      note   note   note   ."
+            ".      addon  addon  addon  ."
+            "thanks thanks thanks thanks thanks"
+            "picker picker picker picker picker";
+
+        /* The combo box's frame; its top line runs through the middle of the 16px legend */
+        &::before {
+            content: "";
+            grid-column: 1 / -1;
+            grid-row: legend-start / addon-end;
+            margin-top: 8px;
+            border: 1px solid var(--tk-red);
+            pointer-events: none;
+        }
+
+        &::after {
+            content: "THANK YOU" / "";
+            grid-area: thanks;
+            margin-top: 14px;
+            padding: 16px 0;
+            background:
+                var(--takeout-spot-foot-l) left center / var(--tk-spot) no-repeat,
+                var(--takeout-spot-foot-r) right center / var(--tk-spot) no-repeat;
+            color: var(--tk-red);
+            font: 900 24px/24px var(--tk-display);
+            letter-spacing: 0.16em;
+            text-align: center;
+            text-indent: 0.16em; /* recenters the text past its trailing letter-spacing */
+        }
+    }
+
+    /* The real h2 stays as the tiny gold line; 菜單 and the name follow it */
+    &[data-page="home"] h2 {
+        grid-area: head;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 0;
+        color: var(--tk-gold-text);
+        font: italic 13px/1.3 var(--tk-serif);
+        letter-spacing: 0.06em;
+
+        /* Full width, so a wide ornament can sit behind it */
+        &::before {
+            content: "菜單" / "";
+            order: 1;
+            align-self: stretch;
+            margin-top: 4px;
+            padding-left: 0.1em; /* recenters past the trailing letter-spacing */
+            background: var(--takeout-ornament) center / contain no-repeat;
+            color: var(--tk-red);
+            font: 36px/1.1 var(--tk-cjk);
+            letter-spacing: 0.1em;
+            text-align: center;
+        }
+
+        &::after {
+            content: "ALEX KAN" / "";
+            order: 2;
+            color: var(--tk-red);
+            font: 900 clamp(36px, 11vw, 52px)/1 var(--tk-display);
+            letter-spacing: 0.01em;
+        }
+    }
+
+    /* Nav links as menu rows: ::before is the item code, the link text the dish,
+       ::after the dot leader and price */
+    &[data-page="home"] nav {
+        grid-area: menu;
+        display: grid;
+        row-gap: 4px;
+        margin: 0 0 30px;
+
+        & a {
+            display: flex;
+            align-items: baseline;
+            column-gap: 10px;
+            min-height: 34px;
+            margin: 0;
+            padding: 2px 0;
+            box-sizing: border-box;
+            color: var(--tk-ink);
+            font-size: 18px;
+            line-height: 1.5;
+            text-decoration: none;
+
+            &::before {
+                content: var(--code) / "";
+                flex: 0 0 30px;
+                color: var(--tk-red);
+                font: 900 11px/1 var(--tk-display);
+                letter-spacing: 0.04em;
+            }
+
+            &::after {
+                content: var(--price) / "";
+                flex: 1;
+                min-width: max-content;
+                background: var(--tk-leader) left var(--lead-from, 0px) bottom 0.3em / calc(100% - var(--lead-from, 0px) - var(--lead-to)) 3px no-repeat;
+                color: var(--price-color, var(--tk-ink));
+                font: var(--price-weight, 400) 16px/1.5 var(--tk-serif);
+                text-align: right;
+                white-space: nowrap;
+            }
+
+            &:hover {
+                color: var(--tk-red);
+            }
+        }
+
+        /* Two chilis and a price, justified to either end of the leader. Browsers
+           also justify between emoji, so the chilis are joined with a ZWJ (and
+           text-justify keeps it to the space where supported). */
+        & a[href="/ideology"] {
+            --code: "L1.";
+            --price: "🌶️\200D🌶️ $0.25";
+            --lead-from: 3.1em;
+            --lead-to: 3.2em;
+
+            &::after {
+                text-align-last: justify;
+                text-justify: inter-word;
+            }
+        }
+
+        & a[href="/projects"] {
+            --code: "S2.";
+            --price: "$0.00";
+            --lead-to: 3.3em;
+        }
+
+        & a[href="/contact"] {
+            --code: "C3.";
+            --price: "FREE";
+            --price-color: var(--tk-red);
+            --price-weight: 700;
+            --lead-to: 3.5em;
+        }
+
+        & .theme-toggle {
+            display: none;
+        }
+    }
+
+    /* Today's special: the cig box's own children join main's grid so milady and
+       the cig can share the combo box */
+    &[data-page="home"] .cig-box {
+        display: contents;
+
+        /* The legend, sitting on the frame's top line */
+        &::before {
+            content: "TODAY’S SPECIAL — COMBO No. 72" / "";
+            grid-area: legend;
+            justify-self: center;
+            margin-bottom: 14px;
+            padding: 0 10px;
+            background: var(--takeout-paper), var(--tk-card);
+            color: var(--tk-red);
+            font: 900 clamp(10px, 3.1vw, 12px)/16px var(--tk-display);
+            letter-spacing: 0.06em;
+            white-space: nowrap;
+        }
+
+        &::after {
+            content: "w. choice of milady or cigawrette • no substitutions" / "";
+            grid-area: note;
+            margin-top: 12px;
+            color: var(--tk-note);
+            font: italic 13.5px/1.4 var(--tk-serif);
+            text-align: center;
+            text-wrap: balance;
+        }
+    }
+
+    /* Same box for both, whatever image the random cig button loads */
+    &[data-page="home"] :is(#milady, #cig) {
+        align-self: start;
+        width: 100%;
+        max-width: none;
+        height: auto;
+        aspect-ratio: 4 / 5;
+        margin: 0;
+        object-fit: cover;
+        box-shadow: 0 0 0 1px rgb(28 28 28 / 0.14);
+    }
+
+    &[data-page="home"] #milady {
+        grid-area: milady;
+    }
+
+    &[data-page="home"] #cig {
+        grid-area: cig;
+    }
+
+    /* The random cig button as a menu add-on: "+ GET RANDOM CIG — FREE" */
+    &[data-page="home"] #cig-button {
+        grid-area: addon;
+        justify-self: center;
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+        min-height: 36px;
+        margin: 14px 0 18px;
+        padding: 0 clamp(10px, 3vw, 16px);
+        border: 1.5px solid var(--tk-red);
+        border-radius: 0;
+        background: transparent;
+        color: var(--tk-red);
+        font: 900 clamp(10.5px, 3.3vw, 12px)/1 var(--tk-display);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        white-space: nowrap;
+
+        &::before {
+            content: "+" / "";
+            font-size: 16px;
+        }
+
+        &::after {
+            content: "— FREE" / "";
+        }
+
+        &:hover:not(:disabled) {
+            background: var(--tk-red);
+            color: var(--tk-card);
+        }
+
+        &:disabled {
+            cursor: progress;
+            opacity: 0.6;
+        }
+    }
+
+    /* The style picker: the sign-off line, then the controls in a small double frame */
+    &[data-page="home"] .remix:not([hidden]) {
+        grid-area: picker;
+        display: grid;
+        grid-template-columns: 1fr auto auto 1fr;
+        align-items: center;
+        row-gap: 22px;
+        margin: 0 0 8px;
+        color: var(--tk-ink);
+        font: 14px/1.2 var(--tk-serif);
+
+        &::before {
+            content: "Enjoy • No MSG • No Trackers" / "";
+            grid-column: 1 / -1;
+            margin-top: -6px; /* tucks under THANK YOU's room for the foot spots */
+            font-style: italic;
+            text-align: center;
+        }
+
+        /* Placed explicitly: the frame below already claims these cells */
+        & label {
+            grid-area: 2 / 2;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--tk-red);
+            font-style: italic;
+        }
+
+        & select {
+            appearance: none;
+            min-height: 32px;
+            padding: 0 28px 0 10px;
+            border: 1px solid var(--tk-red);
+            border-radius: 0;
+            background: var(--tk-card) var(--tk-chevron) right 10px center / 10px 6px no-repeat;
+            color: var(--tk-ink);
+            font: 14px var(--tk-serif);
+        }
+
+        & button {
+            grid-area: 2 / 3;
+            min-height: 32px;
+            margin-left: 8px;
+            padding: 0 12px;
+            border: 1px solid var(--tk-red);
+            border-radius: 0;
+            background: var(--tk-red);
+            color: var(--tk-card);
+            font: 900 11px/1 var(--tk-display);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+
+            &:hover {
+                background: color-mix(in srgb, var(--tk-red), black 18%);
+            }
+        }
+
+        /* The frame, drawn over the label and button's cells */
+        &::after {
+            content: "";
+            grid-area: 2 / 2 / 3 / 4;
+            align-self: stretch;
+            margin: -8px -10px;
+            border: 3px double var(--tk-red);
+            pointer-events: none;
+        }
+    }
+
+    /* ---- Subpages and 404: 菜單 over the title, numbered lists ---- */
+
+    &:not([data-page="home"]) body::before {
+        content: "菜單" / "";
+        display: block;
+        padding-left: 0.1em; /* recenters past the trailing letter-spacing */
+        background: var(--takeout-ornament) center / contain no-repeat;
+        color: var(--tk-red);
+        font: 32px/1.1 var(--tk-cjk);
+        letter-spacing: 0.1em;
+        text-align: center;
+    }
+
+    &:not([data-page="home"]) h2 {
+        margin: 26px 0 8px;
+        color: var(--tk-red);
+        font: 900 22px/1.2 var(--tk-display);
+        text-align: center;
+    }
+
+    /* Page titles: projects and contact use their own heading, ideology gets one */
+    &:is([data-page="projects"], [data-page="contact"]) h2:first-of-type,
+    &[data-page="ideology"] h2:first-of-type::before,
+    &[data-page="404"] h1 {
+        margin: 0;
+        color: var(--tk-red);
+        font: 900 clamp(30px, 9.8vw, 44px)/1.05 var(--tk-display);
+        letter-spacing: 0.01em;
+        text-align: center;
+        text-transform: uppercase;
+    }
+
+    /* Ideology's first heading is its first section, Likes, so the title and
+       address line are generated ahead of its text */
+    &[data-page="ideology"] h2:first-of-type {
+        display: flex;
+        flex-direction: column;
+        margin-top: 0;
+
+        &::before {
+            content: "Ideology" / "";
+            order: -2;
+        }
+
+        &::after {
+            order: -1;
+        }
+    }
+
+    &:not([data-page="home"]) ul {
+        margin: 4px auto 0;
+        padding: 0;
+        list-style: none;
+        counter-reset: dish;
+    }
+
+    &:not([data-page="home"]) li {
+        counter-increment: dish;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        column-gap: 10px;
+        padding: 1px 0;
+
+        &::before {
+            content: counter(dish) "." / "";
+            flex: 0 0 22px;
+            color: var(--tk-red);
+            font: 900 11px/1 var(--tk-display);
+            text-align: right;
+        }
+    }
+
+    &:is([data-page="ideology"], [data-page="404"]) ul {
+        width: min(100%, 15em);
+    }
+
+    /* Projects and contact: each link is a menu row with a leader and a price */
+    &:is([data-page="projects"], [data-page="contact"]) li {
+        --price: "$0.00";
+        --lead-to: 3.3em;
+
+        & > a {
+            padding: 3px 0;
+            color: var(--tk-ink);
+            font-size: 18px;
+            text-decoration: underline 1px var(--tk-red);
+            text-underline-offset: 4px;
+
+            &:hover {
+                color: var(--tk-red);
+            }
+        }
+
+        &::after {
+            content: var(--price) / "";
+            order: 1;
+            flex: 1;
+            min-width: max-content;
+            background: var(--tk-leader) left bottom 0.3em / calc(100% - var(--lead-to)) 3px no-repeat;
+            font: 16px/1.5 var(--tk-serif);
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        /* Anything under the link (the live figure, the notes) wraps below it,
+           lined up with the dish name */
+        & > :not(a) {
+            order: 2;
+            box-sizing: border-box;
+            flex: 0 0 calc(100% - 32px);
+            margin-left: 32px;
+        }
+    }
+
+    /* istheldown is live, so it's market price */
+    &[data-page="projects"] li:has(> a[href*="istheldown"]) {
+        --price: "M.P.";
+        --lead-to: 2.7em;
+    }
+
+    &[data-page="projects"] {
+        & li > p {
+            margin-top: 8px;
+            margin-bottom: 0;
+            color: var(--tk-note);
+            font: italic 14.5px/1.5 var(--tk-serif);
+        }
+
+        & .figs ~ p:not(.meta)::before,
+        & .meta::before {
+            margin-right: 0.5em;
+            color: var(--tk-red);
+            font: 900 10.5px/1 var(--tk-display);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        & .figs ~ p:not(.meta)::before {
+            content: "Chef’s note" / "";
+        }
+
+        & .meta {
+            margin-top: 4px;
+            font-size: 13.5px;
+
+            &::before {
+                content: "Ingredients" / "";
+            }
+        }
+
+        & #subway-vis-caption {
+            font-size: 14px;
+        }
+
+        /* The live figure, framed like the homepage's combo box */
+        & .figs {
+            position: relative;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 22px;
+            padding: 22px 14px 14px;
+            border: 1px solid var(--tk-red);
+
+            &[hidden] {
+                display: none;
+            }
+
+            &::before {
+                content: "FRESH FROM THE MTA" / "";
+                position: absolute;
+                top: -9px;
+                left: 50%;
+                translate: -50% 0;
+                padding: 0 10px;
+                background: var(--takeout-paper), var(--tk-card);
+                color: var(--tk-red);
+                font: 900 11px/16px var(--tk-display);
+                letter-spacing: 0.06em;
+                white-space: nowrap;
+            }
+        }
+
+        & .fig {
+            width: calc(50% - 6px);
+            box-shadow: 0 0 0 1px rgb(28 28 28 / 0.14);
+        }
+    }
+
+    /* The nav's margin does the spacing */
+    &:not([data-page="home"]) br {
+        display: none;
+    }
+
+    &:not([data-page="home"]) nav {
+        margin-top: 22px;
+        text-align: center;
+
+        & a {
+            display: inline-block;
+            padding: 6px 12px; /* a 32px+ tap target */
+            color: var(--tk-red);
+            font-size: 17px;
+            text-decoration: underline 1px;
+            text-underline-offset: 4px;
+        }
+    }
+
+    /* ---- 404: the dish is sold out ---- */
+
+    /* The 404 pads <html> and sets a 20px base; the card does its own spacing */
+    &[data-page="404"] {
+        padding: 0;
+        font-size: 16px;
+
+        /* One column with explicit rows, so the stamp can share the photo's cell */
+        & .container {
+            display: grid;
+            max-width: none;
+        }
+
+        & h1 {
+            grid-row: 1;
+
+            /* Large enough for the lighter gold */
+            & span {
+                color: var(--tk-gold);
+            }
+        }
+
+        & .container > img {
+            grid-area: 2 / 1;
+            justify-self: center;
+            width: min(100%, 280px);
+            height: auto;
+            aspect-ratio: 4 / 5;
+            object-fit: cover;
+            box-shadow: 0 0 0 1px rgb(28 28 28 / 0.14);
+        }
+
+        /* A SOLD OUT stamp over the photo */
+        & .container::before {
+            content: "SOLD OUT" / "";
+            grid-area: 2 / 1;
+            place-self: center;
+            rotate: -12deg;
+            padding: 6px 14px 4px;
+            border: 4px double var(--tk-red);
+            background: rgb(255 253 248 / 0.88);
+            color: var(--tk-red);
+            font: 900 30px/1 var(--tk-display);
+            letter-spacing: 0.1em;
+            text-indent: 0.1em;
+        }
+
+        & .container::after {
+            content: "Sorry, we’re out of that dish" / "";
+            grid-area: 3 / 1;
+            margin-top: 10px;
+            color: var(--tk-note);
+            font: italic 13.5px/1.4 var(--tk-serif);
+            text-align: center;
+        }
+
+        & p {
+            margin: 14px 0 0;
+        }
+
+        & ul {
+            width: auto;
+            margin: 8px 0 0;
+        }
+    }
+
+    /* ---- Phones: a narrower card, and side-by-side pictures stacked ---- */
+
+    @media (max-width: 560px) {
+        --tk-spot: 44px;
+
+        &[data-page="home"] main,
+        &:not([data-page="home"]) body {
+            margin: 12px auto 20px;
+            padding: 26px 22px 28px;
+        }
+
+        &[data-page="home"] main {
+            grid-template-columns: 14px 1fr 14px;
+            grid-template-areas:
+                "head   head   head"
+                "menu   menu   menu"
+                "legend legend legend"
+                ".      milady ."
+                ".      cig    ."
+                ".      note   ."
+                ".      addon  ."
+                "thanks thanks thanks"
+                "picker picker picker";
+        }
+
+        &[data-page="home"] #cig {
+            margin-top: 12px;
+        }
+
+        &[data-page="projects"] .fig {
+            width: 100%;
+        }
+    }
+}
