@@ -1,7 +1,8 @@
 /* One position and appearance for navigation on every page. */
 :root { --bg: #f4f4f4; --fg: #111; }
 :root[data-theme="dark"] { --bg: #161616; --fg: #e8e8e8; }
-html { background: var(--bg); }
+/* Reserve desktop scrollbar space so short and long routes stay aligned. */
+html { background: var(--bg); scrollbar-gutter: stable; }
 body { background: var(--bg); color: var(--fg); max-width: 720px; margin: 40px auto; padding: 0 16px; }
 main > :first-child { margin-top: 0; }
 .site-header { margin-bottom: 32px; font-size: 16px; line-height: 1.2; color: #111; view-transition-name: site-header; }
