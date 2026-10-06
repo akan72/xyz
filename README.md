@@ -23,6 +23,9 @@ serves the HTML/images from the edge; an
     styles in a scoped `<style>` block; Astro inlines a page's CSS into it.
   - `site/content/projects/` — one Markdown file per project on `/projects`;
     the schema is in `site/content.config.ts`.
+  - `site/content/writing/` — one Markdown or MDX file per post, listed on
+    `/writing` (`site/pages/writing.astro`) and rendered by
+    `site/pages/writing/[slug].astro` with `site/layouts/Post.astro`.
   - `site/scripts/page-navigation.js` — changes pages without a reload: the
     header stays put and the outgoing page fades out. Used instead of Astro's
     `<ClientRouter />`, which measured 75-360 ms slower per page change and
@@ -103,6 +106,36 @@ and the plan for securely serving refreshed market prices in a future update.
 `astro build` fails if an entry doesn't match the schema in
 `site/content.config.ts` (https URL, a known kind of years with the start
 before the end, a non-empty stack), or if two projects share an `order`.
+
+## Writing
+
+Add a `.mdx` (or `.md`) file to `site/content/writing/`. Its filename is
+its URL: `site/content/writing/my-post.mdx` is `/writing/my-post`.
+
+    ---
+    title: My post
+    description: One sentence, for search results and llms.txt.
+    date: 2026-10-07
+    draft: true          # remove to publish
+    ---
+
+    Opening paragraph. The title and date render above it.
+
+While `draft: true`, the post shows in `npm run dev` (with a Draft marker)
+and the build leaves it out entirely. Published posts are listed on
+`/writing`, newest first, and get a Markdown copy, an `llms.txt` entry under
+"Writing" and a sitemap entry, like every page.
+
+MDX can embed components, such as an interactive figure: put the component
+in `site/components/`, then import and use it in the post:
+
+    import MyFigure from "../../components/MyFigure.astro";
+
+    <MyFigure />
+
+`/writing` isn't in the header yet; add it to
+`site/components/SiteHeader.astro` and the `routes` in
+`site/scripts/page-navigation.js` when it should be.
 
 ## Tests
 

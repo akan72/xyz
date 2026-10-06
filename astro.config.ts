@@ -1,4 +1,5 @@
 import { satteri } from "@astrojs/markdown-satteri";
+import mdx from "@astrojs/mdx";
 import { defineConfig } from "astro/config";
 import { defineHastPlugin } from "satteri";
 import agentFiles from "./site/integrations/agent-files.ts";
@@ -40,5 +41,15 @@ export default defineConfig({
         },
     },
     markdown: { processor: satteri({ hastPlugins: [externalLinksInNewTab] }) },
-    integrations: [agentFiles({ sources: { "/projects": ["site/content/projects"] } })],
+    integrations: [
+        mdx(),
+        agentFiles({
+            // What each page's sitemap date follows besides its .astro file
+            sources: (path) =>
+                path === "/projects" ? ["site/content/projects"]
+                : path === "/writing" ? ["site/content/writing"]
+                : path.startsWith("/writing/") ? [`site/content/writing/${path.slice("/writing/".length)}.md`, `site/content/writing/${path.slice("/writing/".length)}.mdx`, "site/layouts/Post.astro"]
+                : [],
+        }),
+    ],
 });

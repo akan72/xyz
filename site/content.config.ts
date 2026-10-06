@@ -29,4 +29,19 @@ const projects = defineCollection({
     }),
 });
 
-export const collections = { projects };
+// One Markdown (.md) or MDX (.mdx) file per post in site/content/writing/. The
+// filename is the URL: my-post.mdx -> /writing/my-post. MDX can import and
+// use components, e.g. an interactive figure.
+const writing = defineCollection({
+    loader: glob({ pattern: "*.{md,mdx}", base: "./site/content/writing" }),
+    schema: z.object({
+        title: z.string().trim().min(1),
+        // One sentence: the page's meta description and its llms.txt entry
+        description: z.string().trim().min(1),
+        date: z.coerce.date(),
+        // Drafts show up in `npm run dev` only; the build leaves them out entirely
+        draft: z.boolean().default(false),
+    }),
+});
+
+export const collections = { projects, writing };

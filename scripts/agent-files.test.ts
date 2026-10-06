@@ -75,6 +75,14 @@ describe("generated files", () => {
         assert.ok(text.includes("- [alexkan.xyz](https://alexkan.xyz/index.md): Personal website.\n- [Ideology](https://alexkan.xyz/ideology.md): Likes.\n"));
     });
 
+    test("llms.txt lists pages in a directory under their own heading", () => {
+        const post = { path: "/writing/first-post", url: "https://alexkan.xyz/writing/first-post", title: "First", description: "A post.", body: "Hi." };
+        const text = llmsTxt([...pages, post], site);
+        assert.ok(text.includes("## Pages\n\n- [alexkan.xyz]"));
+        assert.ok(text.includes("## Writing\n\n- [First](https://alexkan.xyz/writing/first-post.md): A post.\n"));
+        assert.ok(text.indexOf("## Pages") < text.indexOf("## Writing"));
+    });
+
     test("llms-full.txt has every page, without the per-copy index link", () => {
         const text = llmsFullTxt(pages, site);
         for (const page of pages) assert.ok(text.includes(pageMarkdown(page, site, false)));

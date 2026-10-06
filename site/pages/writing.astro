@@ -1,0 +1,28 @@
+---
+import Page from "../layouts/Page.astro";
+import { formatDate, getPosts } from "../lib/writing.ts";
+
+const posts = await getPosts();
+---
+<Page title="Writing | alexkan.xyz" description="Things I've written.">
+    <h2>Writing</h2>
+    {posts.length ? (
+        <ul>
+            {posts.map((post) => (
+                <li>
+                    <time datetime={formatDate(post.data.date)}>{formatDate(post.data.date)}</time>
+                    <a href={`/writing/${post.id}`}>{post.data.title}</a>
+                    {post.data.draft && <em>(draft)</em>}
+                </li>
+            ))}
+        </ul>
+    ) : (
+        <p>Nothing yet.</p>
+    )}
+</Page>
+
+<style>
+    ul { list-style: none; padding: 0; }
+    li { display: flex; gap: 16px; margin: 0 0 8px; }
+    time { font-variant-numeric: tabular-nums; color: var(--muted, #666); }
+</style>
