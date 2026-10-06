@@ -1,8 +1,8 @@
 ---
-// The header every page shares. assets/page-navigation.js keeps it mounted
-// while it swaps <main> between these pages.
+// The header every page shares. page-navigation.js keeps it mounted while it
+// swaps <main> between pages, and moves the aria-current mark itself.
 interface Props {
-    current?: string; // path of the page being shown, marked aria-current
+    current: string; // path of the page being shown
 }
 
 const { current } = Astro.props;
@@ -14,9 +14,29 @@ const links = [
 ];
 ---
 <header class="site-header">
-            <h2>alexkan.xyz</h2>
-            <nav aria-label="Primary">
-                {links.map(({ href, label }) => <a href={href} aria-current={href === current ? "page" : undefined}>{label}</a>)}
-                <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode"><svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button>
-            </nav>
-        </header>
+    <h2>alexkan.xyz</h2>
+    <nav aria-label="Primary">
+        {links.map(({ href, label }) => <a href={href} aria-current={href === current ? "page" : undefined}>{label}</a>)}
+        <!-- No whitespace between the icons: it would widen the button -->
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode"><svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg><svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg></button>
+    </nav>
+</header>
+
+<style>
+    .site-header { margin-bottom: 32px; font-size: 16px; line-height: 1.2; color: #111; view-transition-name: site-header; }
+    h2 { margin: 0 0 24px; font-size: 24px; line-height: 1.2; }
+    nav { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+    /* Every underline sits below descenders; only its thickness marks the current page */
+    a, a:visited { color: #333; text-decoration-thickness: 1px; text-underline-offset: 5px; text-decoration-skip-ink: none; }
+    a[aria-current="page"], a[aria-current="page"]:visited { color: var(--fg); text-decoration-line: underline; text-decoration-thickness: 2px; }
+    .theme-toggle { font: inherit; color: #333; background: none; border: 0; padding: 2px; cursor: pointer; line-height: 0; }
+    .theme-toggle:hover { opacity: 0.7; }
+    svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .icon-sun { display: none; }
+
+    :global(:root[data-theme="dark"]) .site-header { color: #e8e8e8; }
+    :global(:root[data-theme="dark"]) a:not([aria-current="page"]),
+    :global(:root[data-theme="dark"]) .theme-toggle { color: #c8c8c8; }
+    :global(:root[data-theme="dark"]) .icon-moon { display: none; }
+    :global(:root[data-theme="dark"]) .icon-sun { display: inline; }
+</style>

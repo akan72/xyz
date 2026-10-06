@@ -4,10 +4,11 @@ import { z } from "astro/zod";
 
 const year = z.number().int().min(1990).max(2100);
 
-// One YAML file per project in site/content/projects/, listed on /projects.
+// One Markdown file per project in site/content/projects/, listed on /projects:
+// these fields as frontmatter, then a sentence or two about it as the body.
 // `astro build` fails if an entry doesn't match this schema.
 const projects = defineCollection({
-    loader: glob({ pattern: "*.yaml", base: "./site/content/projects" }),
+    loader: glob({ pattern: "*.md", base: "./site/content/projects" }),
     schema: z.object({
         name: z.string().trim().min(1),
         url: z.url().startsWith("https://", "use an https:// URL"),
@@ -19,8 +20,6 @@ const projects = defineCollection({
             }),
             z.object({ kind: z.literal("single"), year }),
         ]),
-        // One or two sentences. HTML is allowed, for inline links.
-        about: z.string().trim().min(1),
         // Shown under the description, joined with " · "
         stack: z.array(z.string().trim().min(1)).nonempty(),
         // Position in the list, smallest first; no two projects may share one

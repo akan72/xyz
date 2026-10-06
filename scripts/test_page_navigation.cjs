@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const source = fs.readFileSync(require('node:path').join(__dirname, '../public/assets/page-navigation.js'), 'utf8');
+const source = fs.readFileSync(require('node:path').join(__dirname, '../site/scripts/page-navigation.js'), 'utf8');
 const flush = () => new Promise(resolve => setImmediate(resolve));
 
 // A small DOM fixture exercises the real navigation controller, not a second router.
@@ -32,16 +32,14 @@ function app(reduced = false) {
     const link = new Element('a'); link.href = 'https://example.test' + path; link.target = ''; link.closest = () => link; return link;
   });
   body.append(header); body.append(initialMain);
-  const initialStyle = new Element('style'), navigationStyle = new Element('style');
-  navigationStyle.dataset.inlineSource = '/assets/navigation.css';
-  head.append(initialStyle); head.append(navigationStyle);
-  head.insertBefore = (el, anchor) => { const i = head.children.indexOf(anchor); head.children.splice(i, 0, el); el.parent = head; };
+  const initialStyle = new Element('style');
+  head.append(initialStyle);
   const mains = () => body.children.flatMap(el => el.tag === 'main' ? [el] : el.children.filter(child => child.tag === 'main'));
   const pageStyles = () => head.children.filter(el => el.tag === 'style' && Object.hasOwn(el.dataset, 'pageStyle'));
   const document = {
     body, head, title: 'Main',
-    querySelector(selector) { if (selector === '.site-header') return header; if (selector === 'main') return mains()[0]; return navigationStyle; },
-    querySelectorAll(selector) { if (selector.includes('not(')) return [initialStyle]; return pageStyles(); },
+    querySelector(selector) { if (selector === '.site-header') return header; if (selector === 'main') return mains()[0]; return null; },
+    querySelectorAll(selector) { if (selector === 'head > style') return [initialStyle]; return pageStyles(); },
     createElement: tag => new Element(tag),
     importNode(el) { const copy = new Element(el.tag); copy.path = el.path; copy.dataset = { ...el.dataset }; return copy; },
     addEventListener: (name, fn) => { events[name] = fn; },

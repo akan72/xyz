@@ -1,10 +1,9 @@
+---
 name: dotfiles
 url: https://github.com/akan72/dotfiles
 years:
   kind: since
   start: 2020
-about: >-
-  My dotfiles! Easily installable config for my dev setup.
 stack:
   - Lua
   - shell
@@ -13,3 +12,6 @@ stack:
   - Ghostty
   - Coding Agent Configs
 order: 1
+---
+
+My dotfiles! Easily installable config for my dev setup.

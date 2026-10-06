@@ -1,0 +1,65 @@
+/* Shared by every page; site/layouts/Page.astro imports it. Each page's own
+   styles live in a <style> block in its .astro file. */
+
+/* Georgia everywhere, form controls included */
+html { font-family: Georgia, "Times New Roman", serif; }
+body, button, input, select, textarea { font-family: inherit; }
+
+/* Colors. theme.js sets <html data-theme> to the saved or system theme. */
+:root {
+    color-scheme: light;
+    --bg: #f4f4f4;
+    --fg: #111;
+}
+/* The dark palette, by saved choice or (with scripts off) the system setting */
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #161616;
+    --fg: #e8e8e8;
+    --link: #8ab4f8;
+    --visited: #c58af9;
+    --muted: #9a9a9a;
+}
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --bg: #161616;
+        --fg: #e8e8e8;
+        --link: #8ab4f8;
+        --visited: #c58af9;
+        --muted: #9a9a9a;
+    }
+}
+
+/* Reserve desktop scrollbar space so short and long pages stay aligned */
+html { background: var(--bg); scrollbar-gutter: stable; }
+body { background: var(--bg); color: var(--fg); max-width: 720px; margin: 40px auto; padding: 0 16px; }
+main > :first-child { margin-top: 0; }
+a { color: var(--link, LinkText); }
+a:visited { color: var(--visited, VisitedText); }
+
+/* page-navigation.js fades the outgoing page out over the incoming one */
+.page-shell { position: relative; }
+.page-shell > [data-outgoing-page] { position: absolute; top: 0; left: 0; width: 100%; pointer-events: none; background: var(--bg); z-index: 1; }
+
+/* Ordinary page loads (and browsers without page-navigation.js) crossfade
+   with a cross-document view transition. The header stays still and only the
+   outgoing page fades. */
+@view-transition { navigation: auto; }
+::view-transition-group(root),
+::view-transition-group(site-header) { animation: none; }
+::view-transition-old(root) { z-index: 1; mix-blend-mode: normal; animation: page-fade-out 240ms ease-out both; }
+::view-transition-new(root) { z-index: 0; mix-blend-mode: normal; animation: none; }
+::view-transition-old(site-header) { animation: none; opacity: 0; }
+::view-transition-new(site-header) { animation: none; mix-blend-mode: normal; }
+@keyframes page-fade-out { from { opacity: 1; } to { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+    @view-transition { navigation: none; }
+    ::view-transition-group(root),
+    ::view-transition-group(site-header),
+    ::view-transition-old(root),
+    ::view-transition-new(root),
+    ::view-transition-old(site-header),
+    ::view-transition-new(site-header) { animation: none; }
+}

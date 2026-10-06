@@ -12,12 +12,16 @@
     "test": "node --test 'scripts/*.test.ts' scripts/test_*.cjs"
   },
   "dependencies": {
+    "@astrojs/markdown-satteri": "0.4.2",
     "astro": "7.3.5",
-    "htmlparser2": "12.0.0"
+    "node-html-parser": "9.0.4",
+    "satteri": "0.10.5",
+    "turndown": "7.2.4"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
     "@types/node": "22.20.5",
+    "@types/turndown": "5.0.6",
     "typescript": "6.0.3"
   }
 }

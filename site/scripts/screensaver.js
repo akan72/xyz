@@ -1,7 +1,6 @@
 // Idle screensaver: after IDLE_MS with no input, a full-screen overlay fades in
 // with the XYZ logo bouncing around the viewport, changing color on every edge
-// hit. Any input dismisses it. Pages include it with
-// <script type="module" src="/assets/screensaver.js"></script>.
+// hit. Any input dismisses it. site/layouts/Page.astro includes it on every page.
 
 // Set to false to turn the screensaver off on every page.
 const ENABLED = true;
@@ -13,9 +12,9 @@ const STILL_COLOR_MS = 3000; // prefers-reduced-motion: the logo sits centered a
 const BACKGROUND_OPACITY = 0.6; // 1 is solid; lower lets the page show through
 const LOGO_HALO = true; // soft glow in the background color around the logo
 const MAX_FRAME_MS = 100;
-const LOGO_URL = new URL('./xyz-logo/xyz-currentcolor.svg', import.meta.url);
+const LOGO_URL = '/assets/xyz-logo/xyz-currentcolor.svg'; // in public/, served as is
 
-// Palettes from xyz-logo/README.md, cycled in order. Light has no yellow: it
+// Palettes from public/assets/xyz-logo/README.md, cycled in order. Light has no yellow: it
 // can't reach readable contrast on the light background.
 const THEMES = {
     dark: {

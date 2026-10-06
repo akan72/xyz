@@ -1,3 +1,0 @@
-/* Match the homepage typography throughout the site, including form controls. */
-html { font-family: Georgia, "Times New Roman", serif; }
-body, button, input, select, textarea { font-family: inherit; }
