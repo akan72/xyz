@@ -1,0 +1,24 @@
+---
+import Page from "../layouts/Page.astro";
+---
+<Page title="Contact | alexkan.xyz" description="How to reach me.">
+    <Fragment slot="head">
+        <style is:inline>
+            :root { color-scheme: light; }
+            @media (prefers-color-scheme: dark) {
+                :root:not([data-theme="light"]) { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --link: #8ab4f8; --visited: #c58af9; }
+            }
+            :root[data-theme="dark"] { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --link: #8ab4f8; --visited: #c58af9; }
+            body { max-width: 720px; margin: 40px auto; padding: 0 16px; background: var(--bg, Canvas); color: var(--fg, CanvasText); }
+            a { color: var(--link, LinkText); }
+            a:visited { color: var(--visited, VisitedText); }
+        </style>
+    </Fragment>
+        <h2> Contact </h2>
+        <ul>
+            <li> <a href="https://github.com/akan72" target="_blank">GitHub</a> </li>
+            <li> <a href="https://x.com/0xUltraviolence" target="_blank">Twitter</a> </li>
+            <li> <a href="/pgp.txt" target="_blank">PGP</a> </li>
+            <li> <a href="https://www.linkedin.com/in/alexanderkan/" target="_blank">LinkedIn</a> </li>
+        </ul>
+</Page>

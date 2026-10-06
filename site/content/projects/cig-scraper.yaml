@@ -1,0 +1,15 @@
+name: cig_scraper
+url: https://github.com/akan72/cig_scraper
+years:
+  kind: single
+  year: 2025
+about: >-
+  Ingests all <a href="https://opensea.io/collection/cigawrettepacks"
+  target="_blank">Cigawrette Packs</a> NFT images from IPFS and writes to an
+  R2 bucket. Scale horizontally with Modal to ingest them more quickly. This
+  is what powers the random-cig button on the homepage.
+stack:
+  - Python
+  - Modal
+  - Cloudflare R2
+order: 5

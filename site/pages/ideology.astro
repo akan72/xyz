@@ -1,0 +1,30 @@
+---
+import Page from "../layouts/Page.astro";
+---
+<Page title="Ideology | alexkan.xyz" description="Likes and dislikes.">
+    <Fragment slot="head">
+        <style is:inline>
+            :root { color-scheme: light; }
+            @media (prefers-color-scheme: dark) {
+                :root:not([data-theme="light"]) { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --link: #8ab4f8; --visited: #c58af9; }
+            }
+            :root[data-theme="dark"] { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --link: #8ab4f8; --visited: #c58af9; }
+            body { max-width: 720px; margin: 40px auto; padding: 0 16px; background: var(--bg, Canvas); color: var(--fg, CanvasText); }
+            a { color: var(--link, LinkText); }
+            a:visited { color: var(--visited, VisitedText); }
+        </style>
+    </Fragment>
+        <h2> Likes </h2>
+        <ul>
+            <li> Black Metal </li>
+            <li> Urbanism </li>
+            <li> Vim </li>
+            <li> Privacy </li>
+            <li> Uniqlo </li>
+        </ul>
+        <h2> Dislikes </h2>
+        <ul>
+            <li> Bayesian Statistics </li>
+            <li> Modern Monetary Theory </li>
+        </ul>
+</Page>

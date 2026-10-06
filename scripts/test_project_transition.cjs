@@ -4,8 +4,9 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'public/projects.html'), 'utf8');
-const head = html.match(/<script>\s*([\s\S]*?)<\/script>/)[1];
+// The inline <head> script the projects page renders before subway-vis.js
+const component = fs.readFileSync(path.join(root, 'site/components/SubwayHead.astro'), 'utf8');
+const head = component.match(/<script is:inline>\s*([\s\S]*?)<\/script>/)[1];
 const renderer = fs.readFileSync(path.join(root, 'public/assets/subway-vis.js'), 'utf8');
 
 function page(supported = true) {

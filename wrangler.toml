@@ -19,12 +19,14 @@ workers_dev = false
 preview_urls = true
 
 [build]
-# sitegen.py writes dist/: public/ plus llms.txt, sitemaps and Markdown copies of pages
-command = "command -v worker-build >/dev/null 2>&1 || cargo install worker-build; worker-build --release && python3 scripts/sitegen.py"
-watch_dir = ["src", "public", "scripts"]
+# Astro builds dist/: the pages in site/, public/, and llms.txt, the sitemap
+# and Markdown copies of pages (site/integrations/agent-files.ts). Then
+# worker-build compiles the Worker. Needs `npm ci` first.
+command = "npm run build && (command -v worker-build >/dev/null 2>&1 || cargo install worker-build) && worker-build --release"
+watch_dir = ["src", "public", "site"]
 
 [assets]
-# Built from public/ by scripts/sitegen.py (see [build])
+# Built by Astro from site/ and public/ (see [build])
 directory = "./dist"
 binding = "ASSETS"
 # Missing paths get 404.html with a 404 status

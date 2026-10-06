@@ -1,0 +1,23 @@
+{
+  "name": "xyz",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "check": "astro check",
+    "build": "astro build",
+    "test": "node --test 'scripts/*.test.ts' scripts/test_*.cjs"
+  },
+  "dependencies": {
+    "astro": "7.3.5",
+    "htmlparser2": "12.0.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@types/node": "22.20.5",
+    "typescript": "6.0.3"
+  }
+}

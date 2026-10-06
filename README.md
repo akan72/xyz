@@ -10,22 +10,37 @@ serves the HTML/images from the edge; an
 
 ## Layout
 
-- `public/` — hand-written HTML, images and `robots.txt`.
+- `site/` — the [Astro](https://astro.build/) project that builds `dist/`
+  (in `site/` because `src/` is the Worker):
+  - `site/pages/` — one `.astro` file per page (`ideology.astro` →
+    `/ideology`), including `404.astro`.
+  - `site/layouts/Page.astro` — every page's `<head>` and shared header
+    (`site/components/SiteHeader.astro`). It inlines the small render-blocking
+    assets (`theme.js`, `typography.css`, `navigation.css`,
+    `transitions.css`) and links each page's canonical URL, Markdown copy and
+    `llms.txt`.
+  - `site/content/projects/` — one YAML file per project on `/projects`; the
+    schema is in `site/content.config.ts`.
+  - `site/integrations/agent-files.ts` and `site/lib/agent-files.ts` — after
+    the pages build, generate the files AI crawlers and agents read:
+    `llms.txt`, `llms-full.txt`, a Markdown copy of each page (`/ideology.md`,
+    `/index.md`), `sitemap.xml` (each page dated by its last git commit) and
+    `_headers`.
+- `public/` — images, scripts, `robots.txt` and other static files, copied
+  into `dist/` unchanged.
 - `public/assets/screensaver.js` — idle screensaver loaded by every page: the
   `public/assets/xyz-logo/` mark bounces around after 5s without input. Set
   `ENABLED = false` at the top of the file to turn it off.
 - `docs/screensaver/` — design log for the screensaver: screenshots and
   recordings from each iteration. Not deployed.
-- `scripts/sitegen.py` — runs in the wrangler build. Copies `public/` to
-  `dist/` (served by Workers Static Assets) and generates the files AI
-  crawlers and agents read: `llms.txt`, `llms-full.txt`, a Markdown copy of
-  each page (`/ideology.md`, `/index.md`) and `sitemap.xml`.
 - `src/lib.rs` — the Worker code. Handles `GET /image` (random cig HTML) and
   `GET /cig/{id}` (R2 fetch + stream), adds link-preview tags to pages, and
   serves a page's Markdown copy to requests sent with
   `Accept: text/markdown`. Unmatched paths get `404.html`.
 - `src/link_preview.rs` — adds Open Graph / Twitter tags to every HTML page.
-- `wrangler.toml` — build command, assets directory, R2 binding, custom
+- `astro.config.ts` — Astro's settings: `site/` in, `dist/` out, one
+  `.html` file per page.
+- `wrangler.toml` — build command (Astro, then `worker-build`), assets directory, R2 binding, custom
   domain routes, and the `[previews]` block with the bindings PR previews get.
 - `scripts/preview-url.sh`, `scripts/delete-preview.sh` — read a PR
   preview's URL and delete it, for the workflows in `.github/workflows/`.
@@ -33,15 +48,54 @@ serves the HTML/images from the edge; an
 
 ## Adding a page
 
-Add an `.html` file to `public/` with a `<title>` and a
-`<meta name="description">`. The build adds it to `llms.txt`,
-`llms-full.txt`, `sitemap.xml` and its own Markdown copy, dated by its last
-git commit. It fails if either tag is missing. Pages with
-`<meta name="robots" content="noindex">` (like `404.html`) are left out.
+Add an `.astro` file to `site/pages/` that wraps its content in the shared
+layout, and add it to the header in `site/components/SiteHeader.astro` and
+the `routes` in `public/assets/page-navigation.js`:
 
-Test the generator with:
+    ---
+    import Page from "../layouts/Page.astro";
+    ---
+    <Page title="Notes | alexkan.xyz" description="Things I've noticed.">
+        <Fragment slot="head">
+            <style is:inline>/* this page's styles */</style>
+        </Fragment>
+        <h2> Notes </h2>
+        ...
+    </Page>
 
-    python3 -m unittest discover -s scripts
+The build adds it to `llms.txt`, `llms-full.txt`, `sitemap.xml` and its own
+Markdown copy, dated by its last git commit. It fails if the title or
+description is missing or its URL contains a dot. Pages passed `noindex`
+instead of a description (like `404.astro`) are left out.
+
+## Adding a project
+
+Add a YAML file to `site/content/projects/`, e.g. `site/content/projects/notes.yaml`:
+
+    name: notes
+    url: https://github.com/akan72/notes
+    years:
+      kind: since        # (2024-Present); or kind: range with start and end,
+      start: 2024        # (2020-2023); or kind: single with year, (2025)
+    about: >-
+      One or two sentences. HTML is allowed, for inline links.
+    stack:
+      - Rust
+      - Cloudflare Workers, R2
+    order: 6             # position in the list, smallest first
+
+`media: subway-vis` puts the live istheldown figure above the description.
+`astro build` fails if an entry doesn't match the schema in
+`site/content.config.ts` (https URL, a known kind of years with the start
+before the end, a non-empty stack), or if two projects share an `order`.
+
+## Tests
+
+    npm ci
+    npm run check   # type-check site/ against the content collections
+    npm run build   # build dist/; fails on a bad page or project
+    npm test        # unit tests, then checks on the built dist/
+    python3 -m unittest discover -s scripts   # Worker Preview workflow tests
 
 ## Local dev
 
@@ -50,12 +104,14 @@ Prerequisites:
     rustup target add wasm32-unknown-unknown
     cargo install worker-build
     npm install -g wrangler
+    npm ci
 
 Run against the real R2 bucket:
 
     wrangler dev --remote
 
-The build (and `dist/`) reruns when `src/`, `public/` or `scripts/` change.
+The build (and `dist/`) reruns when `src/`, `public/` or `site/` change.
+For faster page edits without the Worker, run `npm run dev`.
 
 Open http://localhost:8787
 
@@ -101,8 +157,8 @@ from the Worker: `og:title` from the page's `<title>`, `og:description`
 from its `<meta name="description">`, and the default card
 `public/assets/og.jpg`. New pages need nothing extra.
 
-To override a default on one page, declare that tag in the page's `<head>`;
-root-relative paths are fine:
+To override a default on one page, declare that tag in the page's
+`<Fragment slot="head">`; root-relative paths are fine:
 
     <meta property="og:image" content="/assets/other-card.jpg">
 

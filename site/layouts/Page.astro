@@ -1,0 +1,59 @@
+---
+// The shell of every page: <head> furniture, the shared header, and <main>.
+//
+// Slots: "head-scripts" goes before the screensaver script (the projects
+// figure's early loaders), "head" after it (JSON-LD, the page's own <style>).
+// Indexable pages also get their canonical URL, Markdown copy and llms.txt
+// links; site/integrations/agent-files.ts generates those files.
+import { readFileSync } from "node:fs";
+import SiteHeader from "../components/SiteHeader.astro";
+import { SITE_URL, markdownPath } from "../lib/agent-files.ts";
+
+type Props = { title: string } & (
+    | { description: string; noindex?: false }
+    | { description?: undefined; noindex: true } // the 404 page
+);
+
+const { title, description, noindex } = Astro.props;
+
+// Tiny render-blocking assets are inlined: a page change shouldn't wait on a
+// round trip to revalidate the theme, font, navigation, or fade CSS.
+const asset = (name: string) => readFileSync(`public/assets/${name}`, "utf8");
+// An HTML parser ends a <script> at "</script" even inside a JS comment
+const themeScript = asset("theme.js").replace(/<\/script/gi, "<\\/script");
+const inline = (text: string) => `\n${text}\n`;
+
+const path = Astro.url.pathname.replace(/\.html$/, "").replace(/\/index$/, "/") || "/";
+---
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script is:inline data-inline-source="/assets/theme.js" set:html={inline(themeScript)}></script>
+        <style is:inline data-inline-source="/assets/typography.css" set:html={inline(asset("typography.css"))}></style>
+        <title>{title}</title>
+        {noindex && <meta name="robots" content="noindex">}
+        <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+        {description && <meta name="description" content={description}>}
+        <slot name="head-scripts" />
+        <script is:inline type="module" src="/assets/screensaver.js"></script>
+        <slot name="head" />
+        <style is:inline data-inline-source="/assets/navigation.css" set:html={inline(asset("navigation.css"))}></style>
+        <style is:inline data-inline-source="/assets/transitions.css" set:html={inline(asset("transitions.css"))}></style>
+        <script is:inline src="/assets/page-navigation.js" defer></script>
+        {!noindex && (
+            <>
+                <link rel="canonical" href={SITE_URL + path}>
+                <link rel="alternate" type="text/markdown" href={markdownPath(path)}>
+                <link rel="describedby" href="/llms.txt">
+            </>
+        )}
+    </head>
+    <body>
+        <SiteHeader current={path} />
+        <main>
+        <slot />
+        </main>
+    </body>
+</html>

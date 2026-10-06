@@ -11,9 +11,9 @@ repos:
         entry: cargo check --target wasm32-unknown-unknown
         language: system
         pass_filenames: false
-      - id: sitegen
-        name: sitegen (tests + build dist/)
-        entry: sh -c 'python3 -m unittest discover -s scripts -q && python3 scripts/sitegen.py'
+      - id: site
+        name: site (astro build + tests)
+        entry: sh -c 'npm run build --silent && npm test --silent && python3 -m unittest discover -s scripts -q'
         language: system
         pass_filenames: false
-        files: ^(public|scripts)/
+        files: ^(public|site|scripts)/|^astro\.config\.ts$|^package(-lock)?\.json$
