@@ -24,7 +24,10 @@ serves the HTML/images from the edge; an
   - `site/content/projects/` — one Markdown file per project on `/projects`;
     the schema is in `site/content.config.ts`.
   - `site/scripts/page-navigation.js` — changes pages without a reload: the
-    header stays put and the outgoing page fades out.
+    header stays put and the outgoing page fades out. Used instead of Astro's
+    `<ClientRouter />`, which measured 75-360 ms slower per page change and
+    blocks clicks during the fade
+    ([#35](https://github.com/akan72/xyz/pull/35)).
   - `site/scripts/screensaver.js` — idle screensaver: the
     `public/assets/xyz-logo/` mark bounces around after 5s without input. Set
     `ENABLED = false` at the top of the file to turn it off.

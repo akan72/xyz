@@ -1,5 +1,7 @@
 // Keep the header, theme controls, and screensaver alive between the four pages.
 // HTML stays server-rendered: failed requests and ordinary links still navigate normally.
+// Chosen over Astro's <ClientRouter /> for being faster and keeping the header
+// clickable during the fade; see https://github.com/akan72/xyz/pull/35.
 (() => {
     const routes = new Set(['/', '/ideology', '/projects', '/contact']);
     const header = document.querySelector('.site-header');
