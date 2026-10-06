@@ -1,0 +1,45 @@
+---
+import { getCollection, render } from "astro:content";
+import SubwayFigure from "../components/SubwayFigure.astro";
+import SubwayHead from "../components/SubwayHead.astro";
+import Page from "../layouts/Page.astro";
+
+// Each project is a Markdown file in site/content/projects/ (schema in site/content.config.ts)
+const entries = (await getCollection("projects")).sort((a, b) => a.data.order - b.data.order);
+const orders = new Map<number, string>();
+for (const { id, data } of entries) {
+    const other = orders.get(data.order);
+    if (other) throw new Error(`projects ${other} and ${id} both have order: ${data.order}`);
+    orders.set(data.order, id);
+}
+const projects = await Promise.all(entries.map(async (entry) => ({ ...entry.data, Content: (await render(entry)).Content })));
+
+type Years = (typeof projects)[number]["years"];
+const years = (y: Years) =>
+    y.kind === "since" ? `(${y.start}-Present)` : y.kind === "range" ? `(${y.start}-${y.end})` : `(${y.year})`;
+---
+<Page title="Projects | alexkan.xyz" description="Things I've built.">
+    <Fragment slot="head-scripts">
+        {projects.some((p) => p.media === "subway-vis") && <SubwayHead />}
+    </Fragment>
+    <h2>Projects</h2>
+    <ul>
+        {projects.map(({ name, url, Content, media, stack, ...project }) => (
+            <li>
+                <a href={url} target="_blank">{name}</a> <span class="years">{years(project.years)}</span>
+                {media === "subway-vis" && <SubwayFigure />}
+                <Content />
+                <p class="meta">{stack.join(" · ")}</p>
+            </li>
+        ))}
+    </ul>
+</Page>
+
+<style>
+    /* The stack line under each description */
+    .meta { color: var(--muted, #666); font-size: 0.9em; margin-top: -0.4em; }
+    /* Wrap descriptions at the right edge of the figure (2 x 260px + 16px gap),
+       and never past 70ch in case the font gets wider. :global reaches the
+       <p> each project's Markdown renders. */
+    ul :global(p) { max-width: min(536px, 70ch); }
+</style>

@@ -38,12 +38,12 @@ jobs:
       - run: cargo test --lib
 
   site:
-    name: Site files (sitegen)
+    name: Site (astro check + build + tests)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
-          # sitegen reads each page's last commit date for sitemap.xml
+          # The build dates each page in sitemap.xml by its last commit
           fetch-depth: 0
           persist-credentials: false
 
@@ -51,13 +51,22 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
+          cache: npm
 
-      - run: node --test scripts/test_project_transition.cjs scripts/test_page_navigation.cjs scripts/test_screensaver_navigation.cjs
+      - run: npm ci
 
+      # Type-checks site/ against the content collections' generated types
+      - run: npm run check
+
+      # Fails on a project that doesn't match its schema, or a page missing a
+      # <title> or <meta name="description">
+      - run: npm run build
+
+      # Unit tests, then checks on the built dist/
+      - run: npm test
+
+      # The Worker Preview workflow tests
       - run: python3 -m unittest discover -s scripts
-
-      # Fails if a page is missing a <title> or <meta name="description">
-      - run: python3 scripts/sitegen.py
 
   deploy:
     name: Cloudflare Workers
@@ -79,7 +88,7 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
-          # The wrangler build runs sitegen, which dates pages from git history
+          # The wrangler build runs Astro, which dates pages from git history
           fetch-depth: 0
           persist-credentials: false
 
@@ -103,6 +112,11 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
+          cache: npm
+
+      # wrangler's [build] runs `npm run build` (Astro) before worker-build
+      - name: Install npm dependencies
+        run: npm ci
 
       # Production: push to the default branch → create-or-update the Worker
       # at its custom domains. `wrangler deploy` creates the script on first

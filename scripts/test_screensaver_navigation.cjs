@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const fs = require('node:fs');
-const source = fs.readFileSync(require('node:path').join(__dirname, '../public/assets/screensaver.js'), 'utf8');
+const source = fs.readFileSync(require('node:path').join(__dirname, '../site/scripts/screensaver.js'), 'utf8');
 const flush = () => new Promise(resolve => setImmediate(resolve));
 
 async function saver() {
@@ -28,7 +28,7 @@ async function saver() {
     addEventListener: (type, fn) => { (browserEvents[type] ||= []).push(fn); },
   });
   // Only substitute the module's static URL resolution; run its real idle/dismiss logic.
-  vm.runInContext(source.replace('import.meta.url', "'https://example.test/assets/screensaver.js'"), context);
+  vm.runInContext(source, context);
   await flush();
   return { events, timers, overlays, browserEvents,
     idle() { const [id, timer] = [...timers].find(([, timer]) => timer.ms === 5000); timers.delete(id); timer.fn(); },

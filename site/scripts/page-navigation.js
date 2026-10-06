@@ -1,5 +1,7 @@
 // Keep the header, theme controls, and screensaver alive between the four pages.
 // HTML stays server-rendered: failed requests and ordinary links still navigate normally.
+// Chosen over Astro's <ClientRouter /> for being faster and keeping the header
+// clickable during the fade; see https://github.com/akan72/xyz/pull/35.
 (() => {
     const routes = new Set(['/', '/ideology', '/projects', '/contact']);
     const header = document.querySelector('.site-header');
@@ -11,7 +13,8 @@
     main.before(shell);
     shell.append(main);
     document.body.dataset.navigation = 'persistent';
-    document.querySelectorAll('head > style:not([data-inline-source])').forEach(s => s.dataset.pageStyle = '');
+    // Every <style> in <head> is the page's CSS (Astro inlines it); swap them all on navigation
+    document.querySelectorAll('head > style').forEach(s => s.dataset.pageStyle = '');
 
     const cache = new Map();
     const scrolls = new Map();
@@ -103,11 +106,10 @@
 
         const outgoing = main;
         const oldStyles = Array.from(document.querySelectorAll('head > style[data-page-style]'));
-        const styleAnchor = document.querySelector('style[data-inline-source="/assets/navigation.css"], link[href="/assets/navigation.css"]');
-        doc.querySelectorAll('head > style:not([data-inline-source])').forEach(style => {
+        doc.querySelectorAll('head > style').forEach(style => {
             const copy = document.importNode(style, true);
             copy.dataset.pageStyle = '';
-            document.head.insertBefore(copy, styleAnchor);
+            document.head.append(copy);
         });
         metadata(doc);
         window.xyzPauseProjects?.();

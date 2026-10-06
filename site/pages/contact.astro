@@ -1,0 +1,16 @@
+---
+import Page from "../layouts/Page.astro";
+
+const links = [
+    { label: "GitHub", href: "https://github.com/akan72" },
+    { label: "Twitter", href: "https://x.com/0xUltraviolence" },
+    { label: "PGP", href: "/pgp.txt" },
+    { label: "LinkedIn", href: "https://www.linkedin.com/in/alexanderkan/" },
+];
+---
+<Page title="Contact | alexkan.xyz" description="How to reach me.">
+    <h2>Contact</h2>
+    <ul>
+        {links.map(({ label, href }) => <li><a href={href} target="_blank">{label}</a></li>)}
+    </ul>
+</Page>

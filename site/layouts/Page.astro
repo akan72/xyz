@@ -1,0 +1,51 @@
+---
+// The shell of every page: <head>, the shared header, and <main>.
+//
+// Slots: "head-scripts" for page scripts that must load before the
+// screensaver (the projects figure's early loaders), "head" for anything else
+// in <head>, like JSON-LD.
+import SiteHeader from "../components/SiteHeader.astro";
+import ThemeScript from "../components/ThemeScript.astro";
+import "../styles/site.css";
+
+type Props = { title: string } & (
+    | { description: string; noindex?: false }
+    | { description?: undefined; noindex: true } // the 404 page
+);
+
+const { title, description, noindex } = Astro.props;
+
+// /ideology, or / for the homepage (pages build to ideology.html, index.html)
+const path = Astro.url.pathname.replace(/(index)?\.html$/, "") || "/";
+const markdownCopy = path === "/" ? "/index.md" : `${path}.md`;
+---
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <ThemeScript />
+        <title>{title}</title>
+        {noindex && <meta name="robots" content="noindex">}
+        <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+        {description && <meta name="description" content={description}>}
+        {!noindex && (
+            <>
+                <link rel="canonical" href={new URL(path, Astro.site)}>
+                <link rel="alternate" type="text/markdown" href={markdownCopy}>
+                <link rel="describedby" href="/llms.txt">
+            </>
+        )}
+        <slot name="head-scripts" />
+        <script src="../scripts/screensaver.js"></script>
+        <script src="../scripts/page-navigation.js"></script>
+        <script src="../scripts/cig-button.js"></script>
+        <slot name="head" />
+    </head>
+    <body>
+        <SiteHeader current={path} />
+        <main>
+            <slot />
+        </main>
+    </body>
+</html>

@@ -1,13 +1,8 @@
-// Light/dark theme. Loaded as a blocking script at the top of <head> so the
-// theme is set before the page paints:
-// <script src="/assets/theme.js"></script>
-//
-// <html data-theme> always holds the theme in use: the visitor's saved choice
-// if they've switched, otherwise their system setting. Pages style dark mode
-// off it, and other scripts (like the screensaver) can read it and watch it
-// for changes. Any element with data-theme-toggle switches the theme on click
-// and gets an aria-label/title describing what it will do.
-
+---
+// Sets <html data-theme> before the page paints, so it must stay inline and
+// blocking. Elements with data-theme-toggle switch the theme on click.
+---
+<script is:inline>
 (() => {
     const STORAGE_KEY = 'theme';
     const BAR_COLORS = { light: '#f4f4f4', dark: '#161616' }; // browser UI tint, matches the homepage background
@@ -56,3 +51,4 @@
         apply(); // the theme-color tag and toggles are parsed after this script first runs
     });
 })();
+</script>

@@ -1,0 +1,16 @@
+---
+import Page from "../layouts/Page.astro";
+
+const likes = ["Black Metal", "Urbanism", "Vim", "Privacy", "Uniqlo"];
+const dislikes = ["Bayesian Statistics", "Modern Monetary Theory"];
+---
+<Page title="Ideology | alexkan.xyz" description="Likes and dislikes.">
+    <h2>Likes</h2>
+    <ul>
+        {likes.map((item) => <li>{item}</li>)}
+    </ul>
+    <h2>Dislikes</h2>
+    <ul>
+        {dislikes.map((item) => <li>{item}</li>)}
+    </ul>
+</Page>

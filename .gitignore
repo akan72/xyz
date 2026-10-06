@@ -9,3 +9,4 @@ dist/
 __pycache__/
 src/bin/
 node_modules/
+.astro/
