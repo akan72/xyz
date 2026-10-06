@@ -541,6 +541,30 @@ def with_head_links(text: str, page: Page) -> str:
     return f"{text[:match.start()]}{added}{text[match.start():]}"
 
 
+# Tiny render-blocking assets belong in the HTML: a page change should not wait
+# for another round trip to revalidate its theme, font, navigation, or fade CSS.
+CRITICAL_STYLES = ("typography.css", "navigation.css", "transitions.css")
+
+
+def with_critical_assets(text: str, public: Path) -> str:
+    def asset(name: str) -> str:
+        try:
+            return (public / "assets" / name).read_text(encoding="utf-8")
+        except FileNotFoundError:
+            raise SiteError([f"public/assets/{name}: missing render-blocking asset"])
+
+    theme_tag = '<script src="/assets/theme.js"></script>'
+    if theme_tag in text:
+        # An HTML parser recognizes closing script tags even inside JS comments.
+        script = re.sub(r"</script", r"<\\/script", asset("theme.js"), flags=re.IGNORECASE)
+        text = text.replace(theme_tag, f'<script data-inline-source="/assets/theme.js">\n{script}\n</script>')
+    for name in CRITICAL_STYLES:
+        tag = f'<link rel="stylesheet" href="/assets/{name}">'
+        if tag in text:
+            text = text.replace(tag, f'<style data-inline-source="/assets/{name}">\n{asset(name)}\n</style>')
+    return text
+
+
 def build(public: Path, dist: Path, lastmods: dict) -> list:
     """Writes public/ plus the generated files to dist/ and returns the pages."""
     pages = load_pages(public, lastmods)
@@ -550,8 +574,11 @@ def build(public: Path, dist: Path, lastmods: dict) -> list:
     for path in sorted(p for p in public.rglob("*") if p.is_file()):
         rel = PurePosixPath(path.relative_to(public).as_posix())
         data = path.read_bytes()
-        if rel in by_source:
-            data = with_head_links(data.decode("utf-8"), by_source[rel]).encode("utf-8")
+        if rel.suffix.lower() == ".html":
+            text = with_critical_assets(data.decode("utf-8"), public)
+            if rel in by_source:
+                text = with_head_links(text, by_source[rel])
+            data = text.encode("utf-8")
         files[rel] = data
 
     headers = files.pop(PurePosixPath("_headers"), b"").decode("utf-8")

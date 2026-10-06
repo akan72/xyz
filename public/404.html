@@ -2,10 +2,12 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <script src="/assets/theme.js"></script>
+        <link rel="stylesheet" href="/assets/typography.css">
         <title>Page Not Found :(</title>
         <meta name="robots" content="noindex">
-        <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+        <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
         <script type="module" src="/assets/screensaver.js"></script>
         <style>
             ::-moz-selection {
@@ -54,23 +56,20 @@
             }
 
             html {
-                padding: 30px 10px;
-                font-size: 20px;
-                line-height: 1.4;
+                padding: 0;
+                font-size: 16px;
+                line-height: normal;
                 color: var(--text);
                 background: var(--page);
                 -webkit-text-size-adjust: 100%;
                 -ms-text-size-adjust: 100%;
             }
 
-            html,
-            input {
-                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-            }
-
-            body {
+            .error-card {
+                color: var(--text);
+                font-size: 20px;
+                line-height: 1.4;
                 max-width: 500px;
-                _width: 500px;
                 padding: 30px 20px 50px;
                 border: 1px solid var(--border);
                 border-radius: 4px;
@@ -86,7 +85,10 @@
                 color: var(--heading);
             }
 
+            .error-card img { display: block; max-width: 100%; height: auto; }
+
             h1 span {
+                white-space: nowrap;
                 color: var(--heading-muted);
             }
 
@@ -178,11 +180,25 @@
                 border: 0;
             }
         </style>
+        <link rel="stylesheet" href="/assets/navigation.css">
+        <link rel="stylesheet" href="/assets/transitions.css">
+        <script src="/assets/page-navigation.js" defer></script>
     </head>
     <body>
-        <div class="container">
+        <header class="site-header">
+            <h2>alexkan.xyz</h2>
+            <nav aria-label="Primary">
+                <a href="/">Main</a>
+                <a href="/ideology">Ideology</a>
+                <a href="/projects">Projects</a>
+                <a href="/contact">Contact</a>
+                <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode"><svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button>
+            </nav>
+        </header>
+        <main>
+        <div class="error-card"><div class="container">
             <h1>Not found <span>:(</span></h1>
-            <img src="./assets/cig.jpg" alt="Cigawrette" width="400" height="400">
+            <img src="/assets/cig.jpg" alt="Cigawrette" width="400" height="400">
             <p>Sorry, but the page you were trying to view does not exist.</p>
             <p>It looks like this was the result of either:</p>
             <ul>
@@ -193,6 +209,7 @@
                 var GOOG_FIXURL_LANG = (navigator.language || '').slice(0,2),GOOG_FIXURL_SITE = location.host;
             </script>
             <script src="//linkhelp.clients.google.com/tbproxy/lh/wm/fixurl.js"></script>
-        </div>
+        </div></div>
+        </main>
     </body>
 </html>

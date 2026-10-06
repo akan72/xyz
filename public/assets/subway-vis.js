@@ -3,8 +3,8 @@
 // Subscribes to istheldown's WebSocket (subway trains and subway alerts only),
 // picks one subway line at random on every page load, and renders it with
 // hydra-synth. A second canvas beside it maps every subway train, with the chosen
-// line's trains in its color. The figure stays hidden until a snapshot arrives;
-// if istheldown can't be reached, it is removed from the page.
+// line's trains in its color. Its space is reserved before the snapshot arrives;
+// if istheldown can't be reached, the same space shows an unavailable state.
 //
 // A train counts as "running" once it has left its first stop (it has a
 // previousStopId). Scheduled trips still waiting at their origin terminal are
@@ -28,23 +28,35 @@
 // Fixed knobs (not data-driven): warp-noise scale 4 with 50 x 1 steps, warp 1,
 // twist 1.57, pixel grid 112 x 140, feedback trail 0.12, three-tone thresholds
 // 0.1 / 0.8, scanlines with a 3 px period, grain 0.12 at scale 300.
-(function () {
+window.xyzMountProjects = function () {
+  window.xyzDisposeProjects?.();
   const canvas = document.getElementById('subway-vis');
   const caption = document.getElementById('subway-vis-caption');
   if (!canvas) return;
+  let disposed = false, suspended = false, activeSocket = null, socketTimer, retryTimer;
   const DEBUG = /[?&]debug\b/.test(location.search);
   const box = canvas.parentElement, captionBlock = caption.parentElement;
   const hide = reason => {
     try { console.info('[subway-vis] figure hidden: ' + reason); } catch (e) {}
     if (DEBUG) { captionBlock.hidden = false; caption.textContent = 'subway-vis hidden: ' + reason + ' | ' + navigator.userAgent; }
   };
-  // The renderer script loads async in <head>; wait for it, and try unpkg if the first CDN fails.
-  function loadScript(src) { return new Promise(res => { const sc = document.createElement('script'); sc.src = src; sc.onload = () => res(typeof Hydra !== 'undefined'); sc.onerror = () => res(false); document.head.appendChild(sc); }); }
+  // Fetches can start early, but evaluating Hydra and compiling shaders must not interrupt the fade.
+  function loadScript(src) {
+    return new Promise(resolve => {
+      const sc = document.createElement('script');
+      const finish = () => { clearTimeout(timer); resolve(typeof Hydra !== 'undefined'); };
+      const timer = setTimeout(finish, 5000);
+      sc.onload = finish; sc.onerror = finish; sc.src = src;
+      document.head.appendChild(sc);
+    });
+  }
   function ensureHydra() {
     if (typeof Hydra !== 'undefined') return Promise.resolve(true);
-    const tag = document.getElementById('hydra-script');
-    const primary = tag && !window.__hydraFailed ? new Promise(res => { tag.addEventListener('load', () => res(typeof Hydra !== 'undefined')); tag.addEventListener('error', () => res(false)); setTimeout(() => res(typeof Hydra !== 'undefined'), 5000); }) : Promise.resolve(false);
-    return primary.then(ok => ok || loadScript('https://unpkg.com/hydra-synth@1.4.0/dist/hydra-synth.js'));
+    if (window.xyzHydraLoading) return window.xyzHydraLoading;
+    window.xyzHydraLoading = loadScript('https://cdn.jsdelivr.net/npm/hydra-synth@1.4.0/dist/hydra-synth.js')
+      .then(ok => ok || loadScript('https://unpkg.com/hydra-synth@1.4.0/dist/hydra-synth.js'))
+      .then(ok => { if (!ok) window.xyzHydraLoading = null; return ok; });
+    return window.xyzHydraLoading;
   }
 
   const LINE = { '1': '#D82233', '2': '#D82233', '3': '#D82233', '4': '#009952', '5': '#009952', '6': '#009952', '7': '#9A38A1', A: '#0062CF', C: '#0062CF', E: '#0062CF', B: '#EB6800', D: '#EB6800', F: '#EB6800', M: '#EB6800', G: '#799534', J: '#8E5C33', Z: '#8E5C33', L: '#7C858C', N: '#F6BC26', Q: '#F6BC26', R: '#F6BC26', W: '#F6BC26' };
@@ -59,8 +71,13 @@
   // --- renderer (created only once a snapshot has arrived, so a dead feed never shows a black box) ---
   let hydra = null, S = null;
   const wrap = box.closest('.figs') || box;
-  function show() { wrap.hidden = false; captionBlock.hidden = false; }
-  function remove(reason) { stop(); wrap.hidden = true; captionBlock.hidden = true; hide(reason || 'unknown'); }
+  function show() { wrap.dataset.state = 'ready'; }
+  function remove(reason) {
+    stop();
+    wrap.dataset.state = 'unavailable';
+    caption.textContent = 'Live transit preview unavailable. Visit istheldown.com for the current map.';
+    hide(reason || 'unknown');
+  }
   function createRenderer() {
     const W = Math.max(2, Math.min(260, Math.round(box.parentElement.clientWidth || 260))), H = Math.round(W * 1.25);
     hydra = new Hydra({ canvas, width: W, height: H, detectAudio: false, makeGlobal: false, autoLoop: false, enableStreamCapture: false });
@@ -107,14 +124,50 @@
   }
 
   // --- frame loop: pauses offscreen, on hidden tabs, and for reduced motion ---
-  let raf = null, last = 0, visible = true, frameNo = 0, scene = null;
+  let raf = null, last = 0, visible = true, frameNo = 0, scene = null, warmup = 0;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function frame(t) { if (!hydra) { raf = null; return; } const dt = Math.min(t - last, 100); last = t; frameNo++; if (scene && frameNo % 30 === 0) drawInputs(scene); hydra.tick(dt); raf = requestAnimationFrame(frame); }
-  function start() { if (!hydra || raf || reduced || document.hidden || !visible) return; last = performance.now(); raf = requestAnimationFrame(frame); }
+  function frame(t) {
+    raf = null;
+    if (!hydra || document.hidden || !visible) return;
+    if (warmup) {
+      // Settle the feedback a frame at a time so navigation and scrolling stay responsive.
+      hydra.tick(16);
+      if (--warmup === 0) show();
+    } else {
+      const dt = Math.min(t - last, 100);
+      frameNo++;
+      if (scene && frameNo % 30 === 0) drawInputs(scene);
+      hydra.tick(dt);
+    }
+    last = t;
+    if (warmup || !reduced) raf = requestAnimationFrame(frame);
+  }
+  function start() { if (disposed || suspended || !hydra || !scene || raf !== null || (reduced && !warmup) || document.hidden || !visible) return; last = performance.now(); raf = requestAnimationFrame(frame); }
   function stop() { cancelAnimationFrame(raf); raf = null; }
-  const settle = () => { if (hydra) for (let k = 0; k < 24; k++) hydra.tick(16); };
-  new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? start() : stop(); }, { threshold: 0 }).observe(box);
-  document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+  const settle = () => { warmup = 24; start(); };
+  const observer = new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? start() : stop(); }, { threshold: 0 });
+  observer.observe(box);
+  const onVisibility = () => (document.hidden ? stop() : start());
+  document.addEventListener('visibilitychange', onVisibility);
+  const pause = () => { suspended = true; stop(); };
+  window.xyzPauseProjects = pause;
+  window.xyzDisposeProjects = () => {
+    if (disposed) return;
+    disposed = true;
+    stop();
+    observer.disconnect();
+    document.removeEventListener('visibilitychange', onVisibility);
+    clearTimeout(socketTimer); clearTimeout(retryTimer);
+    if (activeSocket) { activeSocket.onclose = null; activeSocket.onmessage = null; activeSocket.close(); }
+    if (window.__subway) {
+      window.__subway.ws.removeEventListener('message', window.__subway.onmsg);
+      if (window.__subway.ws !== activeSocket) window.__subway.ws.close();
+      delete window.__subway;
+    }
+    if (window.xyzPauseProjects === pause) window.xyzPauseProjects = null;
+    hydra?.regl.destroy();
+    hydra = null;
+  };
 
   // --- data: one random line from the live feed ---
   function project(lat, lon, w, h) {
@@ -189,25 +242,32 @@
   }
 
   (async () => {
-    if (!(await ensureHydra())) return remove('hydra-synth did not load from jsDelivr or unpkg');
+    await window.__pageTransitionFinished;
+    if (disposed || suspended) return;
+    if (!(await ensureHydra())) return disposed ? undefined : remove('hydra-synth did not load from jsDelivr or unpkg');
+    if (disposed || suspended) return;
     // Create the renderer and compile the shader graph now, so the only work left when the snapshot lands is one rebuild with real numbers.
     try { createRenderer(); buildGraph(); hydra.tick(16); }
     catch (e) { return remove('renderer failed (WebGL?): ' + e); }
     const pre = window.__subway || null;
     let stations;
     try { stations = await (pre && pre.stations ? pre.stations : fetch(STATIONS_URL).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })); } catch (e) { return remove('station file failed: ' + e); }
+    if (disposed || suspended) return;
     let attempts = 0;
     const connect = () => {
+    if (disposed || suspended) return;
     attempts++;
     // First attempt: adopt the socket the page opened in <head>, replaying anything it already queued.
     const early = attempts === 1 && pre && pre.ws && pre.closed === null ? pre : null;
     let ws;
     if (early) ws = early.ws; else { try { ws = new WebSocket(WS_URL); } catch (e) { return remove('WebSocket constructor failed: ' + e); } }
+    activeSocket = ws;
     const elapsed = early ? performance.now() - early.t0 : 0;
-    const timer = setTimeout(() => { if (!scene) { try { ws.close(); } catch (e) {} remove('no snapshot within 20 s'); } }, Math.max(2000, 20000 - elapsed));
+    const timer = socketTimer = setTimeout(() => { if (!disposed && !scene) { try { ws.close(); } catch (e) {} remove('no snapshot within 20 s'); } }, Math.max(2000, 20000 - elapsed));
     const subway = t => (t.system || 'subway') === 'subway';
     let lastBuild = 0, dirty = false;
     ws.onmessage = ev => {
+      if (disposed || suspended) return;
       let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
       if (m.type === 'snapshot' && !scene) {
         clearTimeout(timer);
@@ -218,7 +278,7 @@
         scene = { route, stations, trains: new Map(), all: new Map(), alerts: 0, serverTime: m.serverTime, receivedAt: performance.now() };
         m.trains.forEach(t => { if (!subway(t)) return; scene.all.set(t.tripId, t); if (t.routeId === route) scene.trains.set(t.tripId, t); });
         scene.alerts = m.alerts.filter(a => (a.system || 'subway') === 'subway' && a.routeIds.includes(route)).length;
-        drawInputs(scene); const k = knobs(scene); applyKnobs(k); describe(scene, k, true); settle(); show(); start(); lastBuild = performance.now();
+        drawInputs(scene); const k = knobs(scene); applyKnobs(k); describe(scene, k, true); settle(); lastBuild = performance.now();
       } else if (!scene) return;
       else if (m.type === 'trains') { m.updated.forEach(t => { if (!subway(t)) return; scene.all.set(t.tripId, t); if (t.routeId === scene.route) scene.trains.set(t.tripId, t); }); m.removed.forEach(id => { scene.trains.delete(id); scene.all.delete(id); }); dirty = true; }
       else if (m.type === 'alerts') { scene.alerts = m.alerts.filter(a => (a.system || 'subway') === 'subway' && a.routeIds.includes(scene.route)).length; dirty = true; }
@@ -229,12 +289,14 @@
     // Before the first snapshot, any failure means "no figure". After it, the last state simply stays on screen.
     ws.onerror = () => {};
     ws.onclose = ev => {
+      if (disposed || suspended) return;
       if (scene) return describe(scene, knobs(scene), false);
       clearTimeout(timer);
-      if (attempts < 2) setTimeout(connect, 1500); else remove('socket closed before a snapshot (code ' + ev.code + ')');
+      if (attempts < 2) retryTimer = setTimeout(connect, 1500); else remove('socket closed before a snapshot (code ' + ev.code + ')');
     };
     if (early) { ws.removeEventListener('message', early.onmsg); const q = early.queue.splice(0); q.forEach(d => ws.onmessage({ data: d })); if (early.closed !== null && !scene) ws.onclose({ code: early.closed }); }
     };
     connect();
   })();
-})();
+};
+window.xyzMountProjects();

@@ -94,6 +94,11 @@ async function init() {
         overlay.addEventListener(type, (e) => e.preventDefault(), { passive: false });
     }
 
+    // Content navigation has the same fresh idle period as loading a new document.
+    document.addEventListener('xyz:navigated', () => {
+        if (active) dismiss({ type: 'navigation' });
+        resetIdleTimer();
+    });
     resetIdleTimer();
 }
 

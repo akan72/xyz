@@ -47,6 +47,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+
+      - run: node --test scripts/test_project_transition.cjs scripts/test_page_navigation.cjs scripts/test_screensaver_navigation.cjs
+
       - run: python3 -m unittest discover -s scripts
 
       # Fails if a page is missing a <title> or <meta name="description">
