@@ -18,7 +18,7 @@ const indexable = htmlFiles.filter((f) => !doc(f).querySelector('meta[name="robo
 
 describe("every page", () => {
     test("covers the site's pages, with only 404 left out of the index", () => {
-        for (const page of ["404.html", "contact.html", "ideology.html", "index.html", "projects.html", "writing.html"]) assert.ok(htmlFiles.includes(page), page);
+        for (const page of ["404.html", "contact.html", "index.html", "projects.html", "writing.html"]) assert.ok(htmlFiles.includes(page), page);
         assert.deepEqual(htmlFiles.filter((f) => !indexable.includes(f)), ["404.html"]);
     });
 
@@ -35,7 +35,7 @@ describe("every page", () => {
             const headers = page.querySelectorAll("header");
             assert.equal(headers.length, 1);
             const links = headers[0].querySelectorAll("a").map((a) => [a.text, a.getAttribute("href")]);
-            assert.deepEqual(links, [["Main", "/"], ["Ideology", "/ideology"], ["Projects", "/projects"], ["Writing", "/writing"], ["Contact", "/contact"]]);
+            assert.deepEqual(links, [["Main", "/"], ["Projects", "/projects"], ["Writing", "/writing"], ["Contact", "/contact"]]);
             const current = headers[0].querySelectorAll('[aria-current="page"]').map((a) => a.getAttribute("href"));
             // The page's own link is marked (a post marks Writing); 404 has none
             const path = pagePath(file);
@@ -117,5 +117,15 @@ describe("/writing", () => {
     test("the index links every published post", () => {
         const links = doc("writing.html").querySelectorAll("main li a").map((a) => a.getAttribute("href"));
         assert.deepEqual(links.sort(), published.map((f) => `/writing/${f.replace(/\.mdx?$/, "")}`).sort());
+    });
+});
+
+describe("redirects", () => {
+    test("/ideology moved into the gm post", () => {
+        const rules = dist("_redirects");
+        assert.match(rules, /^\/ideology \/writing\/gm 301$/m);
+        assert.match(rules, /^\/ideology\.md \/writing\/gm\.md 301$/m);
+        assert.ok(existsSync("dist/writing/gm.html"));
+        assert.ok(!existsSync("dist/ideology.html"));
     });
 });

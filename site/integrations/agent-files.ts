@@ -1,7 +1,7 @@
 // After `astro build`, writes the files AI agents and crawlers read, made from
 // the pages Astro just built:
 //
-//   /ideology.md, /index.md  a Markdown copy of each page. src/lib.rs serves
+//   /projects.md, /index.md  a Markdown copy of each page. src/lib.rs serves
 //                            these to requests with `Accept: text/markdown`.
 //   /llms.txt                an index of the pages (https://llmstxt.org)
 //   /llms-full.txt           every page's Markdown in one file
@@ -24,7 +24,7 @@ const SITE_NAME = "alexkan.xyz";
 const turndown = new TurndownService({ headingStyle: "atx", bulletListMarker: "-", codeBlockStyle: "fenced" });
 
 export interface Page {
-    path: string; // "/" or "/ideology"
+    path: string; // "/" or "/projects"
     url: string;
     title: string; // without " | alexkan.xyz"
     description: string;
@@ -144,7 +144,7 @@ interface Options {
 export default function agentFiles({ sources = () => [] }: Options = {}): AstroIntegration {
     let root = "";
     let site = new URL("https://example.com");
-    const pageFiles = new Map<string, string>(); // "/ideology" -> "site/pages/ideology.astro"
+    const pageFiles = new Map<string, string>(); // "/projects" -> "site/pages/projects.astro"
 
     return {
         name: "agent-files",

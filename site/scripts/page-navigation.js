@@ -5,7 +5,7 @@
 (() => {
     // Posts (/writing/my-post) aren't here: they load as full pages so their
     // scripts, like an interactive figure's, run.
-    const routes = new Set(['/', '/ideology', '/projects', '/writing', '/contact']);
+    const routes = new Set(['/', '/projects', '/writing', '/contact']);
     const header = document.querySelector('.site-header');
     let main = document.querySelector('main');
     if (!header || !main || !routes.has(location.pathname) || location.search) return;

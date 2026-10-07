@@ -12,8 +12,8 @@ serves the HTML/images from the edge; an
 
 - `site/` — the [Astro](https://astro.build/) project that builds `dist/`
   (in `site/` because `src/` is the Worker):
-  - `site/pages/` — one `.astro` file per page (`ideology.astro` →
-    `/ideology`), including `404.astro`.
+  - `site/pages/` — one `.astro` file per page (`projects.astro` →
+    `/projects`), including `404.astro`.
   - `site/layouts/Page.astro` — every page's `<head>`, the shared header
     (`site/components/SiteHeader.astro`) and the scripts every page loads.
     `site/components/ThemeScript.astro` sets the light/dark theme before the
@@ -36,9 +36,10 @@ serves the HTML/images from the edge; an
     `ENABLED = false` at the top of the file to turn it off.
   - `site/integrations/agent-files.ts` — after the pages build, writes the
     files AI crawlers and agents read: a Markdown copy of each page
-    (`/ideology.md`, `/index.md`), `llms.txt`, `llms-full.txt`, `sitemap.xml`
+    (`/projects.md`, `/index.md`), `llms.txt`, `llms-full.txt`, `sitemap.xml`
     (each page dated by its last git commit) and `_headers`.
-- `public/` — images, `robots.txt`, the projects figure's script
+- `public/` — images, `robots.txt`, `_redirects` (old URLs, like
+  `/ideology` → `/writing/gm`), the projects figure's script
   (`assets/subway-vis.js`) and other static files, copied into `dist/`
   unchanged.
 - `docs/screensaver/` — design log for the screensaver: screenshots and
