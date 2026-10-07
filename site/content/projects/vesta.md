@@ -12,6 +12,4 @@ order: 6
 media: vesta-demo
 ---
 
-A CLI for displaying stock and crypto prices on my Vestaboard. Preview the
-board in the terminal or browser before sending it. The board above uses
-synthetic demo prices.
+A CLI + uv tool for displaying crypto and equity prices on your Vestaboard.
