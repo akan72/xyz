@@ -97,6 +97,9 @@ sentence or two about it as the body:
     What it does. Links like [this one](https://example.com) open in a new tab.
 
 `media: subway-vis` puts the live istheldown figure above the description.
+`media: vesta-demo` embeds Vesta's generated offline board preview and text view.
+See [docs/vesta/README.md](docs/vesta/README.md) for regeneration instructions
+and the plan for securely serving refreshed market prices in a future update.
 `astro build` fails if an entry doesn't match the schema in
 `site/content.config.ts` (https URL, a known kind of years with the start
 before the end, a non-empty stack), or if two projects share an `order`.

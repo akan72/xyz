@@ -3,6 +3,7 @@ import { getCollection, render } from "astro:content";
 import CigPicker from "../components/CigPicker.astro";
 import SubwayFigure from "../components/SubwayFigure.astro";
 import SubwayHead from "../components/SubwayHead.astro";
+import VestaPreview from "../components/VestaPreview.astro";
 import Page from "../layouts/Page.astro";
 
 // Each project is a Markdown file in site/content/projects/ (schema in site/content.config.ts)
@@ -30,6 +31,7 @@ const years = (y: Years) =>
                 <a href={url} target="_blank">{name}</a> <span class="years">{years(project.years)}</span>
                 {media === "subway-vis" && <SubwayFigure />}
                 {media === "cig-picker" && <CigPicker />}
+                {media === "vesta-demo" && <VestaPreview />}
                 <Content />
                 <p class="meta">{stack.join(" · ")}</p>
             </li>

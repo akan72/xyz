@@ -1,0 +1,43 @@
+---
+import { parse } from "node-html-parser";
+import demoHtml from "../generated/vesta-demo.html?raw";
+
+// Keep the cells and text view from Vesta's actual --demo HTML output.
+// Only its standalone page shell is replaced by the projects page's layout.
+const demo = parse(demoHtml);
+const board = demo.querySelector(".board");
+const textView = demo.querySelector("details");
+if (!board || !textView) throw new Error("Vesta demo HTML must contain a board and text view");
+---
+<figure class="vesta-preview">
+    <figcaption>Demo prices</figcaption>
+    <div class="rendering" set:html={board.outerHTML} />
+    <div class="text-view" set:html={textView.outerHTML} />
+</figure>
+
+<style>
+    .vesta-preview { width: 536px; max-width: 100%; margin: 1em 0; container-type: inline-size; }
+    figcaption { color: var(--muted, #666); font-size: 0.9em; margin-bottom: 8px; }
+    .rendering :global(.board) {
+        display: grid; grid-template-columns: repeat(22, minmax(0, 1fr));
+        gap: clamp(2px, 0.45cqw, 6px); padding: clamp(8px, 2cqw, 26px);
+        background: #111210; border: 1px solid #383a33; border-radius: 8px;
+    }
+    .rendering :global(.tile) {
+        position: relative; display: flex; align-items: center; justify-content: center;
+        aspect-ratio: 0.72; border-radius: 3px; background: linear-gradient(#292b27, #20221e);
+        color: #f2f0e8; font-family: ui-monospace, Menlo, Consolas, monospace;
+        font-size: clamp(8px, 2.8cqw, 18px); font-weight: 600;
+        box-shadow: inset 0 0 0 1px #34362f;
+    }
+    .rendering :global(.tile::after) {
+        content: ""; position: absolute; left: 0; right: 0; top: 50%;
+        border-top: 1px solid #090a08; opacity: 0.75;
+    }
+    .text-view :global(details) { margin-top: 12px; font-size: 0.9em; }
+    .text-view :global(summary) { cursor: pointer; width: fit-content; }
+    .text-view :global(pre) {
+        overflow-x: auto; padding: 12px; line-height: 1.8;
+        background: color-mix(in srgb, currentColor 6%, var(--bg));
+    }
+</style>
