@@ -133,9 +133,9 @@ in `site/components/`, then import and use it in the post:
 
     <MyFigure />
 
-`/writing` isn't in the header yet; add it to
-`site/components/SiteHeader.astro` and the `routes` in
-`site/scripts/page-navigation.js` when it should be.
+Writing is in the header. The `/writing` list changes pages like the others;
+posts load as full pages, so any scripts in them (like an interactive
+figure's) run.
 
 ## Tests
 

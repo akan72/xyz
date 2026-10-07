@@ -35,10 +35,11 @@ describe("every page", () => {
             const headers = page.querySelectorAll("header");
             assert.equal(headers.length, 1);
             const links = headers[0].querySelectorAll("a").map((a) => [a.text, a.getAttribute("href")]);
-            assert.deepEqual(links, [["Main", "/"], ["Ideology", "/ideology"], ["Projects", "/projects"], ["Contact", "/contact"]]);
+            assert.deepEqual(links, [["Main", "/"], ["Ideology", "/ideology"], ["Projects", "/projects"], ["Writing", "/writing"], ["Contact", "/contact"]]);
             const current = headers[0].querySelectorAll('[aria-current="page"]').map((a) => a.getAttribute("href"));
-            // The page's own link is marked, if it has one in the header (404 and Writing don't)
-            assert.deepEqual(current, links.map(([, href]) => href).filter((href) => href === pagePath(file)));
+            // The page's own link is marked (a post marks Writing); 404 has none
+            const path = pagePath(file);
+            assert.deepEqual(current, links.map(([, href]) => href).filter((href) => href === path || (href !== "/" && path.startsWith(`${href}/`))));
         });
     }
 });
