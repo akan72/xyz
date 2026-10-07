@@ -6,7 +6,7 @@
     "node": ">=22.18.0"
   },
   "scripts": {
-    "dev": "astro dev",
+    "dev": "astro dev --ignore-lock",
     "check": "astro check",
     "build": "astro build",
     "test": "node --test 'scripts/*.test.ts' scripts/test_*.cjs"

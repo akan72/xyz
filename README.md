@@ -159,7 +159,9 @@ Run against the real R2 bucket:
     wrangler dev --remote
 
 The build (and `dist/`) reruns when `src/`, `public/` or `site/` change.
-For faster page edits without the Worker, run `npm run dev`.
+For faster page edits without the Worker, run `npm run dev`. It starts on
+http://localhost:4321, or the next free port if that's taken (it's allowed to
+run alongside another dev server; Astro prints the URL).
 
 Open http://localhost:8787
 
