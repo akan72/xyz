@@ -12,5 +12,27 @@ const links = [
     <h2>Contact</h2>
     <ul>
         {links.map(({ label, href }) => <li><a href={href} target="_blank">{label}</a></li>)}
+        <li data-email-contact data-email-code="bWVAYWxleGthbi54eXo=">
+            <button class="email-control" data-email-reveal hidden>Reveal Email Address</button>
+            <span data-email-result aria-live="polite" aria-atomic="true"></span>
+            <button class="email-control email-copy" data-email-copy hidden>Copy</button>
+            <span class="email-status" data-email-status role="status"></span>
+            <noscript>Email — enable JavaScript to reveal the address.</noscript>
+        </li>
     </ul>
 </Page>
+
+<style>
+    .email-control {
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--link, LinkText);
+        font: inherit;
+        text-decoration: underline;
+        cursor: pointer;
+    }
+    .email-control:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+    .email-copy { margin-left: 0.5em; font-size: 0.85em; }
+    .email-status { margin-left: 0.5em; font-size: 0.85em; }
+</style>
