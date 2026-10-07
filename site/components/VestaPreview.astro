@@ -2,17 +2,15 @@
 import { parse } from "node-html-parser";
 import demoHtml from "../generated/vesta-demo.html?raw";
 
-// Keep the cells and text view from Vesta's actual --demo HTML output.
+// Keep the board cells from Vesta's actual --demo HTML output.
 // Only its standalone page shell is replaced by the projects page's layout.
 const demo = parse(demoHtml);
 const board = demo.querySelector(".board");
-const textView = demo.querySelector("details");
-if (!board || !textView) throw new Error("Vesta demo HTML must contain a board and text view");
+if (!board) throw new Error("Vesta demo HTML must contain a board");
 ---
 <figure class="vesta-preview">
-    <figcaption>Demo prices</figcaption>
+    <figcaption>Sample Prices</figcaption>
     <div class="rendering" set:html={board.outerHTML} />
-    <div class="text-view" set:html={textView.outerHTML} />
 </figure>
 
 <style>
@@ -33,11 +31,5 @@ if (!board || !textView) throw new Error("Vesta demo HTML must contain a board a
     .rendering :global(.tile::after) {
         content: ""; position: absolute; left: 0; right: 0; top: 50%;
         border-top: 1px solid #090a08; opacity: 0.75;
-    }
-    .text-view :global(details) { margin-top: 12px; font-size: 0.9em; }
-    .text-view :global(summary) { cursor: pointer; width: fit-content; }
-    .text-view :global(pre) {
-        overflow-x: auto; padding: 12px; line-height: 1.8;
-        background: color-mix(in srgb, currentColor 6%, var(--bg));
     }
 </style>

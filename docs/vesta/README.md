@@ -3,12 +3,14 @@
 ## Demo shipped now
 
 `site/content/projects/vesta.md` adds Vesta to the projects collection.
-`VestaPreview.astro` embeds the board cells and collapsible text view from
+`VestaPreview.astro` embeds only the board cells from
 `site/generated/vesta-demo.html`, the actual output of Vesta's offline demo.
 It adapts the surrounding styles to xyz's project column and theme, without
-adding a browser script, fetching prices, or requiring any API key.
+adding a browser script, fetching prices, or requiring any API key. The
+projects page labels the rendering "Sample Prices" and omits the CLI's text view.
 
-The checked-in HTML was generated from Vesta master at `a2a7c30`:
+The checked-in HTML was generated from Vesta at `0bb2acc`, with
+Bitcoin's fixed sample price of $83,436:
 
 ```bash
 # Run from an updated Vesta checkout with its CLI installed.
@@ -60,10 +62,10 @@ means 288 refreshes and up to 1,728 symbol credits per day; batching can reduce
 HTTP requests without reducing symbol credits. The free 800-credit daily
 Twelve Data allowance is insufficient for that schedule.
 
-Use an explicit instrument map. In the current demo, `BTC` is the stock/ETF
-symbol shown near $36.79, not a Bitcoin quote. If we want Bitcoin instead, map
-it to the provider's BTC/USD pair and label it distinctly. Keep provider IDs,
-display names, asset types, currencies, and exchanges separate.
+Use an explicit instrument map. The demo's `BTC` label represents Bitcoin,
+with a fixed sample price of $83,436. Map it to the provider's BTC/USD pair,
+not a stock/ETF ticker named BTC. Keep provider IDs, display names, asset
+types, currencies, and exchanges separate.
 
 For stocks and ETFs, display the most recent eligible trade/price and change
 relative to the previous regular-session close; keep both values from the
@@ -136,12 +138,14 @@ sends to the physical board. The CLI keeps using the Vestaboard SDK.
 `npm run check` and `npm run build` succeeded. The checker reports one existing
 unused-variable hint in `404.astro`, with no errors or warnings.
 Browser checks confirmed all 132 cells, the six expected color indicators,
-the collapsible text view, and no horizontal page overflow at a 390px viewport.
+the "Sample Prices" caption, no text view, and no horizontal page overflow
+at a 390px viewport. Bitcoin's $83,436 price fits the eight-cell price field
+within the 22-cell row, including its percentage and color indicator.
 The demo was checked in light and dark themes. No market-data API or Vestaboard
 send was needed. Automated tests and CI configuration were not added.
 
 ![Desktop project entry](desktop.png)
 
-![Mobile project entry with text view](mobile.png)
+![Mobile project entry](mobile.png)
 
 ![Mobile dark theme](mobile-dark.png)
