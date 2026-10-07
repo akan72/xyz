@@ -24,8 +24,8 @@ const projects = defineCollection({
         stack: z.array(z.string().trim().min(1)).nonempty(),
         // Position in the list, smallest first; no two projects may share one
         order: z.number().int(),
-        // A live figure shown above the description (site/components/)
-        media: z.enum(["subway-vis"]).optional(),
+        // Project media shown above the description (site/components/)
+        media: z.enum(["subway-vis", "cig-picker"]).optional(),
     }),
 });
 

@@ -30,6 +30,15 @@ export default defineConfig({
         // per page, and page-navigation.js swaps those when it changes pages
         inlineStylesheets: "always",
     },
+    // Page-only development uses the deployed Worker for the random-cig images.
+    vite: {
+        server: {
+            proxy: {
+                "/image": { target: "https://alexkan.xyz", changeOrigin: true },
+                "/cig/": { target: "https://alexkan.xyz", changeOrigin: true },
+            },
+        },
+    },
     markdown: { processor: satteri({ hastPlugins: [externalLinksInNewTab] }) },
     integrations: [agentFiles({ sources: { "/projects": ["site/content/projects"] } })],
 });
