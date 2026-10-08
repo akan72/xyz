@@ -15,6 +15,22 @@ const htmlFiles = readdirSync("dist").filter((f) => f.endsWith(".html")).sort();
 const doc = (file: string) => parse(dist(file));
 const indexable = htmlFiles.filter((f) => !doc(f).querySelector('meta[name="robots"][content*="noindex"]'));
 
+describe("/contact email reveal", () => {
+    test("offers a reveal button and keeps the decoded mail link out of initial markup", () => {
+        const row = doc("contact.html").querySelector("[data-email-contact]")!;
+        assert.equal(row.querySelector("button[data-email-reveal]")?.text, "Reveal Email Address");
+        assert.equal(row.querySelector('a[href^="mailto:"]'), null);
+        assert.equal(Buffer.from(row.getAttribute("data-email-code")!, "base64").toString(), "me@alexkan.xyz");
+        assert.ok(row.querySelector("noscript")?.text.includes("enable JavaScript"));
+    });
+
+    test("the build preserves obfuscation in HTML, JavaScript, and machine-readable copies", () => {
+        const files = ["contact.html", "contact.md", "llms-full.txt", ...readdirSync("dist/_astro")
+            .filter(file => file.endsWith(".js")).map(file => `_astro/${file}`)];
+        for (const file of files) assert.ok(!dist(file).includes("me@alexkan.xyz"), `${file} exposes the address`);
+    });
+});
+
 describe("every page", () => {
     test("covers the five pages, with only 404 left out of the index", () => {
         assert.deepEqual(htmlFiles, ["404.html", "contact.html", "ideology.html", "index.html", "projects.html"]);
