@@ -2,6 +2,7 @@ use rand::Rng;
 use worker::*;
 
 mod link_preview;
+mod vesta;
 
 // Cig IDs go from 1 -> 9996
 const CIG_MIN: u32 = 1;
@@ -17,6 +18,11 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
 
     let url = req.url()?;
     let path = url.path();
+
+    // The retired price API exposes nothing, regardless of flags or method.
+    if path == "/api/vesta" || path.starts_with("/api/vesta/") {
+        return Ok(Response::empty()?.with_status(404));
+    }
 
     // Replace base Cig with random one on button click (returns raw URL for preload)
     if path == "/image" {
@@ -73,7 +79,22 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
 
     // Every HTML page gets link-preview tags; see link_preview.rs. Missing paths
     // get 404.html with a 404 status (not_found_handling = "404-page").
-    let mut res = assets.fetch_request(req).await?;
+    let render_vesta = matches!(path, "/projects" | "/projects/")
+        && req.method() == Method::Get
+        && vesta::enabled(&env);
+    let asset_request = if render_vesta {
+        // A static-asset 304 would bypass the current KV snapshot. Conditional
+        // validators belong to the sample asset, not this rendered page.
+        let headers = req.headers().clone();
+        headers.delete("if-none-match")?;
+        headers.delete("if-modified-since")?;
+        let mut init = RequestInit::new();
+        init.with_method(Method::Get).with_headers(headers);
+        Request::new_with_init(url.as_str(), &init)?
+    } else {
+        req
+    };
+    let mut res = assets.fetch_request(asset_request).await?;
     let is_html = res
         .headers()
         .get("content-type")?
@@ -87,8 +108,15 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
                 .ascii_serialization()
                 .replacen("http://", "https://", 1),
         };
-        let html = link_preview::add_tags(&res.text().await?, &origin, path);
+        let mut html = link_preview::add_tags(&res.text().await?, &origin, path);
+        if render_vesta {
+            html = vesta::render(html, &env).await;
+        }
         res = Response::from_html(html)?;
+        if render_vesta {
+            res.headers_mut()
+                .set("cache-control", "public, max-age=60, s-maxage=60")?;
+        }
     }
     match page_md {
         Some(_) if res.status_code() != 404 => vary_on_accept(res),

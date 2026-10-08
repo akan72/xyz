@@ -18,6 +18,14 @@ compatibility_date = "2026-05-01"
 workers_dev = false
 preview_urls = true
 
+[vars]
+# Enable only after provisioning the private VESTA_PRICES KV binding.
+VESTA_LIVE_ENABLED = "false"
+
+# [[kv_namespaces]]
+# binding = "VESTA_PRICES"
+# id = "YOUR_PRODUCTION_NAMESPACE_ID"
+
 [build]
 # Astro builds dist/: the pages in site/, public/, and llms.txt, the sitemap
 # and Markdown copies of pages (site/integrations/agent-files.ts). Then
@@ -56,6 +64,14 @@ enabled = true
 # above but none of the bindings, so each binding is declared again here. The
 # Worker only reads the cig packs, so previews share production's bucket.
 [previews]
+
+[previews.vars]
+VESTA_LIVE_ENABLED = "true"
+
+# Separate staging snapshots; PR previews never receive production prices.
+[[previews.kv_namespaces]]
+binding = "VESTA_PRICES"
+id = "f47f1c49d816470ca5947468c050442c"
 
 [[previews.r2_buckets]]
 binding = "BUCKET"
