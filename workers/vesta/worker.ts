@@ -1,4 +1,4 @@
-import { DurableObject } from "cloudflare:workers";
+import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
 import { refreshOnce } from "./prices.ts";
 import { SNAPSHOT_KEY, type Snapshot, type DemoFallback } from "../../shared/vesta.ts";
 
@@ -11,6 +11,7 @@ interface Env {
 }
 
 interface RunRecord {
+    trigger: "cron" | "manual";
     scheduledAt: number;
     completedAt: number;
     result: string;
@@ -22,19 +23,19 @@ const HISTORY_KEY = "vesta:runs:alpaca:v1";
 export class VestaRefresh extends DurableObject<Env> {
     private currentRun: Promise<string> | undefined;
 
-    refresh(scheduledAt: number): Promise<string> {
+    refresh(scheduledAt: number, trigger: "cron" | "manual" = "cron"): Promise<string> {
         if (this.env.VESTA_REFRESH_ENABLED !== "true") return Promise.resolve("disabled");
         if (!this.env.VESTA_PRICES) return Promise.resolve("not_configured");
         if (!this.env["APCA-API-KEY-ID"] || !this.env["APCA-API-SECRET-KEY"]) return Promise.resolve("missing_credentials");
         // All Cron deliveries use the same object. Concurrent deliveries share
         // one promise; durable state prevents duplicates after a restart.
-        this.currentRun ??= this.run(scheduledAt).finally(() => {
+        this.currentRun ??= this.run(scheduledAt, trigger).finally(() => {
             this.currentRun = undefined;
         });
         return this.currentRun;
     }
 
-    private async run(scheduledAt: number): Promise<string> {
+    private async run(scheduledAt: number, trigger: "cron" | "manual"): Promise<string> {
         const snapshots = this.env.VESTA_PRICES!;
         const requests: RunRecord["requests"] = [];
         let published: RunRecord["published"];
@@ -58,7 +59,7 @@ export class VestaRefresh extends DurableObject<Env> {
                 if (key === SNAPSHOT_KEY) published = JSON.parse(value);
             },
         }, scheduledAt, { keyId: this.env["APCA-API-KEY-ID"]!, secretKey: this.env["APCA-API-SECRET-KEY"]! }, observedFetch);
-        const record: RunRecord = { scheduledAt, completedAt: Math.floor(Date.now() / 1000), result, requests, ...(published ? { published } : {}) };
+        const record: RunRecord = { trigger, scheduledAt, completedAt: Math.floor(Date.now() / 1000), result, requests, ...(published ? { published } : {}) };
         try {
             // Private, bounded evidence of real Cron deliveries survives gaps
             // in an attached tail. Never served by the website or HTTP handler.
@@ -68,6 +69,15 @@ export class VestaRefresh extends DurableObject<Env> {
             await snapshots.put(HISTORY_KEY, JSON.stringify(history));
         } catch { console.warn(JSON.stringify({ service: "vesta-refresh", result: "history_write_failed", scheduledAt })); }
         return result;
+    }
+}
+
+// An authenticated operator can invoke this named entrypoint through a remote
+// service binding. It has no public route and cannot bypass the coordinator.
+export class VestaOperations extends WorkerEntrypoint<Env> {
+    async refresh(): Promise<string> {
+        return this.env.VESTA_REFRESH.getByName("six-instruments-alpaca")
+            .refresh(Math.floor(Date.now() / 1000), "manual");
     }
 }
 
@@ -82,7 +92,7 @@ export default {
         console.log(JSON.stringify({ service: "vesta-refresh", provider: "alpaca", result, scheduledAt: Math.floor(controller.scheduledTime / 1000) }));
     },
     fetch(): Response {
-        // The only producer entry point is a Cloudflare Cron Trigger.
+        // Public HTTP cannot invoke a refresh or read the cache.
         return new Response("Not found", { status: 404 });
     },
 } satisfies ExportedHandler<Env>;

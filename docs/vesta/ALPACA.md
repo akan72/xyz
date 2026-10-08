@@ -38,7 +38,9 @@ The 30-minute Cloudflare trigger is restored at minute 17 and 47. The previous
 Codex monitoring automation remains paused. Production uses private KV
 `1434bc71e28a4c5b90e15f6a57a1078c`; staging uses
 `f47f1c49d816470ca5947468c050442c`. Deployments from master update both
-the main site and production producer. Only Cloudflare Cron invokes refreshes.
+the main site and production producer. Cloudflare Cron handles normal refreshes. The private `VestaOperations` RPC
+entrypoint permits an authenticated administrative service binding to request
+a manual refresh through the same coordinator and cooldown. HTTP remains 404.
 
 API access does not establish public-display rights. Alpaca's published terms
 require notice/permission for making data available to other people. Written
@@ -91,3 +93,22 @@ yet been observed; it is a separate verification from the two successful staging
 runs at 18:47 and 19:17 UTC.
 
 ![Production rendering of the scheduled staging publication](production-live-board.png)
+
+
+## Immediate production verification
+
+At the user's request, one manual refresh ran at 2026-10-08 19:44:22 UTC
+through an authenticated remote service binding to `VestaOperations`, using the
+production Worker's own secrets. Producer version
+`caf1c3d2-5e0e-4f44-931f-261b6946b610` returned `updated`. Both batch requests
+returned HTTP 200, and all six quotes were published at 19:44:23 UTC.
+The production HTML matched all 132 cells of that exact publication, including
+BTC $81,597. This replaced the initial staging cache warm-up.
+
+Private history marks this run `trigger: manual`; it is not counted as a Cron
+success. Normal refreshes retain the 30-minute interval and persisted cooldown;
+a Cron delivery soon after this manual refresh may therefore skip fetching.
+At verification time, production had one successful manual publication and zero
+observed successful scheduled publications. Staging had two scheduled successes.
+
+![Production rendering after the manual production refresh](production-manual-live-board.png)
