@@ -67,3 +67,27 @@ was $81,373.2545; the board correctly rounded it to $81,373.
 The live browser rendered 132 cells in 22 columns, with no Sample Prices
 caption or text-view option, and made no provider/API requests. This verifies
 one real scheduled publication, not long-term provider reliability.
+
+## Production rollout
+
+Production site version `a150c24e-107c-425b-87fa-f360edc78841` and private
+producer version `3d94e28f-ccb3-414b-89a5-fdcaea496074` were deployed October 8.
+The production producer has both secret names, its scheduled handler, the
+30-minute trigger, and its dedicated KV binding. Its public URL returns 404.
+The same production site version is available at
+https://a150c24e-xyz.akan72.workers.dev/projects.
+
+The local ISP security filter blocks the custom domain; the deployed production
+version was therefore verified through its Cloudflare URL. Writing and Contact
+pages still return 200. All 14 method/path checks on the retired price API return
+404, and reloading the page makes no provider requests.
+
+The empty production cache was warmed once with the actual staging publication
+from 19:17:29 UTC. Both of that scheduled run's batch requests returned 200.
+The production HTML matches all 132 cells of this publication, with no Sample
+Prices caption or text view. This warm-up made no provider request and did not
+modify or fabricate production run history. A production Cron success has not
+yet been observed; it is a separate verification from the two successful staging
+runs at 18:47 and 19:17 UTC.
+
+![Production rendering of the scheduled staging publication](production-live-board.png)
