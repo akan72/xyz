@@ -38,6 +38,29 @@ main > :first-child { margin-top: 0; }
 a { color: var(--link, LinkText); }
 a:visited { color: var(--visited, VisitedText); }
 
+/* Buttons: <button class="button">, or a link that should look like one
+   (<a class="button">). An outline in the page's colors, in both themes. */
+.button,
+.button:visited {
+    display: inline-block;
+    font: inherit;
+    line-height: normal;
+    color: var(--fg);
+    background: transparent;
+    border: 1px solid #9a9a9a;
+    border-radius: 4px;
+    padding: 2px 7px;
+    text-decoration: none;
+    cursor: pointer;
+}
+.button:hover { border-color: #6a6a6a; }
+:root[data-theme="dark"] .button { border-color: #6a6a6a; }
+:root[data-theme="dark"] .button:hover { border-color: #9a9a9a; }
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .button { border-color: #6a6a6a; }
+    :root:not([data-theme="light"]) .button:hover { border-color: #9a9a9a; }
+}
+
 /* page-navigation.js fades the outgoing page out over the incoming one */
 .page-shell { position: relative; }
 .page-shell > [data-outgoing-page] { position: absolute; top: 0; left: 0; width: 100%; pointer-events: none; background: var(--bg); z-index: 1; }

@@ -3,7 +3,9 @@
 // Chosen over Astro's <ClientRouter /> for being faster and keeping the header
 // clickable during the fade; see https://github.com/akan72/xyz/pull/35.
 (() => {
-    const routes = new Set(['/', '/ideology', '/projects', '/contact']);
+    // Posts (/writing/my-post) aren't here: they load as full pages so their
+    // scripts, like an interactive figure's, run.
+    const routes = new Set(['/', '/projects', '/writing', '/contact']);
     const header = document.querySelector('.site-header');
     let main = document.querySelector('main');
     if (!header || !main || !routes.has(location.pathname) || location.search) return;

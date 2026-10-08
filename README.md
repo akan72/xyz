@@ -12,8 +12,8 @@ serves the HTML/images from the edge; an
 
 - `site/` — the [Astro](https://astro.build/) project that builds `dist/`
   (in `site/` because `src/` is the Worker):
-  - `site/pages/` — one `.astro` file per page (`ideology.astro` →
-    `/ideology`), including `404.astro`.
+  - `site/pages/` — one `.astro` file per page (`projects.astro` →
+    `/projects`), including `404.astro`.
   - `site/layouts/Page.astro` — every page's `<head>`, the shared header
     (`site/components/SiteHeader.astro`) and the scripts every page loads.
     `site/components/ThemeScript.astro` sets the light/dark theme before the
@@ -23,6 +23,9 @@ serves the HTML/images from the edge; an
     styles in a scoped `<style>` block; Astro inlines a page's CSS into it.
   - `site/content/projects/` — one Markdown file per project on `/projects`;
     the schema is in `site/content.config.ts`.
+  - `site/content/writing/` — one Markdown or MDX file per post, listed on
+    `/writing` (`site/pages/writing.astro`) and rendered by
+    `site/pages/writing/[slug].astro` with `site/layouts/Post.astro`.
   - `site/scripts/page-navigation.js` — changes pages without a reload: the
     header stays put and the outgoing page fades out. Used instead of Astro's
     `<ClientRouter />`, which measured 75-360 ms slower per page change and
@@ -33,9 +36,10 @@ serves the HTML/images from the edge; an
     `ENABLED = false` at the top of the file to turn it off.
   - `site/integrations/agent-files.ts` — after the pages build, writes the
     files AI crawlers and agents read: a Markdown copy of each page
-    (`/ideology.md`, `/index.md`), `llms.txt`, `llms-full.txt`, `sitemap.xml`
+    (`/projects.md`, `/index.md`), `llms.txt`, `llms-full.txt`, `sitemap.xml`
     (each page dated by its last git commit) and `_headers`.
-- `public/` — images, `robots.txt`, the projects figure's script
+- `public/` — images, `robots.txt`, `_redirects` (old URLs, like
+  `/ideology` → `/writing/gm`), the projects figure's script
   (`assets/subway-vis.js`) and other static files, copied into `dist/`
   unchanged.
 - `docs/screensaver/` — design log for the screensaver: screenshots and
@@ -104,6 +108,36 @@ and the plan for securely serving refreshed market prices in a future update.
 `site/content.config.ts` (https URL, a known kind of years with the start
 before the end, a non-empty stack), or if two projects share an `order`.
 
+## Writing
+
+Add a `.mdx` (or `.md`) file to `site/content/writing/`. Its filename is
+its URL: `site/content/writing/my-post.mdx` is `/writing/my-post`.
+
+    ---
+    title: My post
+    description: One sentence, for search results and llms.txt.
+    date: 2026-10-07
+    draft: true          # remove to publish
+    ---
+
+    Opening paragraph. The title and date render above it.
+
+While `draft: true`, the post shows in `npm run dev` (with a Draft marker)
+and the build leaves it out entirely. Published posts are listed on
+`/writing`, newest first, and get a Markdown copy, an `llms.txt` entry under
+"Writing" and a sitemap entry, like every page.
+
+MDX can embed components, such as an interactive figure: put the component
+in `site/components/`, then import and use it in the post:
+
+    import MyFigure from "../../components/MyFigure.astro";
+
+    <MyFigure />
+
+Writing is in the header. The `/writing` list changes pages like the others;
+posts load as full pages, so any scripts in them (like an interactive
+figure's) run.
+
 ## Tests
 
     npm ci
@@ -126,7 +160,9 @@ Run against the real R2 bucket:
     wrangler dev --remote
 
 The build (and `dist/`) reruns when `src/`, `public/` or `site/` change.
-For faster page edits without the Worker, run `npm run dev`.
+For faster page edits without the Worker, run `npm run dev`. It starts on
+http://localhost:4321, or the next free port if that's taken (it's allowed to
+run alongside another dev server; Astro prints the URL).
 
 Open http://localhost:8787
 

@@ -7,11 +7,12 @@ import { markdownPath } from "../site/integrations/agent-files.ts";
 
 const SITE_URL = "https://alexkan.xyz";
 const pagePath = (file: string) => (file === "index.html" ? "/" : "/" + file.replace(/\.html$/, ""));
+const frontmatter = (file: string) => readFileSync(file, "utf8").split(/^---$/m)[1] ?? "";
 
 const dist = (name: string) => readFileSync(`dist/${name}`, "utf8");
 assert.ok(existsSync("dist/index.html"), "build the site first: npm run build");
 
-const htmlFiles = readdirSync("dist").filter((f) => f.endsWith(".html")).sort();
+const htmlFiles = readdirSync("dist", { recursive: true, encoding: "utf8" }).filter((f) => f.endsWith(".html")).sort();
 const doc = (file: string) => parse(dist(file));
 const indexable = htmlFiles.filter((f) => !doc(f).querySelector('meta[name="robots"][content*="noindex"]'));
 
@@ -32,9 +33,9 @@ describe("/contact email reveal", () => {
 });
 
 describe("every page", () => {
-    test("covers the five pages, with only 404 left out of the index", () => {
-        assert.deepEqual(htmlFiles, ["404.html", "contact.html", "ideology.html", "index.html", "projects.html"]);
-        assert.deepEqual(indexable, ["contact.html", "ideology.html", "index.html", "projects.html"]);
+    test("covers the site's pages, with only 404 left out of the index", () => {
+        for (const page of ["404.html", "contact.html", "index.html", "projects.html", "writing.html"]) assert.ok(htmlFiles.includes(page), page);
+        assert.deepEqual(htmlFiles.filter((f) => !indexable.includes(f)), ["404.html"]);
     });
 
     for (const file of htmlFiles) {
@@ -50,9 +51,11 @@ describe("every page", () => {
             const headers = page.querySelectorAll("header");
             assert.equal(headers.length, 1);
             const links = headers[0].querySelectorAll("a").map((a) => [a.text, a.getAttribute("href")]);
-            assert.deepEqual(links, [["Main", "/"], ["Ideology", "/ideology"], ["Projects", "/projects"], ["Contact", "/contact"]]);
+            assert.deepEqual(links, [["Main", "/"], ["Projects", "/projects"], ["Writing", "/writing"], ["Contact", "/contact"]]);
             const current = headers[0].querySelectorAll('[aria-current="page"]').map((a) => a.getAttribute("href"));
-            assert.deepEqual(current, file === "404.html" ? [] : [pagePath(file)]);
+            // The page's own link is marked (a post marks Writing); 404 has none
+            const path = pagePath(file);
+            assert.deepEqual(current, links.map(([, href]) => href).filter((href) => href === path || (href !== "/" && path.startsWith(`${href}/`))));
         });
     }
 });
@@ -111,5 +114,34 @@ describe("/projects", () => {
         assert.ok(html.includes("wss://istheldown.com/ws?systems=subway&alerts=subway"));
         assert.ok(html.includes('<script src="/assets/subway-vis.js" defer></script>'));
         assert.ok(html.includes('<link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/hydra-synth@1.4.0/dist/hydra-synth.js">'));
+    });
+});
+
+describe("/writing", () => {
+    const sources = readdirSync("site/content/writing").filter((f) => /\.mdx?$/.test(f));
+    const published = sources.filter((f) => !/^draft:\s*true\s*$/m.test(frontmatter(`site/content/writing/${f}`)));
+
+    test("builds a page and a Markdown copy for every published post, and none for drafts", () => {
+        for (const file of sources) {
+            const slug = file.replace(/\.mdx?$/, "");
+            const built = existsSync(`dist/writing/${slug}.html`);
+            assert.equal(built, published.includes(file), `${file}: ${built ? "built" : "not built"}`);
+            assert.equal(existsSync(`dist/writing/${slug}.md`), built);
+        }
+    });
+
+    test("the index links every published post", () => {
+        const links = doc("writing.html").querySelectorAll("main li a").map((a) => a.getAttribute("href"));
+        assert.deepEqual(links.sort(), published.map((f) => `/writing/${f.replace(/\.mdx?$/, "")}`).sort());
+    });
+});
+
+describe("redirects", () => {
+    test("/ideology moved into the gm post", () => {
+        const rules = dist("_redirects");
+        assert.match(rules, /^\/ideology \/writing\/gm 301$/m);
+        assert.match(rules, /^\/ideology\.md \/writing\/gm\.md 301$/m);
+        assert.ok(existsSync("dist/writing/gm.html"));
+        assert.ok(!existsSync("dist/ideology.html"));
     });
 });

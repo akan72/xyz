@@ -15,7 +15,7 @@ type Props = { title: string } & (
 
 const { title, description, noindex } = Astro.props;
 
-// /ideology, or / for the homepage (pages build to ideology.html, index.html)
+// /projects, or / for the homepage (pages build to projects.html, index.html)
 const path = Astro.url.pathname.replace(/(index)?\.html$/, "") || "/";
 const markdownCopy = path === "/" ? "/index.md" : `${path}.md`;
 ---

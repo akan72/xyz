@@ -1,7 +1,7 @@
 // After `astro build`, writes the files AI agents and crawlers read, made from
 // the pages Astro just built:
 //
-//   /ideology.md, /index.md  a Markdown copy of each page. src/lib.rs serves
+//   /projects.md, /index.md  a Markdown copy of each page. src/lib.rs serves
 //                            these to requests with `Accept: text/markdown`.
 //   /llms.txt                an index of the pages (https://llmstxt.org)
 //   /llms-full.txt           every page's Markdown in one file
@@ -24,7 +24,7 @@ const SITE_NAME = "alexkan.xyz";
 const turndown = new TurndownService({ headingStyle: "atx", bulletListMarker: "-", codeBlockStyle: "fenced" });
 
 export interface Page {
-    path: string; // "/" or "/ideology"
+    path: string; // "/" or "/projects"
     url: string;
     title: string; // without " | alexkan.xyz"
     description: string;
@@ -71,6 +71,17 @@ export function pageMarkdown(page: Page, site: URL, standalone = true): string {
     return [lines.join("\n"), page.body].filter(Boolean).join("\n\n") + "\n";
 }
 
+/** Pages grouped for llms.txt: top-level pages first, then one group per directory (/writing/... -> "Writing"). */
+function sections(pages: Page[]): [string, Page[]][] {
+    const groups = new Map<string, Page[]>([["Pages", []]]);
+    for (const page of pages) {
+        const dir = page.path.split("/").length > 2 ? page.path.split("/")[1] : "";
+        const name = dir ? dir[0].toUpperCase() + dir.slice(1) : "Pages";
+        groups.set(name, [...(groups.get(name) ?? []), page]);
+    }
+    return [...groups].filter(([, group]) => group.length);
+}
+
 export function llmsTxt(pages: Page[], site: URL): string {
     const link = (path: string) => new URL(path, site).href;
     return [
@@ -80,10 +91,12 @@ export function llmsTxt(pages: Page[], site: URL): string {
         "",
         "Each link below is a Markdown copy of a page. Any page is also available as Markdown by adding `.md` to its path " +
             "(`/index.md` for the homepage) or by requesting it with an `Accept: text/markdown` header.",
-        "",
-        "## Pages",
-        "",
-        ...pages.map((p) => `- [${p.title}](${link(markdownPath(p.path))}): ${p.description}`),
+        ...sections(pages).flatMap(([name, group]) => [
+            "",
+            `## ${name}`,
+            "",
+            ...group.map((p) => `- [${p.title}](${link(markdownPath(p.path))}): ${p.description}`),
+        ]),
         "",
         "## Optional",
         "",
@@ -122,15 +135,16 @@ function lastCommit(root: string, files: string[]): Date | undefined {
 }
 
 interface Options {
-    // Files besides its page that each page's sitemap date follows, such as
-    // the content it renders: { "/projects": ["site/content/projects"] }
-    sources?: Record<string, string[]>;
+    // Files besides its .astro file that a page's sitemap date follows, such
+    // as the content it renders. Pages built from a dynamic route like
+    // writing/[slug].astro have no single .astro file, so list their source here.
+    sources?: (path: string) => string[];
 }
 
-export default function agentFiles({ sources = {} }: Options = {}): AstroIntegration {
+export default function agentFiles({ sources = () => [] }: Options = {}): AstroIntegration {
     let root = "";
     let site = new URL("https://example.com");
-    const pageFiles = new Map<string, string>(); // "/ideology" -> "site/pages/ideology.astro"
+    const pageFiles = new Map<string, string>(); // "/projects" -> "site/pages/projects.astro"
 
     return {
         name: "agent-files",
@@ -149,9 +163,9 @@ export default function agentFiles({ sources = {} }: Options = {}): AstroIntegra
                     const path = "/" + file.replace(/(index)?\.html$/, "");
                     const page = readPage(readFileSync(join(dist, file), "utf8"), path, site);
                     if (!page) continue;
-                    const files = [pageFiles.get(path) ?? join("site/pages", file.replace(/\.html$/, ".astro")), ...(sources[path] ?? [])];
-                    page.lastmod = lastCommit(root, files);
-                    if (!page.lastmod) logger.warn(`${files[0]} isn't committed yet; ${path} gets no sitemap date`);
+                    const files = [pageFiles.get(path), ...sources(path)].filter((f): f is string => !!f);
+                    page.lastmod = files.length ? lastCommit(root, files) : undefined;
+                    if (!page.lastmod) logger.warn(`${path} has no committed source yet, so it gets no sitemap date`);
                     pages.push(page);
                 }
                 // The homepage first: llms.txt describes the site with its description

@@ -28,7 +28,7 @@ function app(reduced = false) {
     }
   }
   const body = new Element('body'), head = new Element('head'), header = new Element('header'), initialMain = new Element('main');
-  header.links = ['/', '/ideology', '/projects', '/contact'].map(path => {
+  header.links = ['/', '/writing', '/projects', '/contact'].map(path => {
     const link = new Element('a'); link.href = 'https://example.test' + path; link.target = ''; link.closest = () => link; return link;
   });
   body.append(header); body.append(initialMain);
@@ -85,12 +85,12 @@ function app(reduced = false) {
 
 test('header and controls remain the same nodes while content, title, and URL change', async () => {
   const a = app(); const links = a.header.links;
-  assert.equal(a.click('/ideology').defaultPrevented, true);
-  a.respond('/ideology'); await flush();
+  assert.equal(a.click('/writing').defaultPrevented, true);
+  a.respond('/writing'); await flush();
   assert.equal(a.body.children[0], a.header);
   assert.equal(a.header.links, links);
-  assert.equal(a.document.title, '/ideology');
-  assert.equal(a.location.pathname, '/ideology');
+  assert.equal(a.document.title, '/writing');
+  assert.equal(a.location.pathname, '/writing');
   assert.equal(a.header.links[1].attrs['aria-current'], 'page');
   assert.equal(a.history.state.unrelated, 'preserved');
   assert.equal(a.document.lastEvent, 'xyz:navigated');
@@ -100,16 +100,16 @@ test('header and controls remain the same nodes while content, title, and URL ch
 });
 
 test('a slower earlier response cannot replace the last clicked page', async () => {
-  const a = app(); a.click('/ideology'); a.click('/contact');
-  a.respond('/contact'); await flush(); a.respond('/ideology'); await flush();
+  const a = app(); a.click('/writing'); a.click('/contact');
+  a.respond('/contact'); await flush(); a.respond('/writing'); await flush();
   assert.equal(a.location.pathname, '/contact');
   assert.equal(a.document.title, '/contact');
   assert.equal(a.history.entries.length, 1);
 });
 
 test('failed requests fall back to the original link without losing visible content', async () => {
-  const a = app(); a.click('/ideology'); a.respond('/ideology', false); await flush();
-  assert.deepEqual(a.assigned, ['https://example.test/ideology']);
+  const a = app(); a.click('/writing'); a.respond('/writing', false); await flush();
+  assert.deepEqual(a.assigned, ['https://example.test/writing']);
   assert.equal(a.mains()[0], a.initialMain);
 });
 
@@ -122,11 +122,11 @@ test('modified, prevented, and external clicks retain ordinary browser behavior'
 
 test('Back restores content and scroll without pushing another history entry', async () => {
   const a = app(); const initialState = a.history.state;
-  a.scroll(0, 250); a.click('/ideology'); a.respond('/ideology'); await flush(); await a.settle();
+  a.scroll(0, 250); a.click('/writing'); a.respond('/writing'); await flush(); await a.settle();
   a.click('/contact'); a.respond('/contact'); await flush(); await a.settle();
-  const ideologyState = a.history.entries[0].state;
-  await a.back('/ideology', ideologyState); await a.settle();
-  assert.equal(a.document.title, '/ideology');
+  const writingState = a.history.entries[0].state;
+  await a.back('/writing', writingState); await a.settle();
+  assert.equal(a.document.title, '/writing');
   assert.equal(a.history.entries.length, 2);
   assert.equal(a.document.focused, a.mains()[0]);
   await a.back('/', initialState); a.respond('/'); await flush(); await a.settle();

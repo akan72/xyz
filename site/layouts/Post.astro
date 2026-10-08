@@ -1,0 +1,43 @@
+---
+// A post in site/content/writing/: its title and date over the content, in
+// the shared page layout. site/pages/writing/[slug].astro renders each post.
+import Page from "./Page.astro";
+import { formatDate, type Post } from "../lib/writing.ts";
+
+interface Props {
+    post: Post;
+}
+
+const { post } = Astro.props;
+const { title, description, date, draft } = post.data;
+const url = new URL(`/writing/${post.id}`, Astro.site).href;
+// So search engines and AI crawlers can read the title, date and author
+const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: title,
+    description,
+    datePublished: formatDate(date),
+    url,
+    author: { "@type": "Person", name: "Alex Kan", url: new URL("/", Astro.site).href },
+};
+---
+<Page title={`${title} | alexkan.xyz`} description={description}>
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <article>
+        <h1>{title}</h1>
+        <p class="byline">
+            <time datetime={formatDate(date)}>{formatDate(date)}</time>
+            {draft && <strong> · Draft (shown in dev only)</strong>}
+        </p>
+        <slot />
+    </article>
+    <p><a class="button" href="/writing">All Writing</a></p>
+</Page>
+
+<style>
+    article { max-width: 65ch; line-height: 1.6; }
+    h1 { font-size: 1.6em; line-height: 1.2; margin: 0 0 4px; }
+    .byline { color: var(--muted, #666); margin: 0 0 2em; }
+    article :global(img) { max-width: 100%; height: auto; }
+</style>
