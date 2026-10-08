@@ -36,9 +36,9 @@ export interface Quote {
 export interface Snapshot {
     version: 1;
     mode: "market";
-    provider: "yahoo-finance";
+    provider: "yahoo-finance" | "alpaca";
     fetchedAt: number;
-    priceBasis: "5-minute-bars";
+    priceBasis: "5-minute-bars" | "sampled-bars";
     quotes: Quote[];
     board: number[][];
 }
@@ -97,7 +97,7 @@ export function formatBoard(quotes: Pick<Quote, "label" | "price" | "changePerce
 export function validateSnapshot(input: unknown, now = Math.floor(Date.now() / 1000)): Snapshot {
     if (!input || typeof input !== "object") throw new Error("invalid_snapshot");
     const data = input as Snapshot;
-    if (data.version !== 1 || data.mode !== "market" || data.provider !== "yahoo-finance" || data.priceBasis !== "5-minute-bars"
+    if (data.version !== 1 || data.mode !== "market" || !((data.provider === "yahoo-finance" && data.priceBasis === "5-minute-bars") || (data.provider === "alpaca" && data.priceBasis === "sampled-bars"))
         || !Number.isSafeInteger(data.fetchedAt) || data.fetchedAt <= 0 || data.fetchedAt > now + 60
         || !Array.isArray(data.quotes) || data.quotes.length !== INSTRUMENTS.length) throw new Error("invalid_snapshot");
     const quotes = data.quotes.map((q, i): Quote => {
@@ -115,5 +115,5 @@ export function validateSnapshot(input: unknown, now = Math.floor(Date.now() / 1
     });
     const board = formatBoard(quotes);
     if (data.board !== undefined && JSON.stringify(data.board) !== JSON.stringify(board)) throw new Error("invalid_board");
-    return { version: 1, mode: "market", provider: "yahoo-finance", fetchedAt: data.fetchedAt, priceBasis: "5-minute-bars", quotes, board };
+    return { version: 1, mode: "market", provider: data.provider, fetchedAt: data.fetchedAt, priceBasis: data.priceBasis, quotes, board };
 }

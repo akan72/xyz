@@ -3,6 +3,8 @@ import { refreshOnce } from "./prices.ts";
 import { SNAPSHOT_KEY, type Snapshot, type DemoFallback } from "../../shared/vesta.ts";
 
 interface Env {
+    "APCA-API-KEY-ID"?: string;
+    "APCA-API-SECRET-KEY"?: string;
     VESTA_REFRESH_ENABLED?: string;
     VESTA_PRICES?: KVNamespace;
     VESTA_REFRESH: DurableObjectNamespace<VestaRefresh>;
@@ -15,7 +17,7 @@ interface RunRecord {
     requests: { symbol: string; status: number | null }[];
     published?: Snapshot | DemoFallback;
 }
-const HISTORY_KEY = "vesta:runs:v1";
+const HISTORY_KEY = "vesta:runs:alpaca:v1";
 
 export class VestaRefresh extends DurableObject<Env> {
     private currentRun: Promise<string> | undefined;
@@ -23,6 +25,7 @@ export class VestaRefresh extends DurableObject<Env> {
     refresh(scheduledAt: number): Promise<string> {
         if (this.env.VESTA_REFRESH_ENABLED !== "true") return Promise.resolve("disabled");
         if (!this.env.VESTA_PRICES) return Promise.resolve("not_configured");
+        if (!this.env["APCA-API-KEY-ID"] || !this.env["APCA-API-SECRET-KEY"]) return Promise.resolve("missing_credentials");
         // All Cron deliveries use the same object. Concurrent deliveries share
         // one promise; durable state prevents duplicates after a restart.
         this.currentRun ??= this.run(scheduledAt).finally(() => {
@@ -36,7 +39,8 @@ export class VestaRefresh extends DurableObject<Env> {
         const requests: RunRecord["requests"] = [];
         let published: RunRecord["published"];
         const observedFetch: typeof fetch = async (input, init) => {
-            const symbol = new URL(typeof input === "string" ? input : input instanceof URL ? input.href : input.url).pathname.split("/").at(-1)!;
+            const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.href : input.url);
+            const symbol = url.searchParams.get("symbols") ?? "unknown";
             try {
                 const response = await fetch(input, init);
                 requests.push({ symbol, status: response.status });
@@ -53,7 +57,7 @@ export class VestaRefresh extends DurableObject<Env> {
                 // eventually consistent KV or copying another run's data.
                 if (key === SNAPSHOT_KEY) published = JSON.parse(value);
             },
-        }, scheduledAt, observedFetch);
+        }, scheduledAt, { keyId: this.env["APCA-API-KEY-ID"]!, secretKey: this.env["APCA-API-SECRET-KEY"]! }, observedFetch);
         const record: RunRecord = { scheduledAt, completedAt: Math.floor(Date.now() / 1000), result, requests, ...(published ? { published } : {}) };
         try {
             // Private, bounded evidence of real Cron deliveries survives gaps
@@ -72,10 +76,10 @@ export default {
         let result = "disabled";
         if (env.VESTA_REFRESH_ENABLED === "true") {
             try {
-                result = await env.VESTA_REFRESH.getByName("six-instruments").refresh(Math.floor(controller.scheduledTime / 1000));
+                result = await env.VESTA_REFRESH.getByName("six-instruments-alpaca").refresh(Math.floor(controller.scheduledTime / 1000));
             } catch { result = "refresh_failed"; }
         }
-        console.log(JSON.stringify({ service: "vesta-refresh", result, scheduledAt: Math.floor(controller.scheduledTime / 1000) }));
+        console.log(JSON.stringify({ service: "vesta-refresh", provider: "alpaca", result, scheduledAt: Math.floor(controller.scheduledTime / 1000) }));
     },
     fetch(): Response {
         // The only producer entry point is a Cloudflare Cron Trigger.

@@ -19,12 +19,12 @@ workers_dev = false
 preview_urls = true
 
 [vars]
-# Enable only after provisioning the private VESTA_PRICES KV binding.
-VESTA_LIVE_ENABLED = "false"
+# Read the one shared production snapshot; visitors never fetch market data.
+VESTA_LIVE_ENABLED = "true"
 
-# [[kv_namespaces]]
-# binding = "VESTA_PRICES"
-# id = "YOUR_PRODUCTION_NAMESPACE_ID"
+[[kv_namespaces]]
+binding = "VESTA_PRICES"
+id = "1434bc71e28a4c5b90e15f6a57a1078c"
 
 [build]
 # Astro builds dist/: the pages in site/, public/, and llms.txt, the sitemap

@@ -54,8 +54,10 @@ enum CachedDisplay {
 
 fn valid(data: &Snapshot, now: u64) -> bool {
     if data.version != 1
-        || data.provider != "yahoo-finance"
-        || data.price_basis != "5-minute-bars"
+        || !matches!(
+            (data.provider.as_str(), data.price_basis.as_str()),
+            ("yahoo-finance", "5-minute-bars") | ("alpaca", "sampled-bars")
+        )
         || data.fetched_at == 0
         || data.fetched_at > now + 60
         || data.quotes.len() != 6

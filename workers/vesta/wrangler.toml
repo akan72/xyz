@@ -6,7 +6,7 @@ workers_dev = false
 preview_urls = false
 
 [vars]
-VESTA_REFRESH_ENABLED = "false"
+VESTA_REFRESH_ENABLED = "true"
 
 [triggers]
 crons = ["17,47 * * * *"]
@@ -19,10 +19,10 @@ class_name = "VestaRefresh"
 tag = "v1"
 new_sqlite_classes = ["VestaRefresh"]
 
-# Bind the same production namespace as xyz before enabling the producer:
-# [[kv_namespaces]]
-# binding = "VESTA_PRICES"
-# id = "YOUR_PRODUCTION_NAMESPACE_ID"
+# Shared only with the production xyz Worker, never a PR preview.
+[[kv_namespaces]]
+binding = "VESTA_PRICES"
+id = "1434bc71e28a4c5b90e15f6a57a1078c"
 
 [observability]
 enabled = true
