@@ -9,8 +9,14 @@ const board = demo.querySelector(".board");
 if (!board) throw new Error("Vesta demo HTML must contain a board");
 ---
 <figure class="vesta-preview">
+    <!--vesta-sample:start-->
     <figcaption>Sample Prices</figcaption>
-    <div class="rendering" set:html={board.outerHTML} />
+    <!--vesta-sample:end-->
+    <div class="rendering">
+        <!--vesta-board:start-->
+        <Fragment set:html={board.outerHTML} />
+        <!--vesta-board:end-->
+    </div>
 </figure>
 
 <style>

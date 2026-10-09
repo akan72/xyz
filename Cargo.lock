@@ -784,6 +784,8 @@ dependencies = [
  "console_error_panic_hook",
  "getrandom",
  "rand",
+ "serde",
+ "serde_json",
  "worker",
  "worker-macros",
 ]

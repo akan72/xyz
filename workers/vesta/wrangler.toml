@@ -1,0 +1,44 @@
+# Deploy separately from the website; no GitHub Actions scheduler or Container.
+name = "xyz-vesta-refresh"
+main = "worker.ts"
+compatibility_date = "2026-09-30"
+workers_dev = false
+preview_urls = false
+
+[vars]
+VESTA_REFRESH_ENABLED = "true"
+
+[triggers]
+crons = ["17,47 * * * *"]
+
+[[durable_objects.bindings]]
+name = "VESTA_REFRESH"
+class_name = "VestaRefresh"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["VestaRefresh"]
+
+# Shared only with the production xyz Worker, never a PR preview.
+[[kv_namespaces]]
+binding = "VESTA_PRICES"
+id = "1434bc71e28a4c5b90e15f6a57a1078c"
+
+[observability]
+enabled = true
+
+# Isolated live-preview producer; never receives production bindings or routes.
+[env.staging]
+name = "xyz-vesta-refresh-staging"
+workers_dev = false
+preview_urls = false
+[env.staging.vars]
+VESTA_REFRESH_ENABLED = "true"
+[env.staging.triggers]
+crons = ["17,47 * * * *"]
+[[env.staging.durable_objects.bindings]]
+name = "VESTA_REFRESH"
+class_name = "VestaRefresh"
+[[env.staging.kv_namespaces]]
+binding = "VESTA_PRICES"
+id = "f47f1c49d816470ca5947468c050442c"
