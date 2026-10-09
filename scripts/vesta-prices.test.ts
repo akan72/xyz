@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
+import { formatBoard } from "../shared/board.ts";
 import { fetchAlpacaQuotes, normalizeBitcoin, normalizeStocks } from "../workers/vesta/alpaca.ts";
 import { refreshOnce } from "../workers/vesta/prices.ts";
-import { INSTRUMENTS, SNAPSHOT_KEY } from "../shared/vesta.ts";
+import { INSTRUMENTS, DISPLAY_KEY } from "../shared/vesta.ts";
 
 const at = Date.parse("2026-10-08T18:47:00Z") / 1000;
 const credentials = { keyId: "fixture-key", secretKey: "fixture-secret" };
@@ -39,8 +41,9 @@ test("Alpaca authenticates only to its fixed origin and batches six quotes into 
     assert.equal(requested.length, 2);
     assert.equal(requested[0].searchParams.get("symbols"), "SPCX,GLD,GOOG,META,VTI");
     assert.equal(requested[1].searchParams.get("symbols"), "BTC/USD");
-    assert.equal(result.board.length, 6);
-    assert.ok(result.board.every(row => row.length === 22));
+    assert.ok(result.ok);
+    assert.equal(result.quotes.length, 6);
+    assert.deepEqual(result.requests, [{ batch: "stocks", status: 200 }, { batch: "crypto", status: 200 }]);
     assert.equal(result.quotes[0].price, 84000);
 });
 
@@ -62,12 +65,15 @@ test("incomplete stock batches and crypto pages cannot publish a partial board",
 test("scheduled duplicate deliveries do not call the provider twice", async () => {
     const state = storage(), publications: string[] = [];
     let requests = 0;
-    const kv = { async put(key: string, value: string) { assert.equal(key, SNAPSHOT_KEY); publications.push(value); } };
+    const kv = { async put(key: string, value: string) { assert.equal(key, DISPLAY_KEY); publications.push(value); } };
     const fetcher: typeof fetch = async input => {
         requests++;
         return Response.json(String(input).includes("/stocks/") ? stocks : crypto);
     };
-    assert.equal(await refreshOnce(state, kv, at, credentials, fetcher, () => at), "updated");
+    const outcome = await refreshOnce(state, kv, at, credentials, fetcher, () => at);
+    assert.equal(outcome.result, "updated");
+    assert.deepEqual(JSON.parse(publications[0]), outcome.publication);
+    assert.deepEqual(Object.keys(outcome.publication!).sort(), ["board", "fetchedAt", "mode", "version"]);
     await refreshOnce(state, kv, at, credentials, fetcher, () => at);
     assert.equal(requests, 2);
     assert.equal(publications.length, 1);
@@ -78,10 +84,10 @@ test("429 publishes only a demo marker and persisted cooldown prevents further r
     let requests = 0;
     const kv = { async put(_key: string, value: string) { publications.push(value); } };
     const fetcher: typeof fetch = async () => { requests++; return new Response(null, { status: 429 }); };
-    assert.equal(await refreshOnce(state, kv, at, credentials, fetcher, () => at), "rate_limited");
+    assert.equal((await refreshOnce(state, kv, at, credentials, fetcher, () => at)).result, "rate_limited");
     assert.equal(JSON.parse(publications[0]).mode, "demo");
     assert.equal("quotes" in JSON.parse(publications[0]), false);
-    assert.equal(await refreshOnce(state, kv, at + 1800, credentials, fetcher, () => at + 1800), "cooldown");
+    assert.equal((await refreshOnce(state, kv, at + 1800, credentials, fetcher, () => at + 1800)).result, "cooldown");
     assert.equal(requests, 2);
 });
 
@@ -89,6 +95,53 @@ test("authentication failures preserve the published display", async () => {
     const state = storage(), publications: string[] = [];
     const kv = { async put(_key: string, value: string) { publications.push(value); } };
     const result = await refreshOnce(state, kv, at, credentials, async () => new Response(null, { status: 401 }), () => at);
-    assert.equal(result, "provider_auth_failed");
+    assert.equal(result.result, "provider_auth_failed");
+    assert.equal(result.requests.length, 2);
     assert.equal(publications.length, 0);
+});
+
+const fixtures = JSON.parse(readFileSync(new URL("./fixtures/vesta-board.json", import.meta.url), "utf8"));
+for (const fixture of fixtures) {
+    test(`board matches the actual Vesta CLI: ${fixture.name}`, () => {
+        assert.deepEqual(formatBoard(fixture.quotes), fixture.board);
+    });
+}
+
+test("unsafe quotes and board overflow cannot be published", async () => {
+    assert.throws(() => formatBoard(fixtures[0].quotes.map((q: object) => ({ ...q, changePercent: NaN }))));
+    assert.throws(() => formatBoard(fixtures[0].quotes.map((q: object) => ({ ...q, price: 1000000 }))));
+    const state = storage(), publications: string[] = [];
+    const kv = { async put(_key: string, value: string) { publications.push(value); } };
+    const missing = { ...stocks };
+    delete missing.META;
+    const outcome = await refreshOnce(state, kv, at, credentials,
+        async input => Response.json(String(input).includes("/stocks/") ? missing : crypto), () => at);
+    assert.equal(outcome.result, "missing_symbol");
+    assert.equal(outcome.publication, undefined);
+    assert.equal(publications.length, 0);
+});
+
+test("freshness checks reject old crypto and stock bars", () => {
+    assert.throws(() => normalizeBitcoin(crypto, at + 3600));
+    assert.throws(() => normalizeStocks(stocks, at + 8 * 86400));
+    assert.throws(() => normalizeStocks(stocks, at + 3600));
+});
+
+test("a failed publication does not report a successful display", async () => {
+    const outcome = await refreshOnce(storage(), { async put() { throw new Error("KV unavailable"); } }, at,
+        credentials, async input => Response.json(String(input).includes("/stocks/") ? stocks : crypto), () => at);
+    assert.equal(outcome.result, "refresh_failed");
+    assert.equal(outcome.publication, undefined);
+    assert.equal(outcome.requests.length, 2);
+});
+
+test("records the publication even if saving the next cooldown fails", async () => {
+    let writes = 0;
+    const outcome = await refreshOnce({
+        async get<T>(): Promise<T | undefined> { return undefined; },
+        async put() { if (++writes === 2) throw new Error("state unavailable"); },
+    }, { async put() {} }, at, credentials,
+        async input => Response.json(String(input).includes("/stocks/") ? stocks : crypto), () => at);
+    assert.equal(outcome.result, "refresh_failed");
+    assert.equal(outcome.publication?.mode, "market");
 });

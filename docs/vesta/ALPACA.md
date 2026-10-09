@@ -23,16 +23,18 @@ Each scheduled refresh makes two concurrent HTTP requests, without retries:
 
 Missing symbols or minute bars reject the six-row publication; values are never
 fabricated to fill an unsupported ticker. All rows use the existing formatter.
-Stocks and Bitcoin have different bar durations, so the Alpaca snapshot's
-`priceBasis` is `sampled-bars`. The private KV contract still uses version 1.
-The Rust site renderer accepts only the defined provider/basis combinations.
+The producer formats the validated quotes into a 6×22 board. The private v2
+cache contains only the board and publication timestamp, or a demo marker.
+Rust checks tile codes and dimensions instead of repeating provider validation.
 
 The existing singleton Durable Object, duplicate prevention, atomic snapshot
 publication, 1/2/4/8-hour cooldown and CLI-generated demo fallback remain. Alpaca
 uses a different named coordinator and `refresh-state:alpaca:v1`; Yahoo's saved
 cooldown and history are preserved, not reset. Alpaca's bounded private history
-is stored under `vesta:runs:alpaca:v1`. Requests record symbol groups and HTTP
-statuses, never authorization headers or provider error bodies.
+is stored under `vesta:runs:alpaca:v2`. Compact records contain trigger, result,
+batch HTTP statuses and publication timestamp/mode, never quote tables, board
+copies, authorization headers or provider error bodies. The original v1 history
+is preserved as evidence of the previous deployment.
 
 The 30-minute Cloudflare trigger is restored at minute 17 and 47. The previous
 Codex monitoring automation remains paused. Production uses private KV
@@ -56,7 +58,13 @@ two rate-limited attempts (all four requests HTTP 429) and four cooldown skips,
 with zero market snapshots. The CLI-generated Sample Prices board remained
 available. Its original `vesta:runs:v1` history and local observations are kept.
 
-## First live verification
+## Historical verification before the v2 simplification
+
+The following results and screenshots describe the previously deployed v1 code.
+The v2 refactor is verified locally and on isolated staging; production still
+runs the previous version.
+
+### First live verification
 
 Deployed the private producer as version
 `fed15d07-337e-44f8-a6aa-018cffc311bc` and updated only the PR 40 site preview
@@ -70,7 +78,7 @@ The live browser rendered 132 cells in 22 columns, with no Sample Prices
 caption or text-view option, and made no provider/API requests. This verifies
 one real scheduled publication, not long-term provider reliability.
 
-## Production rollout
+### Production rollout
 
 Production site version `a150c24e-107c-425b-87fa-f360edc78841` and private
 producer version `3d94e28f-ccb3-414b-89a5-fdcaea496074` were deployed October 8.
@@ -95,7 +103,7 @@ runs at 18:47 and 19:17 UTC.
 ![Production rendering of the scheduled staging publication](production-live-board.png)
 
 
-## Immediate production verification
+### Immediate production verification
 
 At the user's request, one manual refresh ran at 2026-10-08 19:44:22 UTC
 through an authenticated remote service binding to `VestaOperations`, using the
@@ -112,3 +120,29 @@ At verification time, production had one successful manual publication and zero
 observed successful scheduled publications. Staging had two scheduled successes.
 
 ![Production rendering after the manual production refresh](production-manual-live-board.png)
+
+
+## Verified v2 staging refactor
+
+Staging producer `cbafd00a-bb89-47da-8a78-5d1b69fb6509` and PR 40 preview
+`b7a22141-1d2e-4717-9174-df4c07b5aa18` were deployed October 8 at 20:48 UTC.
+A manual invocation returned cooldown because the previous version had published
+at 20:47 UTC. The new reader was initially checked using the existing real
+publication converted to the smaller v2 display contract; that warm-up is not
+counted as a fresh producer run.
+
+The first actual v2 scheduled success was October 8 at 21:17:29 UTC
+(5:17:29 PM Eastern). By observation at October 9, 04:25 UTC, compact history
+showed 14 successful scheduled publications through 04:17:17 UTC. Every run had
+both stock and crypto batches return HTTP 200: 28 successful requests, no rate
+limits and no other failures recorded. All 132 live HTML cells matched the latest
+v2 cache, with no Sample Prices caption or text view. Browser reloads made no
+provider/API requests, and all 15 endpoint privacy checks returned 404.
+
+The read-only monitor resumed after its intended deadline; it is now paused.
+Stopping it did not change either Cloudflare producer or its schedule.
+Production was not redeployed by this refactor verification.
+
+[Compact observed run evidence](refactor-verification.json)
+
+![Refactored preview after an actual scheduled publication](refactor-scheduled-board.png)

@@ -2,7 +2,7 @@
 
 A private scheduled Cloudflare Worker samples market data every 30 minutes.
 A singleton SQLite Durable Object prevents duplicate deliveries and persists
-cooldowns. The producer publishes one complete six-instrument snapshot to private
+cooldowns. The producer publishes one complete six-instrument display to private
 KV. The existing Rust xyz Worker reads it when serving `/projects` and renders
 all 132 cells into the HTML. Visitors never trigger provider requests.
 
@@ -58,14 +58,14 @@ npx wrangler@4.143.1 deploy
 
 # Optional: update the isolated staging producer
 npx wrangler@4.143.1 deploy --config workers/vesta/wrangler.toml --env staging
-npx wrangler@4.143.1 kv key get vesta:runs:alpaca:v1 --binding VESTA_PRICES --config workers/vesta/wrangler.toml --env staging --remote
+npx wrangler@4.143.1 kv key get vesta:runs:alpaca:v2 --binding VESTA_PRICES --config workers/vesta/wrangler.toml --env staging --remote
 ```
 
 Production pushes deploy both Workers through the existing deployment job.
 GitHub Actions deploys code; it does not schedule market-data requests.
 The Cloudflare trigger runs at minute 17 and 47. The bounded private history
-records actual deliveries, request status codes and exact publications, separately
-from the preserved Yahoo history. To stop refreshes, remove the staging Cron
+records actual deliveries, batch status codes and publication timestamps, separately
+from the preserved Yahoo and earlier Alpaca histories. It contains no quote tables or board copies. To stop refreshes, remove the staging Cron
 Trigger; closing the site's PR preview does not remove the separate producer.
 The earlier Codex observation automation remains paused.
 
@@ -73,13 +73,42 @@ API availability is separate from public-display permission. Alpaca's published
 terms require notice/permission for making data available to other people;
 public display rights must be arranged separately with Alpaca.
 
+## Small display contract
+
+`shared/vesta.ts` defines the six instruments and the private `vesta:display:v2`
+cache key. The cached value is either `{version: 2, mode: "market", fetchedAt,
+board}` or `{version: 2, mode: "demo", fetchedAt}`. Prices, previous closes,
+provider identifiers and market-session metadata never enter the website cache.
+The producer validates prices and freshness before formatting; Rust validates
+only the version, timestamp, 6×22 dimensions and allowed tile codes before
+rendering. Other failures continue to retain the current display.
+
+The code follows one flow:
+
+- `workers/vesta/alpaca.ts`: fetch two authenticated batches and validate six quotes.
+- `shared/board.ts`: format those quotes to the same tiles as the CLI.
+- `workers/vesta/prices.ts`: enforce cooldown and publish a board or demo marker.
+- `workers/vesta/worker.ts`: Cloudflare entrypoints and compact private run records.
+- `src/vesta.rs`: read the display and render safe tile HTML into the page.
+
+The v2 key coexists with the previously deployed `vesta:latest:v1`; old data and
+historical evidence remain untouched. The coordinator name and persisted cooldown
+key stay unchanged, so deployment cannot reset the provider backoff. Deploy the
+producer first, let an eligible refresh publish v2, then deploy the site consumer.
+If v2 is absent or invalid, the site retains its CLI-generated sample.
+
 ## Validation and experiment record
 
-TypeScript and Rust compile, the 19 existing preview checks pass, and offline
-adapter checks verify two-request batching, complete 6×22 boards, missing-symbol
-rejection, duplicate prevention and CLI fallback after HTTP 429. The live
-Cloudflare result must be reported separately from fixture checks.
+`node --test scripts/vesta-prices.test.ts` covers batching, normalization,
+freshness, duplicate prevention, failure retention and demo fallback. The checked-in
+`scripts/fixtures/vesta-board.json` was generated directly with the Vesta 0.2.0
+Python formatter's `format_for_board`: it includes sample prices and rounding
+boundaries. Both TypeScript formatter checks and Rust renderer checks consume it.
+`cargo test --lib` verifies safe rendering and malformed-cache fallback.
 
-The earlier Yahoo experiment had zero successful market publications; see
-[its historical implementation and evidence](YAHOO-EXPERIMENT.md). Switching
-providers preserves that evidence and uses separate coordinator state.
+The refactor passed 12 focused TypeScript checks, 14 Rust checks, type checking
+and a Worker build dry-run. Its isolated staging deployment then completed 14
+scheduled publications, each with both Alpaca batches returning HTTP 200. The
+live preview matched all 132 cached cells. Production still runs the previous
+version; the staging result does not claim a v2 production deployment. See [deployment evidence](ALPACA.md)
+and the [historical Yahoo experiment](YAHOO-EXPERIMENT.md).

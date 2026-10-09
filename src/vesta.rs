@@ -2,100 +2,43 @@
 use serde::Deserialize;
 use worker::*;
 
-const KEY: &str = "vesta:latest:v1";
-const EXPECTED: [(&str, &str, &str); 6] = [
-    ("bitcoin", "BTC", "crypto"),
-    ("spcx", "SPCX", "security"),
-    ("gld", "GLD", "security"),
-    ("goog", "GOOG", "security"),
-    ("meta", "META", "security"),
-    ("vti", "VTI", "security"),
-];
+const KEY: &str = "vesta:display:v2";
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct Quote {
-    id: String,
-    label: String,
-    asset_type: String,
-    currency: String,
-    price: f64,
-    previous_close: f64,
-    change_percent: f64,
-    quoted_at: u64,
-    market_state: String,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Snapshot {
+struct MarketDisplay {
     version: u8,
-    provider: String,
     fetched_at: u64,
-    price_basis: String,
-    quotes: Vec<Quote>,
     board: Vec<Vec<u8>>,
 }
 
 #[derive(Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-struct DemoFallback {
+#[serde(rename_all = "camelCase")]
+struct DemoDisplay {
     version: u8,
-    reason: String,
     fetched_at: u64,
 }
 
 #[derive(Deserialize)]
 #[serde(tag = "mode", rename_all = "lowercase")]
 enum CachedDisplay {
-    Market(Snapshot),
-    Demo(DemoFallback),
+    Market(MarketDisplay),
+    Demo(DemoDisplay),
 }
 
-fn valid(data: &Snapshot, now: u64) -> bool {
-    if data.version != 1
-        || !matches!(
-            (data.provider.as_str(), data.price_basis.as_str()),
-            ("yahoo-finance", "5-minute-bars") | ("alpaca", "sampled-bars")
-        )
-        || data.fetched_at == 0
-        || data.fetched_at > now + 60
-        || data.quotes.len() != 6
-        || data.board.len() != 6
-    {
-        return false;
-    }
-    for (i, quote) in data.quotes.iter().enumerate() {
-        let expected = EXPECTED[i];
-        let row = &data.board[i];
-        let change = (quote.price - quote.previous_close) / quote.previous_close * 100.0;
-        if quote.id != expected.0
-            || quote.label != expected.1
-            || quote.asset_type != expected.2
-            || quote.currency != "USD"
-            || !quote.price.is_finite()
-            || quote.price <= 0.0
-            || !quote.previous_close.is_finite()
-            || quote.previous_close <= 0.0
-            || !quote.change_percent.is_finite()
-            || (quote.change_percent - change).abs() > 1e-8
-            || quote.quoted_at == 0
-            || quote.quoted_at > data.fetched_at + 60
-            || data.fetched_at.saturating_sub(quote.quoted_at) > 7 * 86400
-            || !matches!(quote.market_state.as_str(), "open" | "closed")
-            || (quote.asset_type == "crypto" && quote.market_state != "open")
-            || (quote.market_state == "open"
-                && data.fetched_at.saturating_sub(quote.quoted_at) > 3600)
-            || row.len() != 22
-            || !matches!(row[21], 63 | 66 | 70)
-            || !row[..21]
-                .iter()
-                .all(|code| matches!(code, 0..=36 | 40 | 44 | 46 | 54..=56))
-        {
-            return false;
-        }
-    }
-    true
+fn valid_timestamp(version: u8, fetched_at: u64, now: u64) -> bool {
+    version == 2 && fetched_at > 0 && fetched_at <= now + 60
+}
+
+fn valid_board(board: &[Vec<u8>]) -> bool {
+    board.len() == 6
+        && board.iter().all(|row| {
+            row.len() == 22
+                && matches!(row[21], 63 | 66 | 70)
+                && row[..21]
+                    .iter()
+                    .all(|code| matches!(code, 0..=36 | 40 | 44 | 46 | 54..=56))
+        })
 }
 
 const BOARD_START: &str = "<!--vesta-board:start-->";
@@ -166,20 +109,16 @@ fn replace_section(html: &str, start: &str, end: &str, replacement: &str) -> Opt
     Some(format!("{}{}{}", &html[..from], replacement, &html[to..]))
 }
 
-// Pure rendering helper; malformed snapshots/templates keep the static sample.
+// Pure rendering helper; malformed displays/templates keep the static sample.
 pub fn render_cached(html: &str, text: &str, now: u64) -> Option<String> {
     if text.len() > 32768 {
         return None;
     }
     let display = serde_json::from_str::<CachedDisplay>(text).ok()?;
-    let snapshot = match display {
-        CachedDisplay::Market(snapshot) => snapshot,
+    let market = match display {
+        CachedDisplay::Market(market) => market,
         CachedDisplay::Demo(fallback) => {
-            if fallback.version != 1
-                || fallback.reason != "rate_limited"
-                || fallback.fetched_at == 0
-                || fallback.fetched_at > now + 60
-            {
+            if !valid_timestamp(fallback.version, fallback.fetched_at, now) {
                 return None;
             }
             // Keep the actual `vesta --demo` board and Sample Prices caption
@@ -187,10 +126,10 @@ pub fn render_cached(html: &str, text: &str, now: u64) -> Option<String> {
             return Some(html.to_string());
         }
     };
-    if !valid(&snapshot, now) {
+    if !valid_timestamp(market.version, market.fetched_at, now) || !valid_board(&market.board) {
         return None;
     }
-    let html = replace_section(html, BOARD_START, BOARD_END, &board_html(&snapshot.board))?;
+    let html = replace_section(html, BOARD_START, BOARD_END, &board_html(&market.board))?;
     replace_section(&html, SAMPLE_START, SAMPLE_END, "")
 }
 
@@ -207,4 +146,72 @@ pub async fn render(html: String, env: &Env) -> String {
         return html;
     };
     render_cached(&html, &text, Date::now().as_millis() / 1000).unwrap_or(html)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::{json, Value};
+
+    const TEMPLATE: &str = "before<!--vesta-board:start-->sample<!--vesta-board:end-->middle<!--vesta-sample:start-->Sample Prices<!--vesta-sample:end-->after";
+
+    fn display() -> Value {
+        let fixtures: Value =
+            serde_json::from_str(include_str!("../scripts/fixtures/vesta-board.json")).unwrap();
+        json!({ "version": 2, "mode": "market", "fetchedAt": 1000, "board": fixtures[0]["board"] })
+    }
+
+    #[test]
+    fn renders_cli_board_and_removes_sample_caption() {
+        let html = render_cached(TEMPLATE, &display().to_string(), 1000).unwrap();
+        assert_eq!(html.matches("class=\"tile").count(), 132);
+        assert!(html.contains("BTC     $83,436 +2.8%"));
+        assert!(!html.contains("Sample Prices"));
+        assert!(html.starts_with("before") && html.ends_with("after"));
+    }
+
+    #[test]
+    fn demo_marker_keeps_original_cli_sample() {
+        let marker = json!({ "version": 2, "mode": "demo", "fetchedAt": 1000 });
+        assert_eq!(
+            render_cached(TEMPLATE, &marker.to_string(), 1000).unwrap(),
+            TEMPLATE
+        );
+    }
+
+    #[test]
+    fn rejects_wrong_dimensions_and_unsafe_codes() {
+        for (row, col, value) in [(0, 0, 999), (0, 21, 40), (0, 1, 37)] {
+            let mut data = display();
+            data["board"][row][col] = json!(value);
+            assert!(render_cached(TEMPLATE, &data.to_string(), 1000).is_none());
+        }
+        let mut data = display();
+        data["board"][0].as_array_mut().unwrap().pop();
+        assert!(render_cached(TEMPLATE, &data.to_string(), 1000).is_none());
+        data["board"].as_array_mut().unwrap().pop();
+        assert!(render_cached(TEMPLATE, &data.to_string(), 1000).is_none());
+    }
+
+    #[test]
+    fn rejects_wrong_versions_and_future_timestamps() {
+        for (version, fetched_at) in [(1, 1000), (2, 0), (2, 1061)] {
+            let mut data = display();
+            data["version"] = json!(version);
+            data["fetchedAt"] = json!(fetched_at);
+            assert!(render_cached(TEMPLATE, &data.to_string(), 1000).is_none());
+        }
+    }
+
+    #[test]
+    fn malformed_json_or_template_keeps_static_fallback() {
+        assert!(render_cached(TEMPLATE, "not JSON", 1000).is_none());
+        assert!(render_cached("no slots", &display().to_string(), 1000).is_none());
+        assert!(render_cached(
+            &format!("{TEMPLATE}{TEMPLATE}"),
+            &display().to_string(),
+            1000
+        )
+        .is_none());
+    }
 }
