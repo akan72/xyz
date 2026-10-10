@@ -1,0 +1,282 @@
+{
+  "observedAt": "2026-10-09T04:25:20.381Z",
+  "history": [
+    {
+      "trigger": "manual",
+      "scheduledAt": 1791492531,
+      "completedAt": 1791492532,
+      "result": "cooldown",
+      "requests": []
+    },
+    {
+      "trigger": "cron",
+      "scheduledAt": 1791494249,
+      "completedAt": 1791494250,
+      "result": "updated",
+      "requests": [
+        {
+          "batch": "stocks",
+          "status": 200
+        },
+        {
+          "batch": "crypto",
+          "status": 200
+        }
+      ],
+      "publishedAt": 1791494250,
+      "mode": "market"
+    },
+    {
+      "trigger": "cron",
+      "scheduledAt": 1791496049,
+      "completedAt": 1791496050,
+      "result": "updated",
+      "requests": [
+        {
+          "batch": "stocks",
+          "status": 200
+        },
+        {
+          "batch": "crypto",
+          "status": 200
+        }
+      ],
+      "publishedAt": 1791496050,
+      "mode": "market"
+    },
+    {
+      "trigger": "cron",
+      "scheduledAt": 1791497837,
+      "completedAt": 1791497844,
+      "result": "cooldown",
+      "requests": []
+    },
+    {
+      "trigger": "cron",
+      "scheduledAt": 1791499637,
+      "completedAt": 1791499641,
+      "result": "updated",
+      "requests": [
+        {
+          "batch": "stocks",
+          "status": 200
+        },
+        {
+          "batch": "crypto",
+          "status": 200
+        }
+      ],
+      "publishedAt": 1791499641,
+      "mode": "market"
+    },
+    {
+      "trigger": "cron",
+      "scheduledAt": 1791501437,
+      "completedAt": 1791501443,
+      "result": "updated",
+      "requests": [
+        {
+          "batch": "stocks",
+          "status": 200
+        },
+        {
+          "batch": "crypto",
+          "status": 200
+        }
+      ],
+      "publishedAt": 1791501443,
+      "mode": "market"
+    },
+    {
+      "trigger": "cron",
+      "scheduledAt": 1791503237,
+      "completedAt": 1791503240,
+      "result": "updated",
+      "requests": [
+        {
+          "batch": "stocks",
+          "status": 200
+        },
+        {
+          "batch": "crypto",
+          "status": 200
+        }
+      ],
+      "publishedAt": 1791503240,
+      "mode": "market"
+    },
+    {
+      "trigger": "cron",
+      "scheduledAt": 1791505037,
+      "completedAt": 1791505041,
+      "result": "updated",
+      "requests": [
+        {
+          "batch": "stocks",
+          "status": 200
+        },
+        {
+          "batch": "crypto",
+          "status": 200
+        }
+      ],
+      "publishedAt": 1791505041,
+      "mode": "market"
+    },
+    {
+      "trigger": "cron",
+      "scheduledAt": 1791506837,
+      "completedAt": 1791506839,
+      "result": "updated",
+      "requests": [
+        {
+          "batch": "stocks",
+          "status": 200
+        },
+        {
+          "batch": "crypto",
+          "status": 200
+        }
+      ],
+      "publishedAt": 1791506839,
+      "mode": "market"
+    },
+    {
+      "trigger": "cron",
+      "scheduledAt": 1791508637,
+      "completedAt": 1791508641,
+      "result": "updated",
+      "requests": [
+        {
+          "batch": "stocks",
+          "status": 200
+        },
+        {
+          "batch": "crypto",
+          "status": 200
+        }
+      ],
+      "publishedAt": 1791508641,
+      "mode": "market"
+    },
+    {
+      "trigger": "cron",
+      "scheduledAt": 1791510437,
+      "completedAt": 1791510439,
+      "result": "updated",
+      "requests": [
+        {
+          "batch": "stocks",
+          "status": 200
+        },
+        {
+          "batch": "crypto",
+          "status": 200
+        }
+      ],
+      "publishedAt": 1791510439,
+      "mode": "market"
+    },
+    {
+      "trigger": "cron",
+      "scheduledAt": 1791512237,
+      "completedAt": 1791512240,
+      "result": "updated",
+      "requests": [
+        {
+          "batch": "stocks",
+          "status": 200
+        },
+        {
+          "batch": "crypto",
+          "status": 200
+        }
+      ],
+      "publishedAt": 1791512239,
+      "mode": "market"
+    },
+    {
+      "trigger": "cron",
+      "scheduledAt": 1791514037,
+      "completedAt": 1791514039,
+      "result": "updated",
+      "requests": [
+        {
+          "batch": "stocks",
+          "status": 200
+        },
+        {
+          "batch": "crypto",
+          "status": 200
+        }
+      ],
+      "publishedAt": 1791514039,
+      "mode": "market"
+    },
+    {
+      "trigger": "cron",
+      "scheduledAt": 1791515837,
+      "completedAt": 1791515842,
+      "result": "updated",
+      "requests": [
+        {
+          "batch": "stocks",
+          "status": 200
+        },
+        {
+          "batch": "crypto",
+          "status": 200
+        }
+      ],
+      "publishedAt": 1791515841,
+      "mode": "market"
+    },
+    {
+      "trigger": "cron",
+      "scheduledAt": 1791517637,
+      "completedAt": 1791517641,
+      "result": "updated",
+      "requests": [
+        {
+          "batch": "stocks",
+          "status": 200
+        },
+        {
+          "batch": "crypto",
+          "status": 200
+        }
+      ],
+      "publishedAt": 1791517640,
+      "mode": "market"
+    },
+    {
+      "trigger": "cron",
+      "scheduledAt": 1791519437,
+      "completedAt": 1791519443,
+      "result": "updated",
+      "requests": [
+        {
+          "batch": "stocks",
+          "status": 200
+        },
+        {
+          "batch": "crypto",
+          "status": 200
+        }
+      ],
+      "publishedAt": 1791519442,
+      "mode": "market"
+    }
+  ],
+  "cells": 132,
+  "hasTextView": false,
+  "sample": false,
+  "matchesCache": true,
+  "matchesWarmPublication": false,
+  "successfulRuns": 14,
+  "freshProducerPublication": true,
+  "siteVersion": "b7a22141-1d2e-4717-9174-df4c07b5aa18",
+  "producerVersion": "cbafd00a-bb89-47da-8a78-5d1b69fb6509",
+  "previewUrl": "https://pr-40-xyz.akan72.workers.dev/projects",
+  "initialWarmupCountedAsProducerRun": false
+}

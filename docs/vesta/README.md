@@ -1,151 +1,114 @@
-# Vesta on /projects
+# Vesta prices on /projects
 
-## Demo shipped now
+A private scheduled Cloudflare Worker samples market data every 30 minutes.
+A singleton SQLite Durable Object prevents duplicate deliveries and persists
+cooldowns. The producer publishes one complete six-instrument display to private
+KV. The existing Rust xyz Worker reads it when serving `/projects` and renders
+all 132 cells into the HTML. Visitors never trigger provider requests.
 
-`site/content/projects/vesta.md` adds Vesta to the projects collection.
-`VestaPreview.astro` embeds only the board cells from
-`site/generated/vesta-demo.html`, the actual output of Vesta's offline demo.
-It adapts the surrounding styles to xyz's project column and theme, without
-adding a browser script, fetching prices, or requiring any API key. The
-projects page labels the rendering "Sample Prices" and omits the CLI's text view.
+The provider is now Alpaca; see [adapter and deployment details](ALPACA.md).
+The Vesta CLI supports Yahoo/yfinance and Alpaca (`--provider yahoo|alpaca`)
+and continues to send through the Vestaboard SDK. The website
+never sends to a physical board.
 
-The checked-in HTML was generated from Vesta at `0bb2acc`, with
-Bitcoin's fixed sample price of $83,436:
+## Security and display
+
+- The producer has no routes, workers.dev URL or preview URL; HTTP returns 404.
+- Both `/api/vesta` and its subpaths return 404 for every method.
+- Alpaca credentials are Cloudflare secrets on the producer only. Authorization
+  headers are sent only to Alpaca, redirects are refused, and logs contain fixed
+  result codes rather than headers or upstream error bodies.
+- Production uses KV `1434bc71e28a4c5b90e15f6a57a1078c`, bound only to `xyz`
+  and the private producer `xyz-vesta-refresh`. PR previews and the staging
+  producer use separate KV `f47f1c49d816470ca5947468c050442c`.
+- The main site serves safe allowlisted tile HTML, not price JSON. Market data
+  removes the Sample Prices caption. There is no text-view option on the page.
+- `/projects` uses a 60-second cache TTL. Static HTML conditional validators are
+  removed before live rendering. Markdown/static `.html` copies remain samples.
+
+On a rate limit the producer writes a demo-mode marker, even after a prior
+market publication, and persists a 1/2/4/8-hour cooldown. The site selects its
+actual CLI-generated sample HTML; neither Worker duplicates demo prices.
+Other failures preserve the current published display. The next successful
+publication restores market mode. KV propagation may delay a newly published
+board reaching another location.
+
+## Demo artifact
+
+The sample board is checked-in output from the actual CLI's `--demo --preview-file`
+command. Regenerate it with:
 
 ```bash
-# Run from an updated Vesta checkout with its CLI installed.
-vesta --demo --preview-file /absolute/path/to/xyz/site/generated/vesta-demo.html
+npm run vesta:demo -- /path/to/vesta-checkout
 ```
 
-`vesta --demo` alone prints the terminal preview; `--preview-file` produces
-the HTML used here. Commit the regenerated file when the demo changes. xyz's
-build needs no Python installation or live market-data access.
+Failed generation preserves the artifact. Ordinary site builds require no Python
+runtime or provider access. The sample keeps BTC $83,436 and three green, two red
+and one black chips.
 
-## Future: refreshed market prices
+## Production and staging deployment
 
-This is a proposed follow-up, not deployed functionality.
+The production producer is `xyz-vesta-refresh`; staging is
+`xyz-vesta-refresh-staging`. Both have independently provisioned secrets. The two secret
+names are `APCA-API-KEY-ID` and `APCA-API-SECRET-KEY`; values never belong in Git.
 
-```mermaid
-flowchart LR
-    Cron[Cloudflare cron: every 5 minutes] --> Worker[Price refresh Worker]
-    Secret[Worker secret: data API key] --> Worker
-    Worker --> Provider[Market data provider]
-    Provider --> Worker
-    Worker --> KV[KV: latest complete snapshot]
-    Visitor[Projects page visitor] --> API[xyz GET /api/vesta]
-    API --> KV
-    API --> Visitor
+```bash
+npx wrangler@4.143.1 deploy --config workers/vesta/wrangler.toml --env ""
+npx wrangler@4.143.1 deploy
+
+# Optional: update the isolated staging producer
+npx wrangler@4.143.1 deploy --config workers/vesta/wrangler.toml --env staging
+npx wrangler@4.143.1 kv key get vesta:runs:alpaca:v2 --binding VESTA_PRICES --config workers/vesta/wrangler.toml --env staging --remote
 ```
 
-### Provider and price meaning
+Production pushes deploy both Workers through the existing deployment job.
+GitHub Actions deploys code; it does not schedule market-data requests.
+The Cloudflare trigger runs at minute 17 and 47. The bounded private history
+records actual deliveries, batch status codes and publication timestamps, separately
+from the preserved Yahoo and earlier Alpaca histories. It contains no quote tables or board copies. To stop refreshes, remove the staging Cron
+Trigger; closing the site's PR preview does not remove the separate producer.
+The earlier Codex observation automation remains paused.
 
-Start by evaluating Twelve Data's business display offering: it covers US
-equities, ETFs, and crypto under one integration. Confirm coverage for all six
-instruments and get the required public website display rights and attribution
-before subscribing. A key for private use does not automatically authorize a
-public projects page. Twelve Data distinguishes internal non-display use from
-[external display plans](https://twelvedata.com/pricing-business), and lists
-[exchange-specific conditions](https://support.twelvedata.com/en/articles/5332349-commercial-and-personal-usage).
-Massive Business is an alternative; its
-[display policy](https://massive.com/knowledge-base/article/which-plan-do-i-need-to-show-massive-data-in-my-app)
-also requires a business subscription when other people see the data.
+API availability is separate from public-display permission. Alpaca's published
+terms require notice/permission for making data available to other people;
+public display rights must be arranged separately with Alpaca.
 
-Confirm that the display license covers delivery of the small quote snapshot
-to the browser as JSON, plus any caching limits. If that delivery requires a
-different entitlement, choose an authorized display approach before exposing
-the endpoint; CORS does not stop others from downloading a public response.
+## Small display contract
 
-Request a quote for this small, non-commercial six-symbol display, including
-delayed data if it lowers cost. Do not choose a subscription based only on a
-personal/free-tier price. Six symbols every five minutes, around the clock,
-means 288 refreshes and up to 1,728 symbol credits per day; batching can reduce
-HTTP requests without reducing symbol credits. The free 800-credit daily
-Twelve Data allowance is insufficient for that schedule.
+`shared/vesta.ts` defines the six instruments and the private `vesta:display:v2`
+cache key. The cached value is either `{version: 2, mode: "market", fetchedAt,
+board}` or `{version: 2, mode: "demo", fetchedAt}`. Prices, previous closes,
+provider identifiers and market-session metadata never enter the website cache.
+The producer validates prices and freshness before formatting; Rust validates
+only the version, timestamp, 6×22 dimensions and allowed tile codes before
+rendering. Other failures continue to retain the current display.
 
-Use an explicit instrument map. The demo's `BTC` label represents Bitcoin,
-with a fixed sample price of $83,436. Map it to the provider's BTC/USD pair,
-not a stock/ETF ticker named BTC. Keep provider IDs, display names, asset
-types, currencies, and exchanges separate.
+The code follows one flow:
 
-For stocks and ETFs, display the most recent eligible trade/price and change
-relative to the previous regular-session close; keep both values from the
-same feed and adjustment convention. For crypto, define the comparison as
-the previous UTC daily close. Record the provider's price timestamp, the
-comparison timestamp, currency, feed delay, and market-session state.
-Refreshing every five minutes does not make a delayed feed real-time.
+- `workers/vesta/alpaca.ts`: fetch two authenticated batches and validate six quotes.
+- `shared/board.ts`: format those quotes to the same tiles as the CLI.
+- `workers/vesta/prices.ts`: enforce cooldown and publish a board or demo marker.
+- `workers/vesta/worker.ts`: Cloudflare entrypoints and compact private run records.
+- `src/vesta.rs`: read the display and render safe tile HTML into the page.
 
-### Cloudflare implementation
+The v2 key coexists with the previously deployed `vesta:latest:v1`; old data and
+historical evidence remain untouched. The coordinator name and persisted cooldown
+key stay unchanged, so deployment cannot reset the provider backoff. Deploy the
+producer first, let an eligible refresh publish v2, then deploy the site consumer.
+If v2 is absent or invalid, the site retains its CLI-generated sample.
 
-1. Add a small scheduled refresh Worker, separate from the xyz page-serving
-   Worker. Configure a [Cron Trigger](https://developers.cloudflare.com/workers/configuration/cron-triggers/)
-   for every five minutes. A cron is UTC; handle the US exchange calendar,
-   holidays, and daylight-saving time in the provider/session logic.
-2. Store the market-data key in a
-   [Worker secret](https://developers.cloudflare.com/workers/configuration/secrets/),
-   provisioned with `wrangler secret put MARKET_DATA_API_KEY`. Prefer a key
-   limited to market-data reads, with no trading permissions. The refresh
-   Worker receives the key; xyz and the browser never need it. Use a
-   production key only in the production refresh Worker. PR previews keep
-   demo data or isolated staging bindings, and never run the production cron.
-3. Fetch only a fixed allowlist of instruments from fixed HTTPS provider
-   endpoints. Use timeouts, bounded retries with backoff, and the provider's
-   rate-limit guidance. Never accept a visitor-supplied URL, symbol list, or
-   refresh command. Do not log credentials, authorization headers, or URLs
-   containing keys; emit sanitized status/error codes instead of raw errors.
-4. Validate a full snapshot: expected symbols/currencies, finite positive
-   prices, usable comparison prices, timestamps, and values that fit the
-   board. Normalize it to a small JSON record containing `mode`, `provider`,
-   `fetchedAt`, `feedDelaySeconds`, and per-instrument quote/comparison data.
-   Write one complete value to KV only after every instrument is valid, so
-   readers cannot get a mix of old and new rows. Keep the last successful
-   snapshot on timeout, 429, or incomplete data.
-5. Bind that namespace to xyz for `GET /api/vesta`. Serve only the sanitized
-   cached snapshot with a short public cache lifetime (e.g. 60 seconds), no
-   credentials or raw provider responses, and no cross-origin access unless
-   needed. All visitors share the scheduled fetches; page traffic cannot
-   consume provider credits. An empty store yields an unavailable response,
-   not fabricated market prices. [KV is eventually consistent](https://developers.cloudflare.com/kv/concepts/how-kv-works/),
-   which is acceptable for a five-minute display; include timestamps because
-   a region can briefly see the prior complete snapshot.
-6. Fetch that endpoint once when the Vesta preview enters view. Update the
-   tiles and text view with text nodes and allowlisted color codes, not
-   provider HTML. Mark prices as delayed when applicable, show their last
-   update time, and distinguish market-closed data from a failed refresh.
-   While loading or unavailable, retain the explicitly labeled demo; do not
-   silently present demo prices as market data. For an already visible page,
-   an optional five-minute poll can keep it current.
+## Validation and experiment record
 
-The web integration displays data only. It never stores a Vestaboard key or
-sends to the physical board. The CLI keeps using the Vestaboard SDK.
+`node --test scripts/vesta-prices.test.ts` covers batching, normalization,
+freshness, duplicate prevention, failure retention and demo fallback. The checked-in
+`scripts/fixtures/vesta-board.json` was generated directly with the Vesta 0.2.0
+Python formatter's `format_for_board`: it includes sample prices and rounding
+boundaries. Both TypeScript formatter checks and Rust renderer checks consume it.
+`cargo test --lib` verifies safe rendering and malformed-cache fallback.
 
-### Before releasing market mode
-
-- Confirm the provider's coverage, public display rights, delay, budget, and
-  attribution for the chosen instruments.
-- Reuse Vesta's formatter rules through a small documented grid contract or
-  a compatible port. Compare against the Python output, especially rounding
-  to `0.0%`, negative zero, narrow rows, and oversized prices.
-- Verify that inspecting assets, page source, responses, and browser network
-  requests reveals no API key; repeated page visits must not cause provider
-  fetches. Validate the CI/preview secret boundaries too.
-- Exercise missing data, partial batches, 429s, timeouts, weekends, market
-  holidays, stale timestamps, and an initially empty KV store.
-- Monitor scheduled successes, snapshot age, and quota failures. Rotate keys
-  without rebuilding frontend assets. Keep a demo-only rollback path.
-
-## Current verification
-
-`npm run check` and `npm run build` succeeded. The checker reports one existing
-unused-variable hint in `404.astro`, with no errors or warnings.
-Browser checks confirmed all 132 cells, the six expected color indicators,
-the "Sample Prices" caption, no text view, and no horizontal page overflow
-at a 390px viewport. Bitcoin's $83,436 price fits the eight-cell price field
-within the 22-cell row, including its percentage and color indicator.
-The demo was checked in light and dark themes. No market-data API or Vestaboard
-send was needed. Automated tests and CI configuration were not added.
-
-![Desktop project entry](desktop.png)
-
-![Mobile project entry](mobile.png)
-
-![Mobile dark theme](mobile-dark.png)
+The refactor passed 12 focused TypeScript checks, 14 Rust checks, type checking
+and a Worker build dry-run. Its isolated staging deployment then completed 14
+scheduled publications, each with both Alpaca batches returning HTTP 200. The
+live preview matched all 132 cached cells. Production still runs the previous
+version; the staging result does not claim a v2 production deployment. See [deployment evidence](ALPACA.md)
+and the [historical Yahoo experiment](YAHOO-EXPERIMENT.md).

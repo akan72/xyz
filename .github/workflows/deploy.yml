@@ -120,8 +120,8 @@ jobs:
 
       # Production: push to the default branch → create-or-update the Worker
       # at its custom domains. `wrangler deploy` creates the script on first
-      # run, so no separate bootstrap is needed. It's the only step that
-      # deploys production.
+      # run, so no separate bootstrap is needed. The private producer is
+      # deployed here too; its refresh schedule runs on Cloudflare.
       - name: Deploy to production
         if: github.event_name == 'push'
         env:
@@ -131,6 +131,7 @@ jobs:
           CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
         run: |
           : "${CLOUDFLARE_EMAIL:?the CLOUDFLARE_EMAIL secret is missing, so the log could show the email of the account that owns the token}"
+          npx --yes "wrangler@${WRANGLER_VERSION}" deploy --config workers/vesta/wrangler.toml --env ""
           npx --yes "wrangler@${WRANGLER_VERSION}" deploy
 
       # Pull requests: a Worker Preview of the one xyz Worker, named pr-<N>,

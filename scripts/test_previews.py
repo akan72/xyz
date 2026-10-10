@@ -159,7 +159,28 @@ class WranglerConfigTests(unittest.TestCase):
         self.assertEqual(previews.get("r2_buckets"), self.config["r2_buckets"])
         for key in BINDING_KEYS:
             if key in self.config:
-                self.assertEqual(previews.get(key), self.config[key], f"[previews] is missing {key}")
+                if key == "vars":
+                    production = dict(self.config[key])
+                    preview = dict(previews.get(key, {}))
+                    production.pop("VESTA_LIVE_ENABLED", None)
+                    live = preview.pop("VESTA_LIVE_ENABLED", None)
+                    self.assertIn(live, ["false", "true"])
+                    if live == "true":
+                        bindings = previews.get("kv_namespaces", [])
+                        production_ids = {b["id"] for b in self.config.get("kv_namespaces", [])}
+                        prices = [b for b in bindings if b["binding"] == "VESTA_PRICES"]
+                        self.assertEqual(len(prices), 1)
+                        self.assertNotIn(prices[0]["id"], production_ids, "Live previews require isolated storage")
+                    self.assertEqual(preview, production)
+                elif key == "kv_namespaces":
+                    production = [b for b in self.config[key] if b["binding"] != "VESTA_PRICES"]
+                    preview = [b for b in previews.get(key, []) if b["binding"] != "VESTA_PRICES"]
+                    self.assertEqual(preview, production)
+                    production_ids = {b["id"] for b in self.config[key] if b["binding"] == "VESTA_PRICES"}
+                    preview_ids = {b["id"] for b in previews.get(key, []) if b["binding"] == "VESTA_PRICES"}
+                    self.assertTrue(production_ids.isdisjoint(preview_ids), "PR previews must not read production market snapshots")
+                else:
+                    self.assertEqual(previews.get(key), self.config[key], f"[previews] is missing {key}")
 
 
 class WorkflowTests(unittest.TestCase):
