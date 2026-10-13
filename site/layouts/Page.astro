@@ -34,6 +34,7 @@ const markdownCopy = path === "/" ? "/index.md" : `${path}.md`;
                 <link rel="canonical" href={new URL(path, Astro.site)}>
                 <link rel="alternate" type="text/markdown" href={markdownCopy}>
                 <link rel="describedby" href="/llms.txt">
+                <link rel="service-desc" type="application/vnd.oai.openapi+json" href="/openapi.json">
             </>
         )}
         <slot name="head-scripts" />

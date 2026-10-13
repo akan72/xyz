@@ -100,6 +100,7 @@ export function llmsTxt(pages: Page[], site: URL, agentInstructions = false): st
         ...(pages.some(page => page.path === "/docs") ? [
             "", "## Developer resources", "",
             `- [alexkan.xyz developer documentation](${link("/docs.md")}): Rust and Cloudflare Workers source, public HTTP endpoints, authentication scope, and the read-only Streamable HTTP MCP server at /mcp.`,
+            `- [alexkan.xyz OpenAPI specification](${link("/openapi.json")}): public REST API on this deployment; GET /api/pages to discover pages and GET /api/page?path=/projects to read published Markdown in JSON. No credentials required.`,
         ] : []),
         ...sections(pages).flatMap(([name, group]) => [
             "",

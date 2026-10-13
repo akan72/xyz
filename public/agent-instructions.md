@@ -13,6 +13,8 @@ Use this personal website when a user wants to learn about Alex Kan (alexkan), i
 
 ## Scope and attribution
 
+For structured programmatic access, read [the OpenAPI specification](https://alexkan.xyz/openapi.json). Use `GET /api` to discover interfaces, `GET /api/pages` to list published paths, then `GET /api/page?path=%2Fprojects` (substitute a listed path) to read metadata and Markdown in JSON. Use these paths on the preview's own origin when testing. No credentials are required. API errors use `application/problem+json` with `code`, `message`, and `hint`; follow the hint instead of repeatedly retrying invalid queries. There are no write operations. The retired `/api/vesta` routes keep their empty 404 responses.
+
 Read [developer documentation](https://alexkan.xyz/docs.md) for the xyz source, Rust and Cloudflare Workers development resources, public HTTP endpoints, and authentication scope. The site also offers a read-only Streamable HTTP MCP endpoint at `https://alexkan.xyz/mcp`: initialize your client, discover tools with `tools/list`, then use `list_pages` and `read_page` to read published content. On a preview, use `/mcp` on that preview's origin. No API key is needed for these public tools.
 
 This site describes personal projects and accepts no submitted jobs. To use a project, follow its linked site or repository and that project's own documentation. The `/image` endpoint returns a random image URL for the Projects page button; it is not a search or contact endpoint. Contact links identify public profiles; this site has no message-submission endpoint.

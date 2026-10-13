@@ -83,6 +83,23 @@ describe("agent readiness", () => {
         assert.ok(!dist("agent-catalog.json").includes("/api/vesta"));
     });
 
+    test("the public REST API contract is discoverable from pages and agent guidance", () => {
+        const spec = JSON.parse(dist("openapi.json"));
+        assert.equal(spec.openapi, "3.1.1");
+        assert.match(spec.info.title, /alexkan.xyz Public Content API/);
+        assert.deepEqual(spec.security, []);
+        assert.deepEqual(Object.keys(spec.paths).sort(), ["/api", "/api/page", "/api/pages"]);
+        for (const file of indexable) {
+            assert.equal(doc(file).querySelector('link[rel="service-desc"]')?.getAttribute("href"), "/openapi.json");
+        }
+        assert.ok(dist("llms.txt").includes("https://alexkan.xyz/openapi.json"));
+        assert.ok(dist("agent-instructions.md").includes("https://alexkan.xyz/openapi.json"));
+        for (const href of ["/api", "/api/pages", "/api/page?path=%2Fprojects", "/openapi.json"]) {
+            assert.ok(doc("docs.html").querySelector(`a[href="${href}"]`), href);
+        }
+        assert.ok(doc("docs.html").text.includes("application/problem+json"));
+    });
+
     test("llms.txt uses file lists and every discovery link resolves to a built file", () => {
         const text = dist("llms.txt");
         assert.ok(text.startsWith("# alexkan.xyz\n\n> "));

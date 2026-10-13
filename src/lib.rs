@@ -1,6 +1,7 @@
 use rand::Rng;
 use worker::*;
 
+mod api;
 mod link_preview;
 mod mcp;
 mod vesta;
@@ -31,6 +32,9 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     // The retired price API exposes nothing, regardless of flags or method.
     if path == "/api/vesta" || path.starts_with("/api/vesta/") {
         return Ok(Response::empty()?.with_status(404));
+    }
+    if path == "/api" || path.starts_with("/api/") {
+        return api::handle(req, &env).await;
     }
 
     // Replace base Cig with random one on button click (returns raw URL for preload)

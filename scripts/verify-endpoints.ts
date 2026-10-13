@@ -29,6 +29,7 @@ test("HTML pages, aliases, and discovery links", async () => {
         assert.equal(doc.querySelector('link[rel="canonical"]')?.getAttribute("href"), page.url);
         assert.equal(doc.querySelector('link[rel="alternate"][type="text/markdown"]')?.getAttribute("href"), markdownPath(page.path));
         assert.equal(doc.querySelector('link[rel="describedby"]')?.getAttribute("href"), "/llms.txt");
+        assert.equal(doc.querySelector('link[rel="service-desc"]')?.getAttribute("href"), "/openapi.json");
         assert.ok(html.includes('property="og:title"'));
         const alias = page.path === "/" ? "/index.html" : `${page.path}.html`;
         const redirected = await request(alias, "text/markdown");

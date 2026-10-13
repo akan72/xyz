@@ -269,6 +269,26 @@ First-time setup:
 
     python scripts/favicon.py
 
+## Public content API
+
+`GET /api` discovers the public read-only interfaces. `GET /api/pages` lists
+published paths, and `GET /api/page?path=%2Fprojects` returns one page's metadata
+and Markdown. No credentials are required. `/openapi.json` is the OpenAPI 3.1.1
+contract; `/docs` covers HTTP, REST, MCP, and Cloudflare Workers development.
+Errors use RFC 9457 `application/problem+json` with codes and resolution hints.
+The retired `/api/vesta` namespace continues to return empty 404s.
+
+Validate a built local Worker or a preview deployment:
+
+```sh
+npm install --prefix /tmp/xyz-openapi-interop --no-audit --no-fund --ignore-scripts @apidevtools/swagger-parser@12.1.0 ajv@8.17.1
+node scripts/verify-openapi.mjs http://127.0.0.1:8787 /tmp/xyz-openapi-interop
+```
+
+CI runs this contract validation before deploying. Cloudflare Worker Previews
+add `X-Robots-Tag: noindex` independently of the site. Audit search rankings
+on the production custom domain after deployment and indexing.
+
 ## Link Previews
 
 Every HTML page gets link-preview tags (iMessage, Slack, Discord, etc.)

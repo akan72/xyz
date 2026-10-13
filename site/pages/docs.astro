@@ -23,6 +23,18 @@ const initialize = JSON.stringify({
     </ul>
     <p>No API key or account is needed to read these public resources. The site does not accept submitted jobs or messages. The retired <code>/api/vesta</code> routes return empty HTTP 404 responses; they do not expose the private price producer or its credentials. This site's read-only interfaces are separate from the services linked on the Projects page.</p>
 
+    <h2>alexkan.xyz public REST API and OpenAPI</h2>
+    <p>The <a href="/openapi.json">OpenAPI 3.1.1 specification at /openapi.json</a> describes the public content API hosted on Cloudflare Workers. Its relative server URL uses the origin you requested, so the same contract works on production and preview deployments. No API key, login, or authorization header is needed. All endpoints support GET and HEAD; they read the same published pages as the MCP tools.</p>
+    <ul>
+        <li><a href="/api">GET /api</a> returns the API name and discovery links.</li>
+        <li><a href="/api/pages">GET /api/pages</a> lists published page paths, titles, descriptions, canonical URLs, and Markdown paths.</li>
+        <li><a href="/api/page?path=%2Fprojects">GET /api/page?path=%2Fprojects</a> returns one page's metadata and its full text in a <code>markdown</code> field. Choose exactly one <code>path</code> from the page catalog; nested paths such as <code>/writing/gm</code> work too.</li>
+    </ul>
+    <p>Successful GET requests return <code>application/json</code>. API errors return <code>application/problem+json</code> following RFC 9457, with the HTTP status, a stable <code>code</code>, a <code>message</code>, and a resolution <code>hint</code>. Invalid or duplicate query parameters return 400; unpublished paths and unknown API routes return 404; unsupported methods on known endpoints return 405 with <code>Allow: GET, HEAD</code>; unavailable content returns 503. HEAD has the same status and content type with no body. Retired <code>/api/vesta</code> routes retain their empty 404 behavior.</p>
+    <pre><code>{`curl -sS https://alexkan.xyz/api/pages
+curl -sS 'https://alexkan.xyz/api/page?path=%2Fprojects'
+curl -sS -i 'https://alexkan.xyz/api/page?path=%2Fmissing'`}</code></pre>
+
     <h2>Read-only MCP server</h2>
     <p>Connect an MCP client using <a href="https://modelcontextprotocol.io/specification/2025-11-25/basic/transports">Streamable HTTP</a> to <code>https://alexkan.xyz/mcp</code>. To test a preview, use <code>/mcp</code> on that preview's own origin. The server supports protocol versions <code>2025-11-25</code>, <code>2025-06-18</code>, and <code>2025-03-26</code>. It returns JSON responses, uses no session IDs, and offers no server event stream; GET returns HTTP 405 as allowed by the transport specification.</p>
     <p>POST a UTF-8 JSON-RPC message with <code>Content-Type: application/json</code> and <code>Accept: application/json, text/event-stream</code>. Start with an <code>initialize</code> request like this:</p>
