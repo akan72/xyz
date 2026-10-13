@@ -16,7 +16,7 @@ const links = [
 const isCurrent = (href: string) => href === current || (href !== "/" && current.startsWith(`${href}/`));
 ---
 <header class="site-header">
-    <h2>alexkan.xyz</h2>
+    <div class="site-name">alexkan.xyz</div>
     <nav aria-label="Primary">
         {links.map(({ href, label }) => <a href={href} aria-current={isCurrent(href) ? "page" : undefined}>{label}</a>)}
         <!-- No whitespace between the icons: it would widen the button -->
@@ -26,7 +26,7 @@ const isCurrent = (href: string) => href === current || (href !== "/" && current
 
 <style>
     .site-header { margin-bottom: 32px; font-size: 16px; line-height: 1.2; color: #111; view-transition-name: site-header; }
-    h2 { margin: 0 0 24px; font-size: 24px; line-height: 1.2; }
+    .site-name { margin: 0 0 24px; font-size: 24px; font-weight: bold; line-height: 1.2; }
     nav { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
     /* Every underline sits below descenders; only its thickness marks the current page */
     a, a:visited { color: #333; text-decoration-thickness: 1px; text-underline-offset: 5px; text-decoration-skip-ink: none; }

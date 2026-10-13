@@ -4,20 +4,27 @@ import Page from "../layouts/Page.astro";
 const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
-        { "@type": "WebSite", name: "alexkan.xyz", url: "https://alexkan.xyz/" },
+        { "@type": "WebSite", name: "alexkan.xyz", alternateName: "Alex Kan's personal website", url: "https://alexkan.xyz/" },
         {
             "@type": "ProfilePage",
             url: "https://alexkan.xyz/",
-            mainEntity: { "@type": "Person", name: "Alex Kan", url: "https://alexkan.xyz/" },
+            mainEntity: { "@type": "Person", name: "Alex Kan", alternateName: "alexkan", url: "https://alexkan.xyz/", sameAs: ["https://github.com/akan72", "https://www.linkedin.com/in/alexanderkan/"] },
         },
     ],
 };
 ---
-<Page title="alexkan.xyz" description="Alex Kan's personal website.">
+<Page title="Alex Kan (alexkan) — Personal Website | alexkan.xyz" description="Alex Kan's personal website (alexkan): software projects, NYC transit maps, music visualizations, developer tools, writing, and contact links.">
     <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
     <img id="milady" class="milady" src="/assets/milady.jpg" alt="Milady" width="410" height="512">
+    <section class="intro">
+        <h1>Alex Kan's personal website</h1>
+        <p>I'm Alex Kan, and alexkan.xyz is my personal website. I use this space to share software I've built, things I like, and ways to find me online. My <a href="/projects">projects</a> include istheldown.com, a real-time map of transit across the NYC area; mingus, an interactive visualization of my music taste since 2014; and dotfiles for my development setup, including Neovim, tmux, and coding agent configurations.</p>
+        <p>This site itself is open source: xyz is written in Rust, compiled to WebAssembly, and served with Cloudflare Workers. The random-cig button on the Projects page draws images from the Cigawrette Packs collection using a scraper and Cloudflare R2. You can read about my interests on the <a href="/writing/gm">Writing</a> page, learn more <a href="/about">about me</a>, or use the <a href="/contact">Contact</a> page to find my GitHub, LinkedIn, and public PGP key. See the <a href="/privacy">Privacy</a> page for how the site handles requests and browser preferences.</p>
+    </section>
 </Page>
 
 <style>
     .milady { display: block; width: 260px; max-width: 100%; height: auto; margin: 0 0 16px; }
+    .intro { margin-top: 32px; }
+    h1 { font-size: 1.5em; }
 </style>

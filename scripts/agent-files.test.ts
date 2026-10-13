@@ -39,6 +39,11 @@ describe("readPage", () => {
         assert.equal(readPage(html("Ideology | alexkan.xyz", "Likes.", "<h2>Likes</h2><ul><li>Vim</li></ul>"), "/ideology", site)!.body, "## Likes\n\n-   Vim");
     });
 
+    test("remaining H1 content headings do not duplicate the standalone title level", () => {
+        const page = readPage(html("About | alexkan.xyz", "About me.", "<h1>Alex's website</h1><p>Hi.</p>"), "/about", site)!;
+        assert.equal(page.body, "## Alex's website\n\nHi.");
+    });
+
     test("leaves out noindex pages", () => {
         assert.equal(readPage(html("Not found", "", "<p>x</p>", '<meta name="robots" content="noindex">'), "/404", site), undefined);
     });
@@ -99,6 +104,12 @@ describe("generated files", () => {
     });
 
     test("_headers points each Markdown copy at its page and llms.txt", () => {
-        assert.ok(headers(pages).includes('/ideology.md\n  Link: <https://alexkan.xyz/ideology>; rel="canonical", </llms.txt>; rel="describedby"\n'));
+        assert.ok(headers(pages).includes('/ideology.md\n  Link: <https://alexkan.xyz/ideology>; rel="canonical", </llms.txt>; rel="describedby"\n  Content-Type: text/markdown; charset=utf-8\n'));
+    });
+
+    test("agent guidance uses an H2 file list in the llms.txt format", () => {
+        const text = llmsTxt(pages, site, true);
+        assert.ok(text.includes("## When to use this\n\n- [Agent instructions](https://alexkan.xyz/agent-instructions.md): use this site to learn about Alex Kan"));
+        assert.ok(!llmsTxt(pages, site).includes("agent-instructions.md"));
     });
 });

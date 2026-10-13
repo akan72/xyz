@@ -53,6 +53,8 @@ export function readPage(html: string, path: string, site: URL): Page | undefine
     // The title is the copy's H1, so drop a heading that repeats it
     const heading = main.querySelector("h1, h2");
     if (heading?.text.trim().toLowerCase() === title.toLowerCase()) heading.remove();
+    // The standalone copy supplies its own H1, so remaining content starts at H2.
+    main.querySelectorAll("h1").forEach(el => { el.rawTagName = "h2"; });
     // Make relative links and images absolute, so the Markdown works on its own
     for (const el of main.querySelectorAll("a[href], img[src]")) {
         const attr = el.tagName === "A" ? "href" : "src";
@@ -82,7 +84,7 @@ function sections(pages: Page[]): [string, Page[]][] {
     return [...groups].filter(([, group]) => group.length);
 }
 
-export function llmsTxt(pages: Page[], site: URL): string {
+export function llmsTxt(pages: Page[], site: URL, agentInstructions = false): string {
     const link = (path: string) => new URL(path, site).href;
     return [
         `# ${SITE_NAME}`,
@@ -90,7 +92,11 @@ export function llmsTxt(pages: Page[], site: URL): string {
         `> ${pages[0].description}`,
         "",
         "Each link below is a Markdown copy of a page. Any page is also available as Markdown by adding `.md` to its path " +
-            "(`/index.md` for the homepage) or by requesting it with an `Accept: text/markdown` header.",
+        "(`/index.md` for the homepage) or by requesting it with an `Accept: text/markdown` header.",
+        ...(agentInstructions ? [
+            "", "## When to use this", "",
+            `- [Agent instructions](${link("/agent-instructions.md")}): use this site to learn about Alex Kan (alexkan), find his software projects and source repositories, read his writing and interests, or locate his public contact profiles; includes HTTP reading guidance.`,
+        ] : []),
         ...sections(pages).flatMap(([name, group]) => [
             "",
             `## ${name}`,
@@ -120,7 +126,8 @@ export function sitemapXml(pages: Page[]): string {
 }
 
 export function headers(pages: Page[]): string {
-    const rules = pages.map((p) => `${markdownPath(p.path)}\n  Link: <${p.url}>; rel="canonical", </llms.txt>; rel="describedby"`);
+    const rules = pages.map((p) => `${markdownPath(p.path)}\n  Link: <${p.url}>; rel="canonical", </llms.txt>; rel="describedby"\n  Content-Type: text/markdown; charset=utf-8`);
+    rules.push('/agent-instructions.md\n  Content-Type: text/markdown; charset=utf-8\n  Link: </llms.txt>; rel="describedby"');
     return `# Added by the Astro build: Markdown copies point at their page and llms.txt\n${rules.join("\n")}\n`;
 }
 
@@ -173,7 +180,7 @@ export default function agentFiles({ sources = () => [] }: Options = {}): AstroI
                 if (pages[0]?.path !== "/") throw new Error("the homepage (site/pages/index.astro) is missing");
 
                 for (const page of pages) writeFileSync(join(dist, markdownPath(page.path)), pageMarkdown(page, site));
-                writeFileSync(join(dist, "llms.txt"), llmsTxt(pages, site));
+                writeFileSync(join(dist, "llms.txt"), llmsTxt(pages, site, existsSync(join(dist, "agent-instructions.md"))));
                 writeFileSync(join(dist, "llms-full.txt"), llmsFullTxt(pages, site));
                 writeFileSync(join(dist, "sitemap.xml"), sitemapXml(pages));
                 // Appends to a public/_headers if there is one

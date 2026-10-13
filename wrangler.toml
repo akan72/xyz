@@ -39,11 +39,9 @@ directory = "./dist"
 binding = "ASSETS"
 # Missing paths get 404.html with a 404 status
 not_found_handling = "404-page"
-# Paths without a file extension (pages, /image, /cig/*) run the Worker first,
-# so it can add link-preview tags (src/link_preview.rs) and answer
-# `Accept: text/markdown` with a page's Markdown copy. Paths with one
-# (images, .md, .txt, .xml) are served straight from assets.
-run_worker_first = ["/*", "!/*.*"]
+# All paths run the Worker first for content negotiation, including Markdown
+# 404s for missing files. Existing static files are fetched from ASSETS.
+run_worker_first = true
 
 [[r2_buckets]]
 binding = "BUCKET"

@@ -138,6 +138,45 @@ Writing is in the header. The `/writing` list changes pages like the others;
 posts load as full pages, so any scripts in them (like an interactive
 figure's) run.
 
+## Agent readiness
+
+The homepage and `/about`, `/contact`, `/privacy` contain at least 500
+characters of visible paragraph text in raw HTML. Their Markdown copies,
+`llms.txt`, `llms-full.txt` and sitemap derive from that same content.
+`public/agent-instructions.md` explains when and how agents should use the
+site, linked from `llms.txt` in the [published format](https://llmstxt.org/).
+
+Read requests for missing pages or files get HTTP 404 with an explanatory
+Markdown body when `Accept: text/markdown` is preferred. Both error
+representations include `Vary: Accept`. All paths enter the Worker for this
+negotiation; static file bodies and headers still come from ASSETS. This
+adds Worker invocations for static files compared with the previous routing.
+
+To verify every page, generated file, asset, and error response against the
+actual local Worker (after `npm run build`):
+
+```sh
+wrangler r2 object put cigawrette-packs/cig-collection/1.jpg --file public/assets/cig.jpg --local
+wrangler dev --local
+# In another terminal:
+node scripts/verify-endpoints.ts http://127.0.0.1:8787 --cig-id=1
+```
+
+CI runs these HTTP checks without Cloudflare credentials before deployment.
+After deployment, build `dist/` from the deployed commit and run:
+
+```sh
+node scripts/verify-endpoints.ts https://alexkan.xyz --cig-id=1
+curl -sS -L -i -H 'Accept: text/markdown' https://alexkan.xyz/__ora-404-probe-1kjbbxuq
+```
+
+The missing URL must finish with HTTP 404, `Content-Type: text/markdown`,
+and explanatory Markdown linking to the site guide or sitemap. Status
+alone does not verify negotiation. Search placement needs search-console
+access to submit the sitemap and request indexing after deployment. Public
+profile links and independent mentions should point to `https://alexkan.xyz/`;
+rankings and editorial links cannot be guaranteed by a code change.
+
 ## Tests
 
     npm ci

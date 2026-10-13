@@ -148,6 +148,10 @@ class WranglerConfigTests(unittest.TestCase):
     def test_names_the_one_worker_that_previews_belong_to(self):
         self.assertEqual(self.config["name"], "xyz")
 
+    def test_missing_files_can_reach_markdown_error_negotiation(self):
+        self.assertIs(self.config["assets"]["run_worker_first"], True)
+        self.assertEqual(self.config["assets"]["not_found_handling"], "404-page")
+
     def test_turns_on_preview_urls_but_not_production_on_workers_dev(self):
         # A Worker Preview only gets a URL when the Worker has Preview URLs on;
         # with custom domains, both default to off
@@ -184,6 +188,16 @@ class WranglerConfigTests(unittest.TestCase):
 
 
 class WorkflowTests(unittest.TestCase):
+    def test_http_checks_gate_deployment_without_production_credentials(self):
+        workflow = DEPLOY.read_text()
+        self.assertIn("needs: [rust, site, endpoints]", workflow)
+        endpoints = workflow.split("  endpoints:\n", 1)[1].split("  deploy:\n", 1)[0]
+        self.assertNotIn("secrets.", endpoints)
+        self.assertIn("r2 object put cigawrette-packs/cig-collection/1.jpg", endpoints)
+        self.assertIn("--file public/assets/cig.jpg --local", endpoints)
+        self.assertIn("dev --local --ip 127.0.0.1", endpoints)
+        self.assertIn("node scripts/verify-endpoints.ts http://127.0.0.1:8787 --cig-id=1", endpoints)
+
     def test_give_the_cloudflare_secrets_only_to_the_deploy_and_delete_steps(self):
         for path, allowed in [(DEPLOY, ["Deploy to production", "Deploy PR preview"]), (CLEANUP, ["Delete preview"])]:
             with_secrets = [name for name, text in steps(path) if "secrets." in text]
