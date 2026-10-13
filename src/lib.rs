@@ -1,9 +1,7 @@
 use rand::Rng;
 use worker::*;
 
-mod api;
 mod link_preview;
-mod mcp;
 mod vesta;
 
 const NOT_FOUND_MARKDOWN: &str = "# Page not found\n\nThe requested resource does not exist on Alex Kan's personal website.\n\nSee the [site guide](https://alexkan.xyz/llms.txt) or [sitemap](https://alexkan.xyz/sitemap.xml) to find an available page.\n";
@@ -25,16 +23,9 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     let markdown = read_request && wants_markdown(req.headers().get("accept")?.as_deref());
     let head = req.method() == Method::Head;
 
-    if path == "/mcp" {
-        return mcp::handle(req, &env).await;
-    }
-
     // The retired price API exposes nothing, regardless of flags or method.
     if path == "/api/vesta" || path.starts_with("/api/vesta/") {
         return Ok(Response::empty()?.with_status(404));
-    }
-    if path == "/api" || path.starts_with("/api/") {
-        return api::handle(req, &env).await;
     }
 
     // Replace base Cig with random one on button click (returns raw URL for preload)
@@ -149,7 +140,7 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
 
 // Path of a page's Markdown copy: / -> /index.md, /ideology -> /ideology.md.
 // None for paths with a dot, which are files, not pages. Keep in sync with
-// markdownPath in site/integrations/agent-files.ts.
+// markdown_path in scripts/sitegen.py.
 fn markdown_path(path: &str) -> Option<String> {
     if path.contains('.') {
         None

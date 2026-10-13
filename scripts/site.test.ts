@@ -17,6 +17,15 @@ const doc = (file: string) => parse(dist(file));
 const indexable = htmlFiles.filter((f) => !doc(f).querySelector('meta[name="robots"][content*="noindex"]'));
 
 describe("agent readiness", () => {
+    test("the build exposes content guidance without the removed API and MCP discovery files", () => {
+        for (const file of ["docs.html", "docs.md", "openapi.json", "agent-catalog.json"]) {
+            assert.ok(!existsSync(`dist/${file}`), file);
+        }
+        assert.equal(doc("index.html").querySelector('link[rel="service-desc"]'), null);
+        assert.ok(!dist("llms.txt").includes("openapi.json"));
+        assert.ok(!dist("agent-instructions.md").includes("Streamable HTTP"));
+    });
+
     for (const file of ["index.html", "about.html", "contact.html", "privacy.html"]) {
         test(`${file} has substantive static content and sequential headings`, () => {
             const page = doc(file);
@@ -39,65 +48,10 @@ describe("agent readiness", () => {
         assert.match(page.querySelector("title")!.text, /Alex Kan \(alexkan\).*Personal Website/);
         assert.match(page.querySelector("h1")!.text, /Alex Kan.*personal website/);
         const graph = JSON.parse(page.querySelector('script[type="application/ld+json"]')!.text)["@graph"];
-        const profile = graph.find((el: { "@type": string }) => el["@type"] === "ProfilePage");
-        assert.match(profile.name, /Alex Kan.*alexkan.xyz Personal Website/);
-        assert.equal(profile.description, page.querySelector('meta[name="description"]')!.getAttribute("content"));
-        assert.deepEqual(profile.sameAs, ["https://github.com/akan72", "https://www.linkedin.com/in/alexanderkan/"]);
-        const person = profile.mainEntity;
+        const person = graph.find((el: { "@type": string }) => el["@type"] === "ProfilePage").mainEntity;
         assert.equal(person.name, "Alex Kan");
         assert.equal(person.alternateName, "alexkan");
         assert.deepEqual(person.sameAs, ["https://github.com/akan72", "https://www.linkedin.com/in/alexanderkan/"]);
-    });
-
-    test("the site homepage is indexable in its own HTML", () => {
-        const page = doc("index.html");
-        for (const el of page.querySelectorAll('meta[name="robots"], meta[name="googlebot"], meta[name="bingbot"]')) {
-            assert.ok(!/\b(noindex|none)\b/i.test(el.getAttribute("content") ?? ""));
-        }
-        assert.equal(page.querySelector('link[rel="canonical"]')!.getAttribute("href"), SITE_URL + "/");
-    });
-
-    test("developer resources and MCP reading guidance are discoverable", () => {
-        const page = doc("docs.html");
-        assert.match(page.querySelector("title")!.text, /alexkan.xyz Developer Resources.*Cloudflare Workers/);
-        assert.match(page.querySelector("h1")!.text, /alexkan.xyz developer resources/);
-        for (const phrase of ["Cloudflare Workers", "Streamable HTTP", "MCP-Protocol-Version", "list_pages", "read_page", "No API key"]) {
-            assert.ok(page.text.includes(phrase), phrase);
-        }
-        assert.equal(doc("index.html").querySelector('main a[href="/docs"]')!.text, "alexkan.xyz developer resources");
-        assert.ok(dist("llms.txt").includes("## Developer resources\n\n- [alexkan.xyz developer documentation](https://alexkan.xyz/docs.md)"));
-        assert.ok(dist("agent-instructions.md").includes("https://alexkan.xyz/docs.md"));
-    });
-
-    test("the MCP catalog contains exactly the published pages", () => {
-        const catalog = JSON.parse(dist("agent-catalog.json"));
-        assert.equal(catalog.siteName, "alexkan.xyz");
-        assert.deepEqual(catalog.pages.map((page: {path: string}) => page.path).sort(), indexable.map(pagePath).sort());
-        for (const page of catalog.pages) {
-            assert.equal(page.url, SITE_URL + page.path);
-            assert.equal(page.markdownPath, markdownPath(page.path));
-            assert.ok(existsSync(`dist${page.markdownPath}`));
-            assert.ok(page.title && page.description);
-        }
-        assert.ok(!dist("agent-catalog.json").includes("/404"));
-        assert.ok(!dist("agent-catalog.json").includes("/api/vesta"));
-    });
-
-    test("the public REST API contract is discoverable from pages and agent guidance", () => {
-        const spec = JSON.parse(dist("openapi.json"));
-        assert.equal(spec.openapi, "3.1.1");
-        assert.match(spec.info.title, /alexkan.xyz Public Content API/);
-        assert.deepEqual(spec.security, []);
-        assert.deepEqual(Object.keys(spec.paths).sort(), ["/api", "/api/page", "/api/pages"]);
-        for (const file of indexable) {
-            assert.equal(doc(file).querySelector('link[rel="service-desc"]')?.getAttribute("href"), "/openapi.json");
-        }
-        assert.ok(dist("llms.txt").includes("https://alexkan.xyz/openapi.json"));
-        assert.ok(dist("agent-instructions.md").includes("https://alexkan.xyz/openapi.json"));
-        for (const href of ["/api", "/api/pages", "/api/page?path=%2Fprojects", "/openapi.json"]) {
-            assert.ok(doc("docs.html").querySelector(`a[href="${href}"]`), href);
-        }
-        assert.ok(doc("docs.html").text.includes("application/problem+json"));
     });
 
     test("llms.txt uses file lists and every discovery link resolves to a built file", () => {

@@ -95,8 +95,6 @@ jobs:
           npm ci
           cargo install worker-build --locked
           npm install --prefix /tmp/xyz-wrangler --no-save "wrangler@${WRANGLER_VERSION}"
-          npm install --prefix /tmp/xyz-mcp-interop --no-audit --no-fund --ignore-scripts @modelcontextprotocol/sdk@1.32.1 @modelcontextprotocol/client@2.3.1
-          npm install --prefix /tmp/xyz-openapi-interop --no-audit --no-fund --ignore-scripts @apidevtools/swagger-parser@12.1.0 ajv@8.17.1
 
       - name: Verify HTTP endpoints
         run: |
@@ -120,8 +118,6 @@ jobs:
             exit 1
           fi
           node scripts/verify-endpoints.ts http://127.0.0.1:8787 --cig-id=1
-          node scripts/verify-openapi.mjs http://127.0.0.1:8787 /tmp/xyz-openapi-interop --fault-injection
-          node scripts/verify-mcp-clients.mjs http://127.0.0.1:8787 /tmp/xyz-mcp-interop
 
   deploy:
     name: Cloudflare Workers
