@@ -97,6 +97,10 @@ export function llmsTxt(pages: Page[], site: URL, agentInstructions = false): st
             "", "## When to use this", "",
             `- [Agent instructions](${link("/agent-instructions.md")}): use this site to learn about Alex Kan (alexkan), find his software projects and source repositories, read his writing and interests, or locate his public contact profiles; includes HTTP reading guidance.`,
         ] : []),
+        ...(pages.some(page => page.path === "/docs") ? [
+            "", "## Developer resources", "",
+            `- [alexkan.xyz developer documentation](${link("/docs.md")}): Rust and Cloudflare Workers source, public HTTP endpoints, authentication scope, and the read-only Streamable HTTP MCP server at /mcp.`,
+        ] : []),
         ...sections(pages).flatMap(([name, group]) => [
             "",
             `## ${name}`,
@@ -183,6 +187,14 @@ export default function agentFiles({ sources = () => [] }: Options = {}): AstroI
                 writeFileSync(join(dist, "llms.txt"), llmsTxt(pages, site, existsSync(join(dist, "agent-instructions.md"))));
                 writeFileSync(join(dist, "llms-full.txt"), llmsFullTxt(pages, site));
                 writeFileSync(join(dist, "sitemap.xml"), sitemapXml(pages));
+                // Public, indexable pages only; the MCP server reads this fixed catalog.
+                writeFileSync(join(dist, "agent-catalog.json"), JSON.stringify({
+                    siteName: SITE_NAME,
+                    url: site.href,
+                    pages: pages.map(({ path, url, title, description }) => ({
+                        path, url, title, description, markdownPath: markdownPath(path),
+                    })),
+                }, null, 2) + "\n");
                 // Appends to a public/_headers if there is one
                 const headersFile = join(dist, "_headers");
                 (existsSync(headersFile) ? appendFileSync : writeFileSync)(headersFile, headers(pages));

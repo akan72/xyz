@@ -39,10 +39,48 @@ describe("agent readiness", () => {
         assert.match(page.querySelector("title")!.text, /Alex Kan \(alexkan\).*Personal Website/);
         assert.match(page.querySelector("h1")!.text, /Alex Kan.*personal website/);
         const graph = JSON.parse(page.querySelector('script[type="application/ld+json"]')!.text)["@graph"];
-        const person = graph.find((el: { "@type": string }) => el["@type"] === "ProfilePage").mainEntity;
+        const profile = graph.find((el: { "@type": string }) => el["@type"] === "ProfilePage");
+        assert.match(profile.name, /Alex Kan.*alexkan.xyz Personal Website/);
+        assert.equal(profile.description, page.querySelector('meta[name="description"]')!.getAttribute("content"));
+        assert.deepEqual(profile.sameAs, ["https://github.com/akan72", "https://www.linkedin.com/in/alexanderkan/"]);
+        const person = profile.mainEntity;
         assert.equal(person.name, "Alex Kan");
         assert.equal(person.alternateName, "alexkan");
         assert.deepEqual(person.sameAs, ["https://github.com/akan72", "https://www.linkedin.com/in/alexanderkan/"]);
+    });
+
+    test("the site homepage is indexable in its own HTML", () => {
+        const page = doc("index.html");
+        for (const el of page.querySelectorAll('meta[name="robots"], meta[name="googlebot"], meta[name="bingbot"]')) {
+            assert.ok(!/\b(noindex|none)\b/i.test(el.getAttribute("content") ?? ""));
+        }
+        assert.equal(page.querySelector('link[rel="canonical"]')!.getAttribute("href"), SITE_URL + "/");
+    });
+
+    test("developer resources and MCP reading guidance are discoverable", () => {
+        const page = doc("docs.html");
+        assert.match(page.querySelector("title")!.text, /alexkan.xyz Developer Resources.*Cloudflare Workers/);
+        assert.match(page.querySelector("h1")!.text, /alexkan.xyz developer resources/);
+        for (const phrase of ["Cloudflare Workers", "Streamable HTTP", "MCP-Protocol-Version", "list_pages", "read_page", "No API key"]) {
+            assert.ok(page.text.includes(phrase), phrase);
+        }
+        assert.equal(doc("index.html").querySelector('main a[href="/docs"]')!.text, "alexkan.xyz developer resources");
+        assert.ok(dist("llms.txt").includes("## Developer resources\n\n- [alexkan.xyz developer documentation](https://alexkan.xyz/docs.md)"));
+        assert.ok(dist("agent-instructions.md").includes("https://alexkan.xyz/docs.md"));
+    });
+
+    test("the MCP catalog contains exactly the published pages", () => {
+        const catalog = JSON.parse(dist("agent-catalog.json"));
+        assert.equal(catalog.siteName, "alexkan.xyz");
+        assert.deepEqual(catalog.pages.map((page: {path: string}) => page.path).sort(), indexable.map(pagePath).sort());
+        for (const page of catalog.pages) {
+            assert.equal(page.url, SITE_URL + page.path);
+            assert.equal(page.markdownPath, markdownPath(page.path));
+            assert.ok(existsSync(`dist${page.markdownPath}`));
+            assert.ok(page.title && page.description);
+        }
+        assert.ok(!dist("agent-catalog.json").includes("/404"));
+        assert.ok(!dist("agent-catalog.json").includes("/api/vesta"));
     });
 
     test("llms.txt uses file lists and every discovery link resolves to a built file", () => {

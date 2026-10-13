@@ -1,0 +1,44 @@
+---
+import Page from "../layouts/Page.astro";
+const initialize = JSON.stringify({
+    jsonrpc: "2.0", id: 1, method: "initialize",
+    params: { protocolVersion: "2025-11-25", capabilities: {}, clientInfo: { name: "site-reader", version: "1.0.0" } },
+}, null, 2);
+---
+<Page title="alexkan.xyz Developer Resources — Rust and Cloudflare Workers" description="Developer documentation for Alex Kan's xyz website: Cloudflare Workers source, public HTTP endpoints, authentication, and a read-only MCP server.">
+    <h1>alexkan.xyz developer resources</h1>
+    <p>xyz is the open-source code for Alex Kan's personal website, alexkan.xyz. It uses Astro to generate static HTML and Markdown, with a Rust Worker compiled to WebAssembly and hosted on Cloudflare Workers. This page documents the public interfaces for reading this site and links to the source for developers working with Workers.</p>
+
+    <h2>Cloudflare Workers source and local development</h2>
+    <p>The <a href="https://github.com/akan72/xyz">xyz repository</a> contains the site's code. Its <a href="https://github.com/akan72/xyz/blob/master/README.md">README</a> covers installation, Astro builds, local Worker development, tests, and deployments. The <a href="https://github.com/akan72/xyz/blob/master/src/lib.rs">Rust Worker</a> handles HTTP routing and content negotiation; the <a href="https://github.com/akan72/xyz/blob/master/site/integrations/agent-files.ts">Astro agent-files integration</a> generates the Markdown copies and discovery indexes. See the <a href="/projects">Projects</a> page for other software and its own documentation.</p>
+
+    <h2>Public HTTP resources</h2>
+    <ul>
+        <li><a href="/llms.txt">/llms.txt</a> describes when to use the site and links to Markdown pages.</li>
+        <li><a href="/llms-full.txt">/llms-full.txt</a> combines all published page content.</li>
+        <li><a href="/agent-catalog.json">/agent-catalog.json</a> lists public page paths, titles, descriptions, canonical URLs, and Markdown paths.</li>
+        <li><a href="/sitemap.xml">/sitemap.xml</a> lists canonical HTML pages for crawlers.</li>
+        <li>Use HTTP GET on a page path with <code>Accept: text/markdown</code>, or fetch its <code>.md</code> copy directly. The homepage copy is <a href="/index.md">/index.md</a>.</li>
+        <li>HTTP GET <code>/image</code> returns a randomly selected <code>/cig/{'{id}'}</code> URL as plain text. IDs range from 1 to 9996; a stored image returns <code>image/jpeg</code>, and a missing image returns HTTP 404.</li>
+    </ul>
+    <p>No API key or account is needed to read these public resources. The site does not accept submitted jobs or messages. The retired <code>/api/vesta</code> routes return empty HTTP 404 responses; they do not expose the private price producer or its credentials. This site's read-only interfaces are separate from the services linked on the Projects page.</p>
+
+    <h2>Read-only MCP server</h2>
+    <p>Connect an MCP client using <a href="https://modelcontextprotocol.io/specification/2025-11-25/basic/transports">Streamable HTTP</a> to <code>https://alexkan.xyz/mcp</code>. To test a preview, use <code>/mcp</code> on that preview's own origin. The server supports protocol versions <code>2025-11-25</code>, <code>2025-06-18</code>, and <code>2025-03-26</code>. It returns JSON responses, uses no session IDs, and offers no server event stream; GET returns HTTP 405 as allowed by the transport specification.</p>
+    <p>POST a UTF-8 JSON-RPC message with <code>Content-Type: application/json</code> and <code>Accept: application/json, text/event-stream</code>. Start with an <code>initialize</code> request like this:</p>
+    <pre><code>{initialize}</code></pre>
+    <p>After initialization, send <code>notifications/initialized</code> without an ID, and include the negotiated <code>MCP-Protocol-Version</code> header on subsequent requests. Accepted notifications return HTTP 202 with no body. Requests are limited to 64 KiB. When a browser sends an Origin header, it must match this server's origin or the production alexkan.xyz origin.</p>
+    <ul>
+        <li><code>tools/list</code> discovers the available tools.</li>
+        <li><code>list_pages</code>, with empty arguments, returns the public page catalog.</li>
+        <li><code>read_page</code>, with arguments such as <code>{'{"path":"/projects"}'}</code>, returns a published page's Markdown. Use a path from <code>list_pages</code>; arbitrary URLs, files, and private APIs are outside this tool's scope.</li>
+    </ul>
+    <p>The MCP server reads the same public Markdown as HTTP clients. It has no authentication requirement because its tools only read published site content. There are no write tools, SDK-specific credentials, or access to private data through this endpoint. Cite each Markdown page's canonical Source URL in answers.</p>
+    <nav aria-label="Site information"><a href="/">Home</a> · <a href="/privacy">Privacy</a> · <a href="/contact">Contact</a></nav>
+</Page>
+
+<style>
+    h1 { font-size: 1.5em; }
+    h2 { font-size: 1.25em; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+</style>

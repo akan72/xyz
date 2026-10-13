@@ -146,6 +146,17 @@ characters of visible paragraph text in raw HTML. Their Markdown copies,
 `public/agent-instructions.md` explains when and how agents should use the
 site, linked from `llms.txt` in the [published format](https://llmstxt.org/).
 
+`/docs` and `/docs.md` publish the xyz developer resources for Rust and
+Cloudflare Workers, including source links, HTTP interfaces, and MCP usage.
+The build also generates `/agent-catalog.json` from indexable pages; the
+stateless `/mcp` endpoint exposes `list_pages` and `read_page` through
+[Streamable HTTP](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports).
+It supports MCP 2025-11-25, 2025-06-18, and 2025-03-26, returns JSON, and
+does not offer SSE or sessions. No API key is required to read this public
+content. The tools never fetch caller-supplied URLs or access private bindings.
+No discovery manifest with an unofficial schema is published: connect to
+the endpoint using the documented `initialize` handshake.
+
 Read requests for missing pages or files get HTTP 404 with an explanatory
 Markdown body when `Accept: text/markdown` is preferred. Both error
 representations include `Vary: Accept`. All paths enter the Worker for this
@@ -163,6 +174,14 @@ node scripts/verify-endpoints.ts http://127.0.0.1:8787 --cig-id=1
 ```
 
 CI runs these HTTP checks without Cloudflare credentials before deployment.
+It also verifies initialization, tool discovery, and all page reads using
+the official MCP v1 and v2 clients. To repeat that interoperability check:
+
+```sh
+npm install --prefix /tmp/xyz-mcp-interop --no-audit --no-fund --ignore-scripts @modelcontextprotocol/sdk@1.32.1 @modelcontextprotocol/client@2.3.1
+node scripts/verify-mcp-clients.mjs http://127.0.0.1:8787 /tmp/xyz-mcp-interop
+```
+
 After deployment, build `dist/` from the deployed commit and run:
 
 ```sh
@@ -176,6 +195,16 @@ alone does not verify negotiation. Search placement needs search-console
 access to submit the sitemap and request indexing after deployment. Public
 profile links and independent mentions should point to `https://alexkan.xyz/`;
 rankings and editorial links cannot be guaranteed by a code change.
+
+Cloudflare's `workers.dev` [Worker Previews](https://developers.cloudflare.com/workers/previews/)
+automatically add `X-Robots-Tag: noindex`, independently of the site markup.
+The homepage sets no robots exclusion and keeps its production canonical
+URL. The verifier reports this preview hosting policy while enforcing no
+homepage exclusion on local and production origins. Audit indexing and
+brand search on the production domain after merging, or provision a custom
+preview hostname with the intended indexing policy. Registry publication
+and removal of unrelated registry matches require the appropriate account
+ownership; this site does not claim the audit's right-to-work service.
 
 ## Tests
 

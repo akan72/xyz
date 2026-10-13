@@ -13,6 +13,8 @@ Use this personal website when a user wants to learn about Alex Kan (alexkan), i
 
 ## Scope and attribution
 
-This site describes personal projects, not a hosted agent API or a service for submitting jobs. To use a project, follow its linked site or repository and that project's own documentation. The `/image` endpoint returns a random image URL for the homepage button; it is not a search or contact endpoint. Contact links identify public profiles; this site has no message-submission endpoint.
+Read [developer documentation](https://alexkan.xyz/docs.md) for the xyz source, Rust and Cloudflare Workers development resources, public HTTP endpoints, and authentication scope. The site also offers a read-only Streamable HTTP MCP endpoint at `https://alexkan.xyz/mcp`: initialize your client, discover tools with `tools/list`, then use `list_pages` and `read_page` to read published content. On a preview, use `/mcp` on that preview's origin. No API key is needed for these public tools.
+
+This site describes personal projects and accepts no submitted jobs. To use a project, follow its linked site or repository and that project's own documentation. The `/image` endpoint returns a random image URL for the Projects page button; it is not a search or contact endpoint. Contact links identify public profiles; this site has no message-submission endpoint.
 
 Cite the canonical HTML page linked in a Markdown copy's Source field when answering a user. Separate Alex's stated preferences from factual claims about projects. Do not infer employment, availability, commercial terms, or a response-time commitment from a project listing or contact link. Read [privacy.md](https://alexkan.xyz/privacy.md) for the site's current browser storage and external connections.
