@@ -68,9 +68,60 @@ jobs:
       # The Worker Preview workflow tests
       - run: python3 -m unittest discover -s scripts
 
+  endpoints:
+    name: HTTP endpoints (local Worker)
+    needs: [rust, site]
+    runs-on: ubuntu-latest
+    env:
+      WRANGLER_SEND_METRICS: "false"
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Add WebAssembly target
+        run: rustup target add wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+
+      - name: Install Worker tools
+        run: |
+          npm ci
+          cargo install worker-build --locked
+          npm install --prefix /tmp/xyz-wrangler --no-save "wrangler@${WRANGLER_VERSION}"
+
+      - name: Verify HTTP endpoints
+        run: |
+          set -euo pipefail
+          worker-build --release
+          npm run build
+          node /tmp/xyz-wrangler/node_modules/wrangler/bin/wrangler.js r2 object put cigawrette-packs/cig-collection/1.jpg --file public/assets/cig.jpg --local
+          node /tmp/xyz-wrangler/node_modules/wrangler/bin/wrangler.js dev --local --ip 127.0.0.1 --port 8787 --show-interactive-dev-session=false > /tmp/xyz-dev.log 2>&1 &
+          dev_pid=$!
+          trap 'kill "$dev_pid" 2>/dev/null || true' EXIT
+          ready=false
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:8787/ > /dev/null 2>&1; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            cat /tmp/xyz-dev.log
+            exit 1
+          fi
+          node scripts/verify-endpoints.ts http://127.0.0.1:8787 --cig-id=1
+
   deploy:
     name: Cloudflare Workers
-    needs: [rust, site]
+    needs: [rust, site, endpoints]
     runs-on: ubuntu-latest
     # Secrets aren't exposed to PRs from forks; skip deploy there.
     if: |

@@ -4,13 +4,14 @@ use worker::*;
 mod link_preview;
 mod vesta;
 
+const NOT_FOUND_MARKDOWN: &str = "# Page not found\n\nThe requested resource does not exist on Alex Kan's personal website.\n\nSee the [site guide](https://alexkan.xyz/llms.txt) or [sitemap](https://alexkan.xyz/sitemap.xml) to find an available page.\n";
+
 // Cig IDs go from 1 -> 9996
 const CIG_MIN: u32 = 1;
 const CIG_MAX: u32 = 9996;
 
-// Worker entrypoint. `run_worker_first` in wrangler.toml sends paths without
-// a file extension (pages, /image, /cig/*) here first; unhandled paths fall
-// through to the static assets that scripts/sitegen.py builds into dist/.
+// All requests pass through the Worker so missing files as well as pages can
+// return Markdown 404s. Existing assets still come from the ASSETS binding.
 #[event(fetch)]
 async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     // Route panics to stack trace via wrangler tail
@@ -18,6 +19,9 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
 
     let url = req.url()?;
     let path = url.path();
+    let read_request = matches!(req.method(), Method::Get | Method::Head);
+    let markdown = read_request && wants_markdown(req.headers().get("accept")?.as_deref());
+    let head = req.method() == Method::Head;
 
     // The retired price API exposes nothing, regardless of flags or method.
     if path == "/api/vesta" || path.starts_with("/api/vesta/") {
@@ -56,12 +60,11 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     }
 
     let assets = env.assets("ASSETS")?;
-    let page_md =
-        markdown_path(path).filter(|_| matches!(req.method(), Method::Get | Method::Head));
+    let page_md = markdown_path(path).filter(|_| read_request);
 
     // Serve the page's generated Markdown copy to clients that ask for it (AI agents)
     if let Some(md_path) = &page_md {
-        if wants_markdown(req.headers().get("accept")?.as_deref()) {
+        if markdown {
             let mut md_url = url.clone();
             md_url.set_path(md_path);
             // Same method and headers, so HEAD and If-None-Match (304) keep working
@@ -95,6 +98,17 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         req
     };
     let mut res = assets.fetch_request(asset_request).await?;
+    if read_request && res.status_code() == 404 {
+        if markdown {
+            res = Response::ok(if head { "" } else { NOT_FOUND_MARKDOWN })?.with_status(404);
+            res.headers_mut()
+                .set("content-type", "text/markdown; charset=utf-8")?;
+            res.headers_mut().set("x-robots-tag", "noindex")?;
+            res.headers_mut()
+                .set("link", "</llms.txt>; rel=\"describedby\"")?;
+        }
+        return vary_on_accept(res);
+    }
     let is_html = res
         .headers()
         .get("content-type")?
