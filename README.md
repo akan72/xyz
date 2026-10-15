@@ -140,9 +140,11 @@ figure's) run.
 
 ## Agent readiness
 
-The homepage and `/about`, `/contact`, `/privacy` contain at least 500
-characters of visible paragraph text in raw HTML. Their Markdown copies,
-`llms.txt`, `llms-full.txt` and sitemap derive from that same content.
+Agent readiness must not change how the visible pages look. The homepage and
+`/contact` carry agents' context in their meta description and JSON-LD only;
+`/about` and `/privacy`, which no visible page links to, each contain at least
+500 characters of paragraph text in raw HTML. Markdown copies, `llms.txt`,
+`llms-full.txt` and sitemap derive from each page's content.
 `public/agent-instructions.md` explains when and how agents should use the
 site, linked from `llms.txt` in the [published format](https://llmstxt.org/).
 
