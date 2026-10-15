@@ -26,7 +26,12 @@ describe("agent readiness", () => {
         assert.ok(!dist("agent-instructions.md").includes("Streamable HTTP"));
     });
 
-    for (const file of ["index.html", "about.html", "contact.html", "privacy.html"]) {
+    // The visible pages keep their look; agent-facing prose lives on /about and /privacy
+    test("index.html and contact.html have no added paragraph text", () => {
+        for (const file of ["index.html", "contact.html"]) assert.equal(doc(file).querySelectorAll("main p").length, 0, file);
+    });
+
+    for (const file of ["about.html", "privacy.html"]) {
         test(`${file} has substantive static content and sequential headings`, () => {
             const page = doc(file);
             page.querySelectorAll("script, style, [hidden], [aria-hidden=true]").forEach(el => el.remove());
@@ -45,8 +50,7 @@ describe("agent readiness", () => {
 
     test("the homepage names Alex Kan and links his verified profiles in structured metadata", () => {
         const page = doc("index.html");
-        assert.match(page.querySelector("title")!.text, /Alex Kan \(alexkan\).*Personal Website/);
-        assert.match(page.querySelector("h1")!.text, /Alex Kan.*personal website/);
+        assert.match(page.querySelector('meta[name="description"]')!.getAttribute("content")!, /Alex Kan/);
         const graph = JSON.parse(page.querySelector('script[type="application/ld+json"]')!.text)["@graph"];
         const person = graph.find((el: { "@type": string }) => el["@type"] === "ProfilePage").mainEntity;
         assert.equal(person.name, "Alex Kan");

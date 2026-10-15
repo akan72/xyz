@@ -8,10 +8,8 @@ const links = [
     { label: "LinkedIn", href: "https://www.linkedin.com/in/alexanderkan/" },
 ];
 ---
-<Page title="Contact Alex Kan | alexkan.xyz" description="Find Alex Kan's public profiles, PGP key, and email reveal on alexkan.xyz.">
-    <h1>Contact Alex Kan</h1>
-    <p>You can find me, Alex Kan, through the public profiles linked below. My GitHub account is akan72, where I publish the source for this website and other software projects. For questions about a particular repository, start with its README and use the issue tracker when appropriate so the discussion stays with the code. My LinkedIn profile is another way to find me for professional conversations.</p>
-    <p>If you're reaching out about something on alexkan.xyz, include the page or project link and a short description of what you'd like to discuss. The email controls below reveal my address and let you copy it in your browser. The PGP link below is my public key, for use when encrypting a message through a suitable communication channel; it is not a contact form or an inbox. This website does not accept messages directly. For privacy questions or corrections to the site's content, use one of the linked profiles.</p>
+<Page title="Contact | alexkan.xyz" description="Find Alex Kan's public profiles, PGP key, and email reveal on alexkan.xyz.">
+    <h1>Contact</h1>
     <ul>
         {links.map(({ label, href }) => <li><a href={href} target="_blank">{label}</a></li>)}
         <li data-email-contact data-email-code="bWVAYWxleGthbi54eXo=">
@@ -22,7 +20,6 @@ const links = [
             <noscript>Email — enable JavaScript to reveal the address.</noscript>
         </li>
     </ul>
-    <nav aria-label="Site information"><a href="/about">About</a> · <a href="/privacy">Privacy</a></nav>
 </Page>
 
 <style>

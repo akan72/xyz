@@ -38,8 +38,8 @@ test("HTML pages, aliases, and discovery links", async () => {
     }
 });
 
-test("meaningful homepage and trust page content without JavaScript", async () => {
-    for (const path of ["/", "/about", "/contact", "/privacy"]) {
+test("meaningful About and Privacy content without JavaScript", async () => {
+    for (const path of ["/about", "/privacy"]) {
         const response = await request(path);
         assert.equal(response.status, 200);
         const doc = parse(await response.text());
