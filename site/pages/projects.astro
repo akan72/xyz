@@ -19,6 +19,9 @@ const projects = await Promise.all(entries.map(async (entry) => ({ ...entry.data
 type Years = (typeof projects)[number]["years"];
 const years = (y: Years) =>
     y.kind === "since" ? `(${y.start}-Present)` : y.kind === "range" ? `(${y.start}-${y.end})` : `(${y.year})`;
+
+// Alt text for each project icon
+const icons: Record<NonNullable<(typeof projects)[number]["icon"]>, string> = { vim: "Vim logo" };
 ---
 <Page title="Projects | alexkan.xyz" description="Things I've built.">
     <Fragment slot="head-scripts">
@@ -26,9 +29,10 @@ const years = (y: Years) =>
     </Fragment>
     <h2>Projects</h2>
     <ul>
-        {projects.map(({ name, url, Content, media, stack, ...project }) => (
+        {projects.map(({ name, url, Content, media, icon, stack, ...project }) => (
             <li>
                 <a href={url} target="_blank">{name}</a> <span class="years">{years(project.years)}</span>
+                {icon && <img class="icon" src={`/assets/icons/${icon}.svg`} alt={icons[icon]} width="20" height="20">}
                 {media === "subway-vis" && <SubwayFigure />}
                 {media === "cig-picker" && <CigPicker />}
                 {media === "vesta-demo" && <VestaPreview />}
@@ -42,6 +46,8 @@ const years = (y: Years) =>
 <style>
     /* The stack line under each description */
     .meta { color: var(--muted, #666); font-size: 0.9em; margin-top: -0.4em; }
+    /* Logo after the years, sized to the text */
+    .icon { width: 1.1em; height: 1.1em; vertical-align: -0.2em; margin-left: 0.15em; }
     /* Wrap descriptions at the right edge of the figure (2 x 260px + 16px gap),
        and never past 70ch in case the font gets wider. :global reaches the
        <p> each project's Markdown renders. */

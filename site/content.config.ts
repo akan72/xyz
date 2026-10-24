@@ -27,6 +27,8 @@ const projects = defineCollection({
         order: z.number().int(),
         // Project media shown above the description (site/components/)
         media: z.enum(["subway-vis", "cig-picker", "vesta-demo"]).optional(),
+        // Small logo shown after the years (public/assets/icons/<icon>.svg)
+        icon: z.enum(["vim"]).optional(),
     }),
 });
 
