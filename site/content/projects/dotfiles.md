@@ -12,6 +12,7 @@ stack:
   - Ghostty
   - Coding Agent Configs
 order: 1
+icon: vim
 ---
 
 My dotfiles! Easily installable config for my dev setup.
