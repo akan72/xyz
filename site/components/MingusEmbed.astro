@@ -1,0 +1,26 @@
+---
+// The live mingus taste map on /projects. mingus is its own Worker, routed
+// same-origin at /mingus/ in production (see the mingus repo's wrangler.toml),
+// and opens in its 3D layout by default. Locally, `wrangler dev` has no
+// /mingus/ route, so the frame shows this site's 404 page.
+---
+<figure class="mingus-embed">
+    <iframe
+        src="/mingus/"
+        title="mingus: interactive 3D map of every artist I've listened to, clustered by genre"
+        loading="lazy"
+        referrerpolicy="same-origin"
+    ></iframe>
+</figure>
+
+<style>
+    /* Same 536px width as the Vesta board (2 x 260px figures + 16px gap) */
+    .mingus-embed { width: 536px; max-width: 100%; margin: 1em 0; }
+    iframe {
+        display: block; width: 100%; aspect-ratio: 4 / 3; border: 0;
+        background: color-mix(in srgb, currentColor 6%, var(--bg, Canvas));
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 12%, transparent);
+    }
+    /* Taller on phones, where the map's own controls take more of the frame */
+    @media (max-width: 600px) { iframe { aspect-ratio: 3 / 4; } }
+</style>

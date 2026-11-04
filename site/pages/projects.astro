@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from "astro:content";
 import CigPicker from "../components/CigPicker.astro";
+import MingusEmbed from "../components/MingusEmbed.astro";
 import SubwayFigure from "../components/SubwayFigure.astro";
 import SubwayHead from "../components/SubwayHead.astro";
 import VestaPreview from "../components/VestaPreview.astro";
@@ -32,6 +33,7 @@ const years = (y: Years) =>
                 {media === "subway-vis" && <SubwayFigure />}
                 {media === "cig-picker" && <CigPicker />}
                 {media === "vesta-demo" && <VestaPreview />}
+                {media === "mingus-3d" && <MingusEmbed />}
                 <Content />
                 <p class="meta">{stack.join(" · ")}</p>
             </li>
