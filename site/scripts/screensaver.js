@@ -43,7 +43,8 @@ const pos = { x: 0, y: 0 };
 const vel = { x: 0, y: 0 };
 const max = { x: 0, y: 0 };
 
-if (ENABLED) {
+// Only the top page gets one: a page of this site shown in a frame stays still.
+if (ENABLED && globalThis.self === globalThis.top) {
     init().catch((err) => console.warn('screensaver disabled:', err));
 }
 

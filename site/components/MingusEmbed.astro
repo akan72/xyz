@@ -1,15 +1,15 @@
 ---
-// The live mingus taste map on /projects. mingus is its own Worker, routed
-// same-origin at /mingus/ in production (see the mingus repo's wrangler.toml),
-// and opens in its 3D layout by default. Locally, `wrangler dev` has no
-// /mingus/ route, so the frame shows this site's 404 page.
+// The live mingus taste map on /projects, which opens in its 3D layout by
+// default. mingus is its own Worker, routed only at alexkan.xyz/mingus in
+// production (see the mingus repo's wrangler.toml). The absolute URL keeps PR
+// previews and `wrangler dev` from framing this site's own 404 page instead.
 ---
 <figure class="mingus-embed">
     <iframe
-        src="/mingus/"
+        src="https://alexkan.xyz/mingus/"
         title="mingus: interactive 3D map of every artist I've listened to, clustered by genre"
         loading="lazy"
-        referrerpolicy="same-origin"
+        referrerpolicy="no-referrer"
     ></iframe>
 </figure>
 
