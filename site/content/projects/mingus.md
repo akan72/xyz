@@ -10,6 +10,7 @@ stack:
   - Modal
   - WebGL
 order: 3
+media: mingus-3d
 ---
 
 Interactive viz of my music taste over time since 2014. Ingests a Spotify
