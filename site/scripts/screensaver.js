@@ -28,6 +28,9 @@ const THEMES = {
 };
 
 const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'wheel', 'scroll'];
+// Input inside the mingus map (site/components/MingusEmbed.astro) never reaches
+// this page's listeners, so its ?embed mode posts this message instead.
+const FRAME_ACTIVITY = { origin: 'https://alexkan.xyz', type: 'mingus:activity' };
 const AXES = ['x', 'y'];
 
 const darkMode = matchMedia('(prefers-color-scheme: dark)');
@@ -72,6 +75,7 @@ async function init() {
         addEventListener(type, onActivity, { capture: true, passive: type !== 'keydown' });
     }
     addEventListener('keydown', onHeldKey, true);
+    addEventListener('message', onFrameActivity);
     addEventListener('keyup', onHeldKey, true);
     addEventListener('resize', onResize);
     // Stops the idle timer while the tab is hidden and restarts it on return.
@@ -112,6 +116,11 @@ function onActivity(e) {
     if (e.type === 'mousemove' && e.movementX === 0 && e.movementY === 0) return;
     if (active) dismiss(e);
     resetIdleTimer();
+}
+
+function onFrameActivity(e) {
+    // While the saver is up it covers the frame, so a message then is a late one.
+    if (e.origin === FRAME_ACTIVITY.origin && e.data?.type === FRAME_ACTIVITY.type && !active) resetIdleTimer();
 }
 
 function start() {

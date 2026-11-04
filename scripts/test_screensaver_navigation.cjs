@@ -61,3 +61,20 @@ test('the first pointer press still dismisses the saver and consumes the rest of
   [...s.timers.values()].find(timer => timer.ms === 0).fn();
   assert.equal(s.overlays[0].hidden, true);
 });
+
+test('input inside the mingus frame restarts the idle period; other messages do not', async () => {
+  const s = await saver(); const originalTimer = [...s.timers.keys()][0];
+  const message = s.browserEvents.message[0];
+  message({ origin: 'https://evil.example', data: { type: 'mingus:activity' } });
+  message({ origin: 'https://alexkan.xyz', data: { type: 'something-else' } });
+  assert.equal(s.timers.has(originalTimer), true);
+  message({ origin: 'https://alexkan.xyz', data: { type: 'mingus:activity' } });
+  assert.equal(s.timers.has(originalTimer), false);
+  assert.equal([...s.timers.values()][0].ms, 5000);
+});
+
+test('a frame message arriving after the saver starts leaves it up', async () => {
+  const s = await saver(); s.idle();
+  s.browserEvents.message[0]({ origin: 'https://alexkan.xyz', data: { type: 'mingus:activity' } });
+  assert.equal(s.overlays[0].hidden, false);
+});

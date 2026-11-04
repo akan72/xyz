@@ -1,12 +1,13 @@
 ---
 // The live mingus taste map on /projects, which opens in its 3D layout by
-// default. mingus is its own Worker, routed only at alexkan.xyz/mingus in
-// production (see the mingus repo's wrangler.toml). The absolute URL keeps PR
+// default. ?embed shows only the map and posts input to this page, which
+// site/scripts/screensaver.js counts as activity. mingus is its own Worker,
+// routed only at alexkan.xyz/mingus in production (see its wrangler.toml). The absolute URL keeps PR
 // previews and `wrangler dev` from framing this site's own 404 page instead.
 ---
 <figure class="mingus-embed">
     <iframe
-        src="https://alexkan.xyz/mingus/"
+        src="https://alexkan.xyz/mingus/?embed"
         title="mingus: interactive 3D map of every artist I've listened to, clustered by genre"
         loading="lazy"
         referrerpolicy="no-referrer"
