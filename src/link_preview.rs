@@ -184,7 +184,10 @@ mod tests {
 
     #[test]
     fn production_urls_use_the_bare_domain() {
-        for asked in ["https://www.alexkan.xyz/projects", "http://alexkan.xyz/projects"] {
+        for asked in [
+            "https://www.alexkan.xyz/projects",
+            "http://alexkan.xyz/projects",
+        ] {
             assert_eq!(origin(&Url::parse(asked).unwrap()), "https://alexkan.xyz");
         }
         assert_eq!(

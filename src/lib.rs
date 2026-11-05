@@ -92,9 +92,7 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     // Every HTML page gets link-preview tags; see link_preview.rs. Missing paths
     // get 404.html with a 404 status (not_found_handling = "404-page").
     // Only the canonical path: /projects/ gets the asset layer's redirect below
-    let render_vesta = path == "/projects"
-        && req.method() == Method::Get
-        && vesta::enabled(&env);
+    let render_vesta = path == "/projects" && req.method() == Method::Get && vesta::enabled(&env);
     let asset_request = if render_vesta {
         // A static-asset 304 would bypass the current KV snapshot. Conditional
         // validators belong to the sample asset, not this rendered page.
