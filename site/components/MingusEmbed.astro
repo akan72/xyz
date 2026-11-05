@@ -8,6 +8,7 @@
 //
 // The SQL frame is not in the HTML: it loads DuckDB-Wasm and the tables
 // (about 14 MB), so site/scripts/mingus-tabs.js adds it on the first click.
+// Both panels share one box, so switching tabs never resizes the figure.
 const MINGUS = "https://alexkan.xyz/mingus/";
 ---
 <figure class="mingus-embed">
@@ -15,6 +16,7 @@ const MINGUS = "https://alexkan.xyz/mingus/";
         <button type="button" role="tab" id="mingus-tab-map" aria-controls="mingus-panel-map" aria-selected="true">3D map</button>
         <button type="button" role="tab" id="mingus-tab-sql" aria-controls="mingus-panel-sql" aria-selected="false" tabindex="-1">Query with SQL</button>
     </div>
+    <div class="stage">
     <div class="panel" id="mingus-panel-map" role="tabpanel" aria-labelledby="mingus-tab-map">
         <iframe
             src={`${MINGUS}?embed`}
@@ -26,8 +28,9 @@ const MINGUS = "https://alexkan.xyz/mingus/";
     <div class="panel sql" id="mingus-panel-sql" role="tabpanel" aria-labelledby="mingus-tab-sql" data-src={`${MINGUS}sql.html?embed`} hidden>
         <p class="loading">Starting DuckDB in your browser…</p>
     </div>
+    </div>
     <figcaption>
-        <a href={MINGUS} target="_blank">Full map ↗</a> · <a href={`${MINGUS}sql.html`} target="_blank">SQL playground ↗</a>
+        <a href={MINGUS} target="_blank">Full map</a> · <a href={`${MINGUS}sql.html`} target="_blank">SQL playground</a>
     </figcaption>
 </figure>
 
@@ -42,18 +45,20 @@ const MINGUS = "https://alexkan.xyz/mingus/";
     .tabs button:hover { color: inherit; }
     .tabs button[aria-selected="true"] { color: inherit; border-bottom-color: currentColor; }
     .tabs button:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+    /* Square: tall enough for the editor and some results, and the map
+       fills it. The panels stack in one cell; the unselected one is only
+       invisible, so the map keeps its size and state behind the SQL tab. */
+    .stage { display: grid; aspect-ratio: 1 / 1; }
     .panel {
-        position: relative; aspect-ratio: 4 / 3;
+        grid-area: 1 / 1; position: relative; min-height: 0;
         background: color-mix(in srgb, currentColor 6%, var(--bg, Canvas));
         box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 12%, transparent);
     }
-    .panel[hidden] { display: none; }
-    /* The editor, its examples and results need more height than the map */
-    .panel.sql { aspect-ratio: auto; height: 600px; }
+    .panel[hidden] { display: block; visibility: hidden; }
     .loading { position: absolute; inset: 0; margin: 0; display: grid; place-items: center; color: var(--muted, #666); font-size: 0.9em; }
     .panel :global(iframe) { position: relative; display: block; width: 100%; height: 100%; border: 0; }
     figcaption { color: var(--muted, #666); font-size: 0.9em; margin-top: 6px; }
     figcaption a { color: inherit; }
-    /* Taller on phones, where the map's own controls take more of the frame */
-    @media (max-width: 600px) { .panel:not(.sql) { aspect-ratio: 3 / 4; } }
+    /* Taller on phones, where both views need more height than width */
+    @media (max-width: 600px) { .stage { aspect-ratio: 3 / 4; } }
 </style>
