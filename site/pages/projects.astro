@@ -28,7 +28,7 @@ const icons: Record<NonNullable<(typeof projects)[number]["icon"]>, string> = { 
     <Fragment slot="head-scripts">
         {projects.some((p) => p.media === "subway-vis") && <SubwayHead />}
     </Fragment>
-    <h2>Projects</h2>
+    <h1>Projects</h1>
     <ul>
         {projects.map(({ name, url, Content, media, icon, stack, ...project }) => (
             <li>

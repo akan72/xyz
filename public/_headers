@@ -1,0 +1,10 @@
+# Every response the asset layer serves, HTML included (src/lib.rs carries
+# this header over when it rewrites a page). No includeSubDomains: that would
+# commit every current and future subdomain to HTTPS.
+/*
+  Strict-Transport-Security: max-age=31536000
+
+# Astro's bundles: each file name carries a content hash, so a new build gets
+# new URLs and the old ones never change.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable

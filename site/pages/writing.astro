@@ -5,7 +5,7 @@ import { formatDate, getPosts } from "../lib/writing.ts";
 const posts = await getPosts();
 ---
 <Page title="Writing | alexkan.xyz" description="Things I've written.">
-    <h2>Writing</h2>
+    <h1>Writing</h1>
     {posts.length ? (
         <ul>
             {posts.map((post) => (
