@@ -31,14 +31,17 @@ function app(reduced = false) {
   header.links = ['/', '/writing', '/projects', '/contact'].map(path => {
     const link = new Element('a'); link.href = 'https://example.test' + path; link.target = ''; link.closest = () => link; return link;
   });
-  body.append(header); body.append(initialMain);
+  // Page.astro renders <main> inside .page-shell, so the script never moves it
+  const shell = new Element('div');
+  shell.querySelector = selector => selector === ':scope > main' ? shell.children.find(el => el.tag === 'main') || null : null;
+  body.append(header); body.append(shell); shell.append(initialMain);
   const initialStyle = new Element('style');
   head.append(initialStyle);
   const mains = () => body.children.flatMap(el => el.tag === 'main' ? [el] : el.children.filter(child => child.tag === 'main'));
   const pageStyles = () => head.children.filter(el => el.tag === 'style' && Object.hasOwn(el.dataset, 'pageStyle'));
   const document = {
     body, head, title: 'Main',
-    querySelector(selector) { if (selector === '.site-header') return header; if (selector === 'main') return mains()[0]; return null; },
+    querySelector(selector) { if (selector === '.site-header') return header; if (selector === '.page-shell') return shell; if (selector === 'main') return mains()[0]; return null; },
     querySelectorAll(selector) { if (selector === 'head > style') return [initialStyle]; return pageStyles(); },
     createElement: tag => new Element(tag),
     importNode(el) { const copy = new Element(el.tag); copy.path = el.path; copy.dataset = { ...el.dataset }; return copy; },

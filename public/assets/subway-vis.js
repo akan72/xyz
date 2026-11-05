@@ -124,11 +124,13 @@ window.xyzMountProjects = function () {
   }
 
   // --- frame loop: pauses offscreen, on hidden tabs, and for reduced motion ---
+  // The 24 warmup frames run offscreen too, so the figure is already settled
+  // when it scrolls in instead of starting its warmup then.
   let raf = null, last = 0, visible = true, frameNo = 0, scene = null, warmup = 0;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   function frame(t) {
     raf = null;
-    if (!hydra || document.hidden || !visible) return;
+    if (!hydra || document.hidden || (!visible && !warmup)) return;
     if (warmup) {
       // Settle the feedback a frame at a time so navigation and scrolling stay responsive.
       hydra.tick(16);
@@ -142,10 +144,10 @@ window.xyzMountProjects = function () {
     last = t;
     if (warmup || !reduced) raf = requestAnimationFrame(frame);
   }
-  function start() { if (disposed || suspended || !hydra || !scene || raf !== null || (reduced && !warmup) || document.hidden || !visible) return; last = performance.now(); raf = requestAnimationFrame(frame); }
+  function start() { if (disposed || suspended || !hydra || !scene || raf !== null || (reduced && !warmup) || document.hidden || (!visible && !warmup)) return; last = performance.now(); raf = requestAnimationFrame(frame); }
   function stop() { cancelAnimationFrame(raf); raf = null; }
   const settle = () => { warmup = 24; start(); };
-  const observer = new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? start() : stop(); }, { threshold: 0 });
+  const observer = new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) start(); else if (!warmup) stop(); }, { threshold: 0 });
   observer.observe(box);
   const onVisibility = () => (document.hidden ? stop() : start());
   document.addEventListener('visibilitychange', onVisibility);
