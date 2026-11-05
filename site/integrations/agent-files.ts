@@ -5,7 +5,8 @@
 //                            these to requests with `Accept: text/markdown`.
 //   /llms.txt                an index of the pages (https://llmstxt.org)
 //   /llms-full.txt           every page's Markdown in one file
-//   /sitemap.xml             every page, dated by its last git commit
+//   /sitemap.xml             every page, dated by its last git commit, plus
+//                            the `external` pages other Workers serve
 //   /_headers                points each Markdown copy at its page
 //
 // Pages marked <meta name="robots" content="noindex"> (the 404 page) are left
@@ -117,11 +118,12 @@ export function llmsFullTxt(pages: Page[], site: URL): string {
     return [intro, ...pages.map((p) => pageMarkdown(p, site, false))].join("\n---\n\n");
 }
 
-export function sitemapXml(pages: Page[]): string {
+export function sitemapXml(pages: Page[], external: string[] = []): string {
     const urls = pages.map((p) => {
         const lastmod = p.lastmod ? `\n    <lastmod>${p.lastmod.toISOString().replace(/\.\d+Z$/, "+00:00")}</lastmod>` : "";
         return `  <url>\n    <loc>${p.url}</loc>${lastmod}\n  </url>`;
     });
+    urls.push(...external.map((url) => `  <url>\n    <loc>${url}</loc>\n  </url>`));
     return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>\n`;
 }
 
@@ -146,9 +148,12 @@ interface Options {
     // as the content it renders. Pages built from a dynamic route like
     // writing/[slug].astro have no single .astro file, so list their source here.
     sources?: (path: string) => string[];
+    // Pages on this domain that another Worker serves, like /mingus/. They go
+    // in the sitemap only: their copy and dates live in their own repository.
+    external?: string[];
 }
 
-export default function agentFiles({ sources = () => [] }: Options = {}): AstroIntegration {
+export default function agentFiles({ sources = () => [], external = [] }: Options = {}): AstroIntegration {
     let root = "";
     let site = new URL("https://example.com");
     const pageFiles = new Map<string, string>(); // "/projects" -> "site/pages/projects.astro"
@@ -182,7 +187,7 @@ export default function agentFiles({ sources = () => [] }: Options = {}): AstroI
                 for (const page of pages) writeFileSync(join(dist, markdownPath(page.path)), pageMarkdown(page, site));
                 writeFileSync(join(dist, "llms.txt"), llmsTxt(pages, site, existsSync(join(dist, "agent-instructions.md"))));
                 writeFileSync(join(dist, "llms-full.txt"), llmsFullTxt(pages, site));
-                writeFileSync(join(dist, "sitemap.xml"), sitemapXml(pages));
+                writeFileSync(join(dist, "sitemap.xml"), sitemapXml(pages, external.map((path) => new URL(path, site).href)));
                 // Appends to a public/_headers if there is one
                 const headersFile = join(dist, "_headers");
                 (existsSync(headersFile) ? appendFileSync : writeFileSync)(headersFile, headers(pages));

@@ -1,3 +1,4 @@
+use link_preview::{SITE_HOST, WWW_HOST};
 use rand::Rng;
 use worker::*;
 
@@ -22,6 +23,14 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     let read_request = matches!(req.method(), Method::Get | Method::Head);
     let markdown = read_request && wants_markdown(req.headers().get("accept")?.as_deref());
     let head = req.method() == Method::Head;
+
+    if url.host_str() == Some(WWW_HOST) {
+        let mut canonical = url.clone();
+        canonical.set_host(Some(SITE_HOST))?;
+        canonical.set_scheme("https").ok();
+        // 308 keeps a POST a POST; a 301 would let clients turn it into a GET
+        return Response::redirect_with_status(canonical, if read_request { 301 } else { 308 });
+    }
 
     // The retired price API exposes nothing, regardless of flags or method.
     if path == "/api/vesta" || path.starts_with("/api/vesta/") {
@@ -82,7 +91,8 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
 
     // Every HTML page gets link-preview tags; see link_preview.rs. Missing paths
     // get 404.html with a 404 status (not_found_handling = "404-page").
-    let render_vesta = matches!(path, "/projects" | "/projects/")
+    // Only the canonical path: /projects/ gets the asset layer's redirect below
+    let render_vesta = path == "/projects"
         && req.method() == Method::Get
         && vesta::enabled(&env);
     let asset_request = if render_vesta {
@@ -98,6 +108,13 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         req
     };
     let mut res = assets.fetch_request(asset_request).await?;
+    // The asset layer sends /about/ and /about.html to /about with a 307. Those
+    // never change, so say so: a 301 tells search engines to drop the variant.
+    if res.status_code() == 307 {
+        if let Some(location) = res.headers().get("location")? {
+            return Response::redirect_with_status(url.join(&location)?, 301);
+        }
+    }
     if read_request && res.status_code() == 404 {
         if markdown {
             res = Response::ok(if head { "" } else { NOT_FOUND_MARKDOWN })?.with_status(404);
@@ -114,19 +131,17 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         .get("content-type")?
         .is_some_and(|t| t.starts_with("text/html"));
     if is_html && res.status_code() == 200 {
-        // Crawlers expect https URLs even if the page was requested over http
-        let origin = match url.host_str() {
-            Some("localhost" | "127.0.0.1") => url.origin().ascii_serialization(),
-            _ => url
-                .origin()
-                .ascii_serialization()
-                .replacen("http://", "https://", 1),
-        };
+        let origin = link_preview::origin(&url);
         let mut html = link_preview::add_tags(&res.text().await?, &origin, path);
         if render_vesta {
             html = vesta::render(html, &env).await;
         }
+        let hsts = res.headers().get("strict-transport-security")?;
         res = Response::from_html(html)?;
+        // From public/_headers; a rebuilt response would otherwise drop it
+        if let Some(hsts) = hsts {
+            res.headers_mut().set("strict-transport-security", &hsts)?;
+        }
         if render_vesta {
             res.headers_mut()
                 .set("cache-control", "public, max-age=60, s-maxage=60")?;

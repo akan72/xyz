@@ -37,18 +37,23 @@ serves the HTML/images from the edge; an
   - `site/integrations/agent-files.ts` — after the pages build, writes the
     files AI crawlers and agents read: a Markdown copy of each page
     (`/projects.md`, `/index.md`), `llms.txt`, `llms-full.txt`, `sitemap.xml`
-    (each page dated by its last git commit) and `_headers`.
-- `public/` — images, `robots.txt`, `_redirects` (old URLs, like
-  `/ideology` → `/writing/gm`), the projects figure's script
+    (each page dated by its last git commit, plus `/mingus/`, which the
+    mingus Worker serves) and `_headers`.
+- `public/` — images, `favicon.ico`, `robots.txt`, `_redirects` (old URLs,
+  like `/ideology` → `/writing/gm`), `_headers` (HSTS, and a year's
+  `immutable` cache for the hashed bundles in `/_astro/`), the projects figure's script
   (`assets/subway-vis.js`) and other static files, copied into `dist/`
   unchanged.
 - `docs/screensaver/` — design log for the screensaver: screenshots and
   recordings from each iteration. Not deployed.
-- `src/lib.rs` — the Worker code. Handles `GET /image` (random cig HTML) and
+- `src/lib.rs` — the Worker code. Redirects `www.alexkan.xyz` to the bare
+  domain and the asset layer's `/about/` and `/about.html` variants to
+  `/about`, all with a 301. Handles `GET /image` (random cig HTML) and
   `GET /cig/{id}` (R2 fetch + stream), adds link-preview tags to pages, and
   serves a page's Markdown copy to requests sent with
   `Accept: text/markdown`. Unmatched paths get `404.html`.
-- `src/link_preview.rs` — adds Open Graph / Twitter tags to every HTML page.
+- `src/link_preview.rs` — adds Open Graph / Twitter tags to every HTML page,
+  with `https://alexkan.xyz` URLs in production (previews keep their own host).
 - `astro.config.ts` — Astro's settings: `site/` in, `dist/` out, one
   `.html` file per page.
 - `wrangler.toml` — build command (Astro, then `worker-build`), assets directory, R2 binding, custom

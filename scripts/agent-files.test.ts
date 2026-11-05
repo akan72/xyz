@@ -103,6 +103,12 @@ describe("generated files", () => {
         );
     });
 
+    test("sitemap.xml lists pages other Workers serve, undated", () => {
+        assert.ok(sitemapXml(pages, ["https://alexkan.xyz/mingus/"]).endsWith(
+            "  <url>\n    <loc>https://alexkan.xyz/mingus/</loc>\n  </url>\n</urlset>\n",
+        ));
+    });
+
     test("_headers points each Markdown copy at its page and llms.txt", () => {
         assert.ok(headers(pages).includes('/ideology.md\n  Link: <https://alexkan.xyz/ideology>; rel="canonical", </llms.txt>; rel="describedby"\n  Content-Type: text/markdown; charset=utf-8\n'));
     });
