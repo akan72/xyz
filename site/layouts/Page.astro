@@ -41,12 +41,18 @@ const markdownCopy = path === "/" ? "/index.md" : `${path}.md`;
         <script src="../scripts/page-navigation.js"></script>
         <script src="../scripts/email-reveal.ts"></script>
         <script src="../scripts/cig-button.js"></script>
+        <script src="../scripts/mingus-tabs.js"></script>
         <slot name="head" />
     </head>
     <body>
         <SiteHeader current={path} />
-        <main>
-            <slot />
-        </main>
+        <!-- page-navigation.js fades pages in this shell. It is in the HTML,
+             not added by the script, because moving <main> into it would
+             reload every iframe in the page (the mingus map on /projects). -->
+        <div class="page-shell">
+            <main>
+                <slot />
+            </main>
+        </div>
     </body>
 </html>

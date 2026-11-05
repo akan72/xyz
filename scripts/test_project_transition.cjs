@@ -136,19 +136,33 @@ test('reduced motion settles a static preview and leaves no ongoing frame loop',
   assert.equal(s.pending, 0);
 });
 
-test('warmup pauses offscreen and on hidden tabs, then resumes without a second loop', () => {
+test('warmup finishes offscreen so the figure is ready when it scrolls in, then the loop stops', () => {
+  const s = scheduler();
+  s.visible(false);
+  s.begin();
+  assert.equal(s.pending, 1, 'warmup starts while offscreen');
+  s.step(); s.visible(false);
+  assert.equal(s.pending, 1, 'scrolling away does not interrupt warmup');
+  for (let i = 1; i < 24; i++) s.step();
+  assert.equal(s.ticks, 24);
+  assert.equal(s.shown, 1);
+  assert.equal(s.pending, 1);
+  s.step();
+  assert.equal(s.ticks, 24, 'no animation offscreen once warm');
+  assert.equal(s.pending, 0);
+  s.visible(true);
+  assert.equal(s.pending, 1);
+});
+
+test('warmup pauses on hidden tabs, then resumes without a second loop', () => {
   const s = scheduler();
   s.begin(); s.step();
-  s.visible(false);
+  s.hidden(true);
   assert.equal(s.pending, 0);
   assert.equal(s.ticks, 1);
-  s.visible(true); s.start();
-  assert.equal(s.pending, 1);
-  s.step(); s.hidden(true);
-  assert.equal(s.pending, 0);
   s.hidden(false); s.start();
   assert.equal(s.pending, 1);
-  for (let i = 2; i < 24; i++) s.step();
+  for (let i = 1; i < 24; i++) s.step();
   assert.equal(s.ticks, 24);
   assert.equal(s.shown, 1);
 });

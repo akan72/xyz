@@ -7,13 +7,10 @@
     // scripts, like an interactive figure's, run.
     const routes = new Set(['/', '/projects', '/writing', '/contact']);
     const header = document.querySelector('.site-header');
-    let main = document.querySelector('main');
+    const shell = document.querySelector('.page-shell');
+    let main = shell?.querySelector(':scope > main');
     if (!header || !main || !routes.has(location.pathname) || location.search) return;
 
-    const shell = document.createElement('div');
-    shell.className = 'page-shell';
-    main.before(shell);
-    shell.append(main);
     document.body.dataset.navigation = 'persistent';
     // Every <style> in <head> is the page's CSS (Astro inlines it); swap them all on navigation
     document.querySelectorAll('head > style').forEach(s => s.dataset.pageStyle = '');

@@ -30,7 +30,9 @@ serves the HTML/images from the edge; an
     header stays put and the outgoing page fades out. Used instead of Astro's
     `<ClientRouter />`, which measured 75-360 ms slower per page change and
     blocks clicks during the fade
-    ([#35](https://github.com/akan72/xyz/pull/35)).
+    ([#35](https://github.com/akan72/xyz/pull/35)). `<main>` sits in a
+    `.page-shell` that `site/layouts/Page.astro` renders: the script used to
+    add it by moving `<main>`, which reloaded the mingus iframe on every visit.
   - `site/scripts/screensaver.js` — idle screensaver: the
     `public/assets/xyz-logo/` mark bounces around after 5s without input. Set
     `ENABLED = false` at the top of the file to turn it off.
@@ -101,6 +103,8 @@ sentence or two about it as the body:
     What it does. Links like [this one](https://example.com) open in a new tab.
 
 `media: subway-vis` puts the live istheldown figure above the description.
+`media: mingus-3d` frames the mingus map, with a second tab that frames its SQL
+playground on first click (`site/components/MingusEmbed.astro`).
 `media: vesta-demo` embeds Vesta's generated offline board preview and text view.
 See [docs/vesta/README.md](docs/vesta/README.md) for regeneration instructions
 and the plan for securely serving refreshed market prices in a future update.
