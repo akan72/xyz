@@ -1,0 +1,31 @@
+---
+// The Pangea board on /projects: four random-move bots partway through a game
+// on the Earth map, drawn by the game's own renderer at
+// pangea.akan72.workers.dev/embed. That page takes no input, opens no saves
+// and calls no API, and it's outside the game's Cloudflare Access login. The
+// frame ignores the pointer, so the whole board is one link to the game, the
+// page scrolls over it, and site/scripts/screensaver.js still sees the mouse.
+// The project's name already links there, so this link is decorative: out of
+// the tab order and hidden from screen readers and the page's Markdown copy.
+---
+<a class="pangea-embed" href="https://pangea.akan72.workers.dev/" target="_blank" tabindex="-1" aria-hidden="true">
+    <iframe
+        src="https://pangea.akan72.workers.dev/embed"
+        title="Pangea: four random-move bots partway through a game on the Earth map"
+        loading="lazy"
+        referrerpolicy="no-referrer"
+        tabindex="-1"
+    ></iframe>
+</a>
+
+<style>
+    /* Same 536px width as the Vesta board and the mingus map. The Earth map is
+       2.3 times as wide as it is tall, so this frame leaves no margins. */
+    .pangea-embed { display: block; width: 536px; max-width: 100%; margin: 1em 0; }
+    iframe {
+        display: block; width: 100%; aspect-ratio: 2.3 / 1; border: 0;
+        pointer-events: none;
+        /* The map's deep-sea color, so the frame doesn't flash while it loads */
+        background: #1d3a52;
+    }
+</style>
