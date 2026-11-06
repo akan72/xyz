@@ -112,6 +112,9 @@ sentence or two about it as the body:
 playground (`site/components/MingusEmbed.astro`). Both share one square box.
 `site/scripts/mingus-tabs.js` adds the SQL frame on the tab's first click, since
 DuckDB and the tables are about 14 MB.
+`media: pangea-board` frames a Pangea board, four random-move bots on the Earth
+map, from `pangea.akan72.workers.dev/embed` (`site/components/PangeaEmbed.astro`).
+The frame ignores the pointer, so the board is one link to the game.
 `media: vesta-demo` embeds Vesta's generated offline board preview and text view.
 See [docs/vesta/README.md](docs/vesta/README.md) for regeneration instructions
 and the plan for securely serving refreshed market prices in a future update.
