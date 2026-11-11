@@ -28,6 +28,7 @@ const head = commits[start];
 const tree = preloadFileTree(history.treeOptions(start));
 ---
 <figure class="repo-figure">
+    <figcaption>View diffs to the site over time</figcaption>
     <!-- Enabled once the script can redraw the tree -->
     <input type="range" class="commit-slider" min="0" max={last} value={start} step="1" disabled
         aria-label={`Commit in ${repo}`} aria-valuetext={`${commitDate(head.date)}: ${head.subject}`} />
@@ -52,6 +53,7 @@ const tree = preloadFileTree(history.treeOptions(start));
 
 <style>
     .repo-figure { margin: 1em 0; }
+    figcaption { color: var(--muted, #666); font-size: 0.9em; margin-bottom: 8px; }
     .commit-slider { display: block; width: 100%; margin: 0; accent-color: currentColor; }
     .commit-slider:disabled { opacity: 0.5; }
     /* The figure's width, not the text column's */
@@ -61,7 +63,7 @@ const tree = preloadFileTree(history.treeOptions(start));
     .date { color: var(--muted, #666); }
     /* Rows fixed to the stage, so the diff and the file scroll inside it */
     .stage {
-        display: grid; grid-template-columns: minmax(200px, 36%) 1fr; grid-template-rows: minmax(0, 1fr); height: 560px;
+        display: grid; grid-template-columns: minmax(200px, 36%) 1fr; grid-template-rows: minmax(0, 1fr); height: 400px;
         border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
     }
     .tree { grid-area: 1 / 1; min-height: 0; }
@@ -91,7 +93,7 @@ const tree = preloadFileTree(history.treeOptions(start));
     .tree :global(file-tree-container) { height: 100%; }
     /* On a phone, the tree above the diff */
     @media (max-width: 600px) {
-        .stage { height: 640px; grid-template-columns: none; grid-template-rows: minmax(0, 2fr) minmax(0, 3fr); }
+        .stage { height: 520px; grid-template-columns: none; grid-template-rows: minmax(0, 2fr) minmax(0, 3fr); }
         .diff-pane, .file { grid-area: 2 / 1; border-left: 0; border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent); }
     }
 </style>
