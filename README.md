@@ -17,7 +17,9 @@ serves the HTML/images from the edge; an
   - `site/layouts/Page.astro` — every page's `<head>`, the shared header
     (`site/components/SiteHeader.astro`) and the scripts every page loads.
     `site/components/ThemeScript.astro` sets the light/dark theme before the
-    page paints.
+    page paints. The favicon is the screensaver's XYZ logo; `data-light-href`
+    and `data-dark-href` on the SVG icon link in `site/layouts/Page.astro`
+    pick the light or dark version to match the page's theme.
   - `site/styles/site.css` — styles every page shares: fonts, colors, the
     page column, page transitions. Each page and component keeps its own
     styles in a scoped `<style>` block; Astro inlines a page's CSS into it.
@@ -249,9 +251,12 @@ First-time setup:
    it's missing.
 4. Add your custom domain to Clodufalre.
 
-## Generate Zyn Favicon
+## Generate Favicons
 
-    python scripts/favicon.py
+Renders the favicons and `apple-touch-icon.png` from
+`public/assets/xyz-logo/xyz-currentcolor.svg`:
+
+    uv run scripts/favicon.py
 
 ## Link Previews
 
