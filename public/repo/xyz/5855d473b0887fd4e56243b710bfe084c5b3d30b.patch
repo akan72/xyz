@@ -1,0 +1,17 @@
+diff --git a/fly.toml b/fly.toml
+index cdac215..1e421fd 100644
+--- a/fly.toml
++++ b/fly.toml
+@@ -9,9 +9,9 @@ primary_region = 'ewr'
+ [http_service]
+   internal_port = 8080
+   force_https = true
+-  auto_stop_machines = true
+-  auto_start_machines = false
+-  min_machines_running = 0
++  auto_start_machines = true
++  auto_stop_machines = false
++  min_machines_running = 1
+   processes = ['app']
+ 
+ [[vm]]

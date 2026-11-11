@@ -2,6 +2,7 @@
 import { getCollection, render } from "astro:content";
 import CigPicker from "../components/CigPicker.astro";
 import MingusEmbed from "../components/MingusEmbed.astro";
+import RepoFigure from "../components/RepoFigure.astro";
 import SubwayFigure from "../components/SubwayFigure.astro";
 import SubwayHead from "../components/SubwayHead.astro";
 import VestaPreview from "../components/VestaPreview.astro";
@@ -38,6 +39,8 @@ const icons: Record<NonNullable<(typeof projects)[number]["icon"]>, string> = { 
                 {media === "cig-picker" && <CigPicker />}
                 {media === "vesta-demo" && <VestaPreview />}
                 {media === "mingus-3d" && <MingusEmbed />}
+                {/* Opens at the move from Fly.io to Cloudflare Workers */}
+                {media === "repo-history" && <RepoFigure at="157e55a" />}
                 <Content />
                 <p class="meta">{stack.join(" · ")}</p>
             </li>

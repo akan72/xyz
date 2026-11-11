@@ -9,6 +9,7 @@ stack:
   - workers-rs
   - Cloudflare Workers, R2
 order: 2
+media: repo-history
 ---
 
 The code for this site. Mostly-static site written in Rust, compiled to

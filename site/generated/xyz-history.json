@@ -1,0 +1,2080 @@
+{
+  "repo": "akan72/xyz",
+  "branch": "master",
+  "commits": [
+    {
+      "sha": "e75f542163040a4416f598bfc7bf0a38384fb623",
+      "date": "2023-06-19T11:47:11-07:00",
+      "subject": "Initial commit",
+      "changes": [
+        {
+          "path": "README.md",
+          "status": "added"
+        }
+      ]
+    },
+    {
+      "sha": "e70f425fb3a0d2caff4a25b270d2616d559599ba",
+      "date": "2024-06-02T17:11:35-04:00",
+      "subject": "Axum Blog (#1)",
+      "changes": [
+        {
+          "path": ".dockerignore",
+          "status": "added"
+        },
+        {
+          "path": ".github/workflows/fly.yml",
+          "status": "added"
+        },
+        {
+          "path": ".gitignore",
+          "status": "added"
+        },
+        {
+          "path": "Cargo.lock",
+          "status": "added"
+        },
+        {
+          "path": "Cargo.toml",
+          "status": "added"
+        },
+        {
+          "path": "Dockerfile",
+          "status": "added"
+        },
+        {
+          "path": "README.md",
+          "status": "modified"
+        },
+        {
+          "path": "assets/404.html",
+          "status": "added"
+        },
+        {
+          "path": "assets/akan72.txt",
+          "status": "added"
+        },
+        {
+          "path": "assets/cig.jpg",
+          "status": "added"
+        },
+        {
+          "path": "assets/favicon.ico",
+          "status": "added"
+        },
+        {
+          "path": "assets/ideology.html",
+          "status": "added"
+        },
+        {
+          "path": "assets/index.html",
+          "status": "added"
+        },
+        {
+          "path": "assets/pgp.html",
+          "status": "added"
+        },
+        {
+          "path": "assets/remilio.jpg",
+          "status": "added"
+        },
+        {
+          "path": "assets/zyn.webp",
+          "status": "added"
+        },
+        {
+          "path": "fly.toml",
+          "status": "added"
+        },
+        {
+          "path": "scripts/favicon.py",
+          "status": "added"
+        },
+        {
+          "path": "src/main.rs",
+          "status": "added"
+        }
+      ]
+    },
+    {
+      "sha": "c45d8b331976a535709c798e2ca2c3347931f87f",
+      "date": "2024-06-03T07:37:57-04:00",
+      "subject": "Install Openssl Into Runtime Image (#2)",
+      "changes": [
+        {
+          "path": "Dockerfile",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "c6e090c733e36068fa74e02cab7faedf2040dfc2",
+      "date": "2024-06-03T08:03:03-04:00",
+      "subject": "Use Rustls TLS in IPFS Request (#3)",
+      "changes": [
+        {
+          "path": ".dockerignore",
+          "status": "modified"
+        },
+        {
+          "path": "Cargo.lock",
+          "status": "modified"
+        },
+        {
+          "path": "Cargo.toml",
+          "status": "modified"
+        },
+        {
+          "path": "assets/ideology.html",
+          "status": "modified"
+        },
+        {
+          "path": "assets/index.html",
+          "status": "modified"
+        },
+        {
+          "path": "src/main.rs",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "c2e4a45bd315ef0a82d8d2647ebc12da03f4f05f",
+      "date": "2024-06-04T08:58:43-04:00",
+      "subject": "Turn off auto-downscaling during inactive periods (#4)",
+      "changes": [
+        {
+          "path": "fly.toml",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "5855d473b0887fd4e56243b710bfe084c5b3d30b",
+      "date": "2024-06-04T23:51:05-04:00",
+      "subject": "Rugged by Copypasta (#5)",
+      "changes": [
+        {
+          "path": "fly.toml",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "9f72e251ac0277436e7690c890aa920d1b52e88f",
+      "date": "2026-04-29T21:33:20-04:00",
+      "subject": "Pull Cig Images from R2 (#6)",
+      "changes": [
+        {
+          "path": ".env.template",
+          "status": "added"
+        },
+        {
+          "path": ".gitignore",
+          "status": "modified"
+        },
+        {
+          "path": "Cargo.lock",
+          "status": "modified"
+        },
+        {
+          "path": "Cargo.toml",
+          "status": "modified"
+        },
+        {
+          "path": "README.md",
+          "status": "modified"
+        },
+        {
+          "path": "src/main.rs",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "157e55a5646a1f43d9b085200ce45a50c13bf05a",
+      "date": "2026-05-10T11:11:56-04:00",
+      "subject": "Migrate from Fly.io to Cloudflare Workers (#7)",
+      "changes": [
+        {
+          "path": ".dockerignore",
+          "status": "deleted"
+        },
+        {
+          "path": ".env.template",
+          "status": "deleted"
+        },
+        {
+          "path": ".github/workflows/deploy.yml",
+          "status": "added"
+        },
+        {
+          "path": ".github/workflows/fly.yml",
+          "status": "deleted"
+        },
+        {
+          "path": ".gitignore",
+          "status": "modified"
+        },
+        {
+          "path": "Cargo.lock",
+          "status": "modified"
+        },
+        {
+          "path": "Cargo.toml",
+          "status": "modified"
+        },
+        {
+          "path": "Dockerfile",
+          "status": "deleted"
+        },
+        {
+          "path": "README.md",
+          "status": "modified"
+        },
+        {
+          "path": "fly.toml",
+          "status": "deleted"
+        },
+        {
+          "path": "public/404.html",
+          "status": "renamed",
+          "from": "assets/404.html"
+        },
+        {
+          "path": "public/assets/akan72.txt",
+          "status": "renamed",
+          "from": "assets/akan72.txt"
+        },
+        {
+          "path": "public/assets/cig.jpg",
+          "status": "renamed",
+          "from": "assets/cig.jpg"
+        },
+        {
+          "path": "public/assets/favicon.ico",
+          "status": "renamed",
+          "from": "assets/favicon.ico"
+        },
+        {
+          "path": "public/assets/remilio.jpg",
+          "status": "renamed",
+          "from": "assets/remilio.jpg"
+        },
+        {
+          "path": "public/assets/zyn.webp",
+          "status": "renamed",
+          "from": "assets/zyn.webp"
+        },
+        {
+          "path": "public/ideology.html",
+          "status": "renamed",
+          "from": "assets/ideology.html"
+        },
+        {
+          "path": "public/index.html",
+          "status": "renamed",
+          "from": "assets/index.html"
+        },
+        {
+          "path": "public/pgp.html",
+          "status": "renamed",
+          "from": "assets/pgp.html"
+        },
+        {
+          "path": "src/lib.rs",
+          "status": "added"
+        },
+        {
+          "path": "src/main.rs",
+          "status": "deleted"
+        },
+        {
+          "path": "wrangler.toml",
+          "status": "added"
+        }
+      ]
+    },
+    {
+      "sha": "ba99a8d4f65d975e3e0e72b4ffb021697efcd9d3",
+      "date": "2026-05-10T11:20:35-04:00",
+      "subject": "Pin NodeJS Version in Deploy Action (#8)",
+      "changes": [
+        {
+          "path": ".github/workflows/deploy.yml",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "d234f6563344178ab7e4378677a1e7427be4fcc6",
+      "date": "2026-05-11T22:21:29-04:00",
+      "subject": "Add Preview Deployments (#9)",
+      "changes": [
+        {
+          "path": ".github/workflows/deploy.yml",
+          "status": "modified"
+        },
+        {
+          "path": ".github/workflows/pr-preview-cleanup.yml",
+          "status": "added"
+        },
+        {
+          "path": ".pre-commit-config.yaml",
+          "status": "added"
+        },
+        {
+          "path": "src/lib.rs",
+          "status": "modified"
+        },
+        {
+          "path": "wrangler.preview.toml",
+          "status": "added"
+        },
+        {
+          "path": "wrangler.toml",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "f71bd01cfd74636280ee2303c488a5024fbc86db",
+      "date": "2026-05-26T22:18:44-04:00",
+      "subject": "Pin GitHub Actions to commit SHAs (#10)",
+      "changes": [
+        {
+          "path": ".github/workflows/deploy.yml",
+          "status": "modified"
+        },
+        {
+          "path": ".github/workflows/pr-preview-cleanup.yml",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "fb64f383099fa91630d4ebb38c564bbb2676ef74",
+      "date": "2026-09-21T18:54:45-07:00",
+      "subject": "Optimize Site Performance (#12)",
+      "changes": [
+        {
+          "path": ".github/workflows/deploy.yml",
+          "status": "modified"
+        },
+        {
+          "path": "public/assets/cig.jpg",
+          "status": "modified"
+        },
+        {
+          "path": "public/assets/favicon.ico",
+          "status": "modified"
+        },
+        {
+          "path": "public/assets/milady.jpg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/remilio.jpg",
+          "status": "modified"
+        },
+        {
+          "path": "public/ideology.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/index.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/pgp.html",
+          "status": "deleted"
+        },
+        {
+          "path": "public/pgp.txt",
+          "status": "renamed",
+          "from": "public/assets/akan72.txt"
+        },
+        {
+          "path": "scripts/favicon.py",
+          "status": "modified"
+        },
+        {
+          "path": "src/lib.rs",
+          "status": "modified"
+        },
+        {
+          "path": "wrangler.preview.toml",
+          "status": "modified"
+        },
+        {
+          "path": "wrangler.toml",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "3adad5d5f78c30ea6311aa29185dec9b72e5af94",
+      "date": "2026-09-22T05:34:54-07:00",
+      "subject": "Fix deploy worker-build failure with wasm-bindgen 0.2.128 (#13)",
+      "changes": [
+        {
+          "path": "Cargo.lock",
+          "status": "modified"
+        },
+        {
+          "path": "Cargo.toml",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "e849660d7c25b497310f66eabc4d51cfa39078cc",
+      "date": "2026-09-22T14:19:36-07:00",
+      "subject": "Redesign homepage as a single column and add a contact page (#14)",
+      "changes": [
+        {
+          "path": "public/contact.html",
+          "status": "added"
+        },
+        {
+          "path": "public/ideology.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/index.html",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "1bc5d7c1e471cc82070738fa4b8c7c246ac7a1da",
+      "date": "2026-09-22T14:35:56-07:00",
+      "subject": "Keep the cig image the same size after loading a random cig (#15)",
+      "changes": [
+        {
+          "path": "public/index.html",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "2d401fbb99adce7ccd2597d9aab3e3a4f79d5d8f",
+      "date": "2026-09-22T19:47:44-07:00",
+      "subject": "Add a projects page (#16)",
+      "changes": [
+        {
+          "path": "public/contact.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/ideology.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/index.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/projects.html",
+          "status": "added"
+        }
+      ]
+    },
+    {
+      "sha": "e2ecf24211abec0cb2f58232a2384e24b527fc6c",
+      "date": "2026-09-25T16:09:21-07:00",
+      "subject": "Add link previews for iMessage and other chat apps (#17)",
+      "changes": [
+        {
+          "path": "README.md",
+          "status": "modified"
+        },
+        {
+          "path": "public/assets/apple-touch-icon.png",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/og.jpg",
+          "status": "added"
+        },
+        {
+          "path": "public/contact.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/ideology.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/index.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/projects.html",
+          "status": "modified"
+        },
+        {
+          "path": "scripts/favicon.py",
+          "status": "modified"
+        },
+        {
+          "path": "scripts/og.py",
+          "status": "added"
+        },
+        {
+          "path": "src/lib.rs",
+          "status": "modified"
+        },
+        {
+          "path": "wrangler.preview.toml",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "ece998342edd9052a978677a4dc7a05706c5e83b",
+      "date": "2026-09-27T16:01:41-07:00",
+      "subject": "Add an idle screensaver with the bouncing XYZ logo (#18)",
+      "changes": [
+        {
+          "path": "README.md",
+          "status": "modified"
+        },
+        {
+          "path": "docs/screensaver/01-solid-dark.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/01-solid-light.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/02-translucent-80-dark.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/02-translucent-80-light.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/03-opacity-levels.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/04-halo-strengths.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/05-final-dark.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/05-final-light.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/05-final.gif",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/README.md",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/closeups/closeup-0.6-dark-halo.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/closeups/closeup-0.6-dark-none.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/closeups/closeup-0.6-light-halo.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/closeups/closeup-0.6-light-none.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/closeups/closeup-0.7-dark-halo.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/closeups/closeup-0.7-dark-none.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/closeups/closeup-0.7-light-halo.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/closeups/closeup-0.7-light-none.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/gifs/halo-0.6.gif",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/gifs/halo-0.7.gif",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/gifs/opacity-0.0.gif",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/gifs/opacity-0.1.gif",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/gifs/opacity-0.2.gif",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/gifs/opacity-0.3.gif",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/gifs/opacity-0.4.gif",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/gifs/opacity-0.5.gif",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/gifs/opacity-0.6.gif",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/gifs/opacity-0.7.gif",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/gifs/opacity-0.8.gif",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/gifs/opacity-0.9.gif",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/gifs/opacity-1.0.gif",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/gifs/opacity-sweep.gif",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/index.html",
+          "status": "added"
+        },
+        {
+          "path": "docs/screensaver/artifact/xyz.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/404.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/assets/screensaver.js",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/xyz-logo/README.md",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/xyz-logo/dark/xyz-cyan-dark.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/xyz-logo/dark/xyz-green-dark.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/xyz-logo/dark/xyz-magenta-dark.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/xyz-logo/dark/xyz-orange-dark.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/xyz-logo/dark/xyz-red-dark.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/xyz-logo/dark/xyz-violet-dark.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/xyz-logo/dark/xyz-yellow-dark.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/xyz-logo/light/xyz-cyan-light.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/xyz-logo/light/xyz-green-light.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/xyz-logo/light/xyz-magenta-light.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/xyz-logo/light/xyz-orange-light.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/xyz-logo/light/xyz-red-light.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/xyz-logo/light/xyz-violet-light.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/xyz-logo/xyz-currentcolor.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/contact.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/ideology.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/index.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/projects.html",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "6fad262b238f8361595574383d3fbb5aed958b68",
+      "date": "2026-09-27T16:30:26-07:00",
+      "subject": "Add link previews to every page by default, with per-page overrides (#20)",
+      "changes": [
+        {
+          "path": "README.md",
+          "status": "modified"
+        },
+        {
+          "path": "public/contact.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/ideology.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/index.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/projects.html",
+          "status": "modified"
+        },
+        {
+          "path": "src/lib.rs",
+          "status": "modified"
+        },
+        {
+          "path": "src/link_preview.rs",
+          "status": "added"
+        },
+        {
+          "path": "wrangler.preview.toml",
+          "status": "modified"
+        },
+        {
+          "path": "wrangler.toml",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "a017cb7496e437d8598717305cc81f84e4a16580",
+      "date": "2026-09-27T16:40:47-07:00",
+      "subject": "Add dark mode with a moon/sun toggle (#19)",
+      "changes": [
+        {
+          "path": "public/404.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/assets/screensaver.js",
+          "status": "modified"
+        },
+        {
+          "path": "public/assets/theme.js",
+          "status": "added"
+        },
+        {
+          "path": "public/contact.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/ideology.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/index.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/projects.html",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "76b56cb37247f06e00b6ad218a192b24ff9e2f89",
+      "date": "2026-09-28T07:43:10-07:00",
+      "subject": "Remove the brackets from the Home links (#23)",
+      "changes": [
+        {
+          "path": "public/contact.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/ideology.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/projects.html",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "e4c412d6a94274fab1b5e8c02ba1ac3fb8e38a09",
+      "date": "2026-09-28T07:48:20-07:00",
+      "subject": "Show the light/dark toggle on the homepage only (#24)",
+      "changes": [
+        {
+          "path": "public/contact.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/ideology.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/projects.html",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "a135eef412d830e75c0bb52011e84da4cd0d3845",
+      "date": "2026-09-28T07:56:31-07:00",
+      "subject": "Generate llms.txt, Markdown page copies and sitemap.xml at build time (#21)",
+      "changes": [
+        {
+          "path": ".github/workflows/deploy.yml",
+          "status": "modified"
+        },
+        {
+          "path": ".gitignore",
+          "status": "modified"
+        },
+        {
+          "path": ".pre-commit-config.yaml",
+          "status": "modified"
+        },
+        {
+          "path": "README.md",
+          "status": "modified"
+        },
+        {
+          "path": "public/404.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/contact.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/ideology.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/index.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/projects.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/robots.txt",
+          "status": "added"
+        },
+        {
+          "path": "scripts/sitegen.py",
+          "status": "added"
+        },
+        {
+          "path": "scripts/test_sitegen.py",
+          "status": "added"
+        },
+        {
+          "path": "src/lib.rs",
+          "status": "modified"
+        },
+        {
+          "path": "wrangler.preview.toml",
+          "status": "modified"
+        },
+        {
+          "path": "wrangler.toml",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "133d05273ae7f91bd861576730485fd404992643",
+      "date": "2026-09-28T08:40:11-07:00",
+      "subject": "Add a live istheldown figure and description to the projects page (#22)",
+      "changes": [
+        {
+          "path": "public/assets/bullets/1.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/2.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/3.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/4.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/5.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/6.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/7.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/A.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/B.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/C.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/D.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/E.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/F.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/G.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/J.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/L.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/LICENSE",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/M.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/N.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/Q.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/R.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/W.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/bullets/Z.svg",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/subway-stations.json",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/subway-vis.js",
+          "status": "added"
+        },
+        {
+          "path": "public/projects.html",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "5266efab3252982c08a7495bf6268ff0a9f00988",
+      "date": "2026-10-04T16:44:27-04:00",
+      "subject": "Switch PR previews to Worker Previews of the one xyz Worker (#29)",
+      "changes": [
+        {
+          "path": ".github/workflows/deploy.yml",
+          "status": "modified"
+        },
+        {
+          "path": ".github/workflows/pr-preview-cleanup.yml",
+          "status": "modified"
+        },
+        {
+          "path": "README.md",
+          "status": "modified"
+        },
+        {
+          "path": "scripts/delete-preview.sh",
+          "status": "added"
+        },
+        {
+          "path": "scripts/preview-url.sh",
+          "status": "added"
+        },
+        {
+          "path": "scripts/test_previews.py",
+          "status": "added"
+        },
+        {
+          "path": "src/link_preview.rs",
+          "status": "modified"
+        },
+        {
+          "path": "wrangler.preview.toml",
+          "status": "deleted"
+        },
+        {
+          "path": "wrangler.toml",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "17e77ff4c0a1aa931bd11f9d970d07397c85d08a",
+      "date": "2026-10-05T11:14:05-04:00",
+      "subject": "feat: add GitHub and LinkedIn contact links (#30)",
+      "changes": [
+        {
+          "path": "docs/pr-evidence/contact-social-links/contact.png",
+          "status": "added"
+        },
+        {
+          "path": "public/contact.html",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "d3f5cd06a25001c7fac766eddb4e306567b7987a",
+      "date": "2026-10-05T12:25:47-04:00",
+      "subject": "Add descriptions and stack lines for the remaining projects and wrap them at the figure's edge. (#31)",
+      "changes": [
+        {
+          "path": "public/projects.html",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "561cfab6fb67ab6f24186ba127a922caff0dac50",
+      "date": "2026-10-05T13:04:23-04:00",
+      "subject": "Show the years each project has been worked on, and require them for every project entry. (#33)",
+      "changes": [
+        {
+          "path": "public/projects.html",
+          "status": "modified"
+        },
+        {
+          "path": "scripts/test_sitegen.py",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "1e67a463030ac648b4f7f63c8183e0d5c833c7b4",
+      "date": "2026-10-05T13:21:02-04:00",
+      "subject": "Add Twitter after GitHub on the Contact page. (#32)",
+      "changes": [
+        {
+          "path": "public/contact.html",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "b6922f1de90101cf6fb9ba5fafcbc4419f9b5021",
+      "date": "2026-10-06T12:01:10-04:00",
+      "subject": "Keep navigation steady during page transitions (#28)",
+      "changes": [
+        {
+          "path": ".github/workflows/deploy.yml",
+          "status": "modified"
+        },
+        {
+          "path": "docs/mobile-transitions/crossfade/README.md",
+          "status": "added"
+        },
+        {
+          "path": "docs/mobile-transitions/crossfade/crossfade-after.jpg",
+          "status": "added"
+        },
+        {
+          "path": "docs/mobile-transitions/crossfade/crossfade-before.jpg",
+          "status": "added"
+        },
+        {
+          "path": "docs/mobile-transitions/layout/README.md",
+          "status": "added"
+        },
+        {
+          "path": "docs/mobile-transitions/layout/space-after-desktop.jpg",
+          "status": "added"
+        },
+        {
+          "path": "docs/mobile-transitions/layout/space-after-initial.jpg",
+          "status": "added"
+        },
+        {
+          "path": "docs/mobile-transitions/layout/space-after-ready.jpg",
+          "status": "added"
+        },
+        {
+          "path": "docs/mobile-transitions/layout/space-after-unavailable.jpg",
+          "status": "added"
+        },
+        {
+          "path": "docs/mobile-transitions/layout/space-before-initial.jpg",
+          "status": "added"
+        },
+        {
+          "path": "docs/mobile-transitions/layout/space-before-ready.jpg",
+          "status": "added"
+        },
+        {
+          "path": "docs/mobile-transitions/typography/README.md",
+          "status": "added"
+        },
+        {
+          "path": "docs/mobile-transitions/typography/font-after.jpg",
+          "status": "added"
+        },
+        {
+          "path": "docs/mobile-transitions/typography/font-before.jpg",
+          "status": "added"
+        },
+        {
+          "path": "public/404.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/assets/navigation.css",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/page-navigation.js",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/screensaver.js",
+          "status": "modified"
+        },
+        {
+          "path": "public/assets/subway-vis.js",
+          "status": "modified"
+        },
+        {
+          "path": "public/assets/transitions.css",
+          "status": "added"
+        },
+        {
+          "path": "public/assets/typography.css",
+          "status": "added"
+        },
+        {
+          "path": "public/contact.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/ideology.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/index.html",
+          "status": "modified"
+        },
+        {
+          "path": "public/projects.html",
+          "status": "modified"
+        },
+        {
+          "path": "scripts/sitegen.py",
+          "status": "modified"
+        },
+        {
+          "path": "scripts/test_page_navigation.cjs",
+          "status": "added"
+        },
+        {
+          "path": "scripts/test_project_transition.cjs",
+          "status": "added"
+        },
+        {
+          "path": "scripts/test_screensaver_navigation.cjs",
+          "status": "added"
+        },
+        {
+          "path": "scripts/test_sitegen.py",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "73b6605eebd8c9213c0eec433ed49c540afc5518",
+      "date": "2026-10-06T17:01:21-04:00",
+      "subject": "Manage Site Content with Astro (#35)",
+      "changes": [
+        {
+          "path": ".github/workflows/deploy.yml",
+          "status": "modified"
+        },
+        {
+          "path": ".gitignore",
+          "status": "modified"
+        },
+        {
+          "path": ".pre-commit-config.yaml",
+          "status": "modified"
+        },
+        {
+          "path": "README.md",
+          "status": "modified"
+        },
+        {
+          "path": "astro.config.ts",
+          "status": "added"
+        },
+        {
+          "path": "package-lock.json",
+          "status": "added"
+        },
+        {
+          "path": "package.json",
+          "status": "added"
+        },
+        {
+          "path": "public/404.html",
+          "status": "deleted"
+        },
+        {
+          "path": "public/assets/navigation.css",
+          "status": "deleted"
+        },
+        {
+          "path": "public/assets/transitions.css",
+          "status": "deleted"
+        },
+        {
+          "path": "public/assets/typography.css",
+          "status": "deleted"
+        },
+        {
+          "path": "public/contact.html",
+          "status": "deleted"
+        },
+        {
+          "path": "public/ideology.html",
+          "status": "deleted"
+        },
+        {
+          "path": "public/index.html",
+          "status": "deleted"
+        },
+        {
+          "path": "public/projects.html",
+          "status": "deleted"
+        },
+        {
+          "path": "scripts/agent-files.test.ts",
+          "status": "added"
+        },
+        {
+          "path": "scripts/site.test.ts",
+          "status": "added"
+        },
+        {
+          "path": "scripts/sitegen.py",
+          "status": "deleted"
+        },
+        {
+          "path": "scripts/test_page_navigation.cjs",
+          "status": "modified"
+        },
+        {
+          "path": "scripts/test_project_transition.cjs",
+          "status": "modified"
+        },
+        {
+          "path": "scripts/test_screensaver_navigation.cjs",
+          "status": "modified"
+        },
+        {
+          "path": "scripts/test_sitegen.py",
+          "status": "deleted"
+        },
+        {
+          "path": "site/components/SiteHeader.astro",
+          "status": "added"
+        },
+        {
+          "path": "site/components/SubwayFigure.astro",
+          "status": "added"
+        },
+        {
+          "path": "site/components/SubwayHead.astro",
+          "status": "added"
+        },
+        {
+          "path": "site/components/ThemeScript.astro",
+          "status": "renamed",
+          "from": "public/assets/theme.js"
+        },
+        {
+          "path": "site/content.config.ts",
+          "status": "added"
+        },
+        {
+          "path": "site/content/projects/cig-scraper.md",
+          "status": "added"
+        },
+        {
+          "path": "site/content/projects/dotfiles.md",
+          "status": "added"
+        },
+        {
+          "path": "site/content/projects/istheldown.md",
+          "status": "added"
+        },
+        {
+          "path": "site/content/projects/mingus.md",
+          "status": "added"
+        },
+        {
+          "path": "site/content/projects/xyz.md",
+          "status": "added"
+        },
+        {
+          "path": "site/integrations/agent-files.ts",
+          "status": "added"
+        },
+        {
+          "path": "site/layouts/Page.astro",
+          "status": "added"
+        },
+        {
+          "path": "site/pages/404.astro",
+          "status": "added"
+        },
+        {
+          "path": "site/pages/contact.astro",
+          "status": "added"
+        },
+        {
+          "path": "site/pages/ideology.astro",
+          "status": "added"
+        },
+        {
+          "path": "site/pages/index.astro",
+          "status": "added"
+        },
+        {
+          "path": "site/pages/projects.astro",
+          "status": "added"
+        },
+        {
+          "path": "site/scripts/cig-button.js",
+          "status": "added"
+        },
+        {
+          "path": "site/scripts/page-navigation.js",
+          "status": "renamed",
+          "from": "public/assets/page-navigation.js"
+        },
+        {
+          "path": "site/scripts/screensaver.js",
+          "status": "renamed",
+          "from": "public/assets/screensaver.js"
+        },
+        {
+          "path": "site/styles/site.css",
+          "status": "added"
+        },
+        {
+          "path": "tsconfig.json",
+          "status": "added"
+        },
+        {
+          "path": "wrangler.toml",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "916c7a5728db2f8fea45631cb6bbdce61eb19787",
+      "date": "2026-10-07T12:13:56-04:00",
+      "subject": "Move the random cig picker into the cig_scraper project. (#36)",
+      "changes": [
+        {
+          "path": "astro.config.ts",
+          "status": "modified"
+        },
+        {
+          "path": "docs/pr-evidence/move-cig-picker/projects.png",
+          "status": "added"
+        },
+        {
+          "path": "site/components/CigPicker.astro",
+          "status": "added"
+        },
+        {
+          "path": "site/content.config.ts",
+          "status": "modified"
+        },
+        {
+          "path": "site/content/projects/cig-scraper.md",
+          "status": "modified"
+        },
+        {
+          "path": "site/pages/index.astro",
+          "status": "modified"
+        },
+        {
+          "path": "site/pages/projects.astro",
+          "status": "modified"
+        },
+        {
+          "path": "site/scripts/cig-button.js",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "a88b466e2724882808b43f2b23ca54500d31afb2",
+      "date": "2026-10-07T16:27:00-04:00",
+      "subject": "Add Vesta to projects with an embedded demo board (#37)",
+      "changes": [
+        {
+          "path": "README.md",
+          "status": "modified"
+        },
+        {
+          "path": "docs/vesta/README.md",
+          "status": "added"
+        },
+        {
+          "path": "docs/vesta/desktop.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/vesta/mobile-dark.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/vesta/mobile.png",
+          "status": "added"
+        },
+        {
+          "path": "site/components/VestaPreview.astro",
+          "status": "added"
+        },
+        {
+          "path": "site/content.config.ts",
+          "status": "modified"
+        },
+        {
+          "path": "site/content/projects/vesta.md",
+          "status": "added"
+        },
+        {
+          "path": "site/generated/vesta-demo.html",
+          "status": "added"
+        },
+        {
+          "path": "site/pages/projects.astro",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "76b8ea0fb2cd29a0849673098d4dc28f55da416f",
+      "date": "2026-10-07T22:26:03-04:00",
+      "subject": "feat: add an animated email reveal to Contact (#38)",
+      "changes": [
+        {
+          "path": "scripts/site.test.ts",
+          "status": "modified"
+        },
+        {
+          "path": "site/layouts/Page.astro",
+          "status": "modified"
+        },
+        {
+          "path": "site/pages/contact.astro",
+          "status": "modified"
+        },
+        {
+          "path": "site/scripts/email-reveal.ts",
+          "status": "added"
+        }
+      ]
+    },
+    {
+      "sha": "1186fe5093979bd7269c1f31af176ad59064e91f",
+      "date": "2026-10-08T11:34:44-04:00",
+      "subject": "Add a Writing section and move Ideology into the first post (#39)",
+      "changes": [
+        {
+          "path": "README.md",
+          "status": "modified"
+        },
+        {
+          "path": "astro.config.ts",
+          "status": "modified"
+        },
+        {
+          "path": "docs/writing/gm-post-desktop.jpg",
+          "status": "added"
+        },
+        {
+          "path": "docs/writing/gm-post-mobile-dark.jpg",
+          "status": "added"
+        },
+        {
+          "path": "docs/writing/writing-list-desktop.jpg",
+          "status": "added"
+        },
+        {
+          "path": "package-lock.json",
+          "status": "modified"
+        },
+        {
+          "path": "package.json",
+          "status": "modified"
+        },
+        {
+          "path": "public/_redirects",
+          "status": "added"
+        },
+        {
+          "path": "scripts/agent-files.test.ts",
+          "status": "modified"
+        },
+        {
+          "path": "scripts/site.test.ts",
+          "status": "modified"
+        },
+        {
+          "path": "scripts/test_page_navigation.cjs",
+          "status": "modified"
+        },
+        {
+          "path": "site/components/CigPicker.astro",
+          "status": "modified"
+        },
+        {
+          "path": "site/components/SiteHeader.astro",
+          "status": "modified"
+        },
+        {
+          "path": "site/content.config.ts",
+          "status": "modified"
+        },
+        {
+          "path": "site/content/writing/gm.mdx",
+          "status": "added"
+        },
+        {
+          "path": "site/integrations/agent-files.ts",
+          "status": "modified"
+        },
+        {
+          "path": "site/layouts/Page.astro",
+          "status": "modified"
+        },
+        {
+          "path": "site/layouts/Post.astro",
+          "status": "added"
+        },
+        {
+          "path": "site/lib/writing.ts",
+          "status": "added"
+        },
+        {
+          "path": "site/pages/ideology.astro",
+          "status": "deleted"
+        },
+        {
+          "path": "site/pages/writing.astro",
+          "status": "added"
+        },
+        {
+          "path": "site/pages/writing/[slug].astro",
+          "status": "added"
+        },
+        {
+          "path": "site/scripts/page-navigation.js",
+          "status": "modified"
+        },
+        {
+          "path": "site/styles/site.css",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "b855c2bf6483be6d0f21d4342339e30c93824335",
+      "date": "2026-10-10T19:33:08-04:00",
+      "subject": "Display cached Alpaca prices through a private scheduled Worker (#40)",
+      "changes": [
+        {
+          "path": ".github/workflows/deploy.yml",
+          "status": "modified"
+        },
+        {
+          "path": ".gitignore",
+          "status": "modified"
+        },
+        {
+          "path": "Cargo.lock",
+          "status": "modified"
+        },
+        {
+          "path": "Cargo.toml",
+          "status": "modified"
+        },
+        {
+          "path": "docs/vesta/ALPACA.md",
+          "status": "added"
+        },
+        {
+          "path": "docs/vesta/README.md",
+          "status": "modified"
+        },
+        {
+          "path": "docs/vesta/YAHOO-EXPERIMENT.md",
+          "status": "added"
+        },
+        {
+          "path": "docs/vesta/production-live-board.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/vesta/production-manual-live-board.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/vesta/refactor-scheduled-board.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/vesta/refactor-verification.json",
+          "status": "added"
+        },
+        {
+          "path": "package-lock.json",
+          "status": "modified"
+        },
+        {
+          "path": "package.json",
+          "status": "modified"
+        },
+        {
+          "path": "scripts/fixtures/vesta-board.json",
+          "status": "added"
+        },
+        {
+          "path": "scripts/test_previews.py",
+          "status": "modified"
+        },
+        {
+          "path": "scripts/update-vesta-demo.mjs",
+          "status": "added"
+        },
+        {
+          "path": "scripts/vesta-prices.test.ts",
+          "status": "added"
+        },
+        {
+          "path": "shared/board.ts",
+          "status": "added"
+        },
+        {
+          "path": "shared/vesta.ts",
+          "status": "added"
+        },
+        {
+          "path": "site/components/VestaPreview.astro",
+          "status": "modified"
+        },
+        {
+          "path": "src/lib.rs",
+          "status": "modified"
+        },
+        {
+          "path": "src/vesta.rs",
+          "status": "added"
+        },
+        {
+          "path": "workers/vesta/alpaca.ts",
+          "status": "added"
+        },
+        {
+          "path": "workers/vesta/prices.ts",
+          "status": "added"
+        },
+        {
+          "path": "workers/vesta/tsconfig.json",
+          "status": "added"
+        },
+        {
+          "path": "workers/vesta/worker.ts",
+          "status": "added"
+        },
+        {
+          "path": "workers/vesta/wrangler.toml",
+          "status": "added"
+        },
+        {
+          "path": "wrangler.toml",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "aa7253d6474a48d94cf9198586c8b1553148808c",
+      "date": "2026-10-15T17:16:54-04:00",
+      "subject": "Improve agent readability with static content and Markdown guidance (#41)",
+      "changes": [
+        {
+          "path": ".github/workflows/deploy.yml",
+          "status": "modified"
+        },
+        {
+          "path": "README.md",
+          "status": "modified"
+        },
+        {
+          "path": "public/agent-instructions.md",
+          "status": "added"
+        },
+        {
+          "path": "scripts/agent-files.test.ts",
+          "status": "modified"
+        },
+        {
+          "path": "scripts/site.test.ts",
+          "status": "modified"
+        },
+        {
+          "path": "scripts/test_previews.py",
+          "status": "modified"
+        },
+        {
+          "path": "scripts/verify-endpoints.ts",
+          "status": "added"
+        },
+        {
+          "path": "site/components/SiteHeader.astro",
+          "status": "modified"
+        },
+        {
+          "path": "site/integrations/agent-files.ts",
+          "status": "modified"
+        },
+        {
+          "path": "site/pages/404.astro",
+          "status": "modified"
+        },
+        {
+          "path": "site/pages/about.astro",
+          "status": "added"
+        },
+        {
+          "path": "site/pages/contact.astro",
+          "status": "modified"
+        },
+        {
+          "path": "site/pages/index.astro",
+          "status": "modified"
+        },
+        {
+          "path": "site/pages/privacy.astro",
+          "status": "added"
+        },
+        {
+          "path": "src/lib.rs",
+          "status": "modified"
+        },
+        {
+          "path": "wrangler.toml",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "a10ebfa76a6a033d9ab1e578bad1f306261c8fa5",
+      "date": "2026-10-15T18:00:15-04:00",
+      "subject": "Remove visible text added by agent readability PR (#42)",
+      "changes": [
+        {
+          "path": "README.md",
+          "status": "modified"
+        },
+        {
+          "path": "docs/agent-readiness/404-after.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/agent-readiness/404-before.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/agent-readiness/contact-after.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/agent-readiness/contact-before.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/agent-readiness/index-after.png",
+          "status": "added"
+        },
+        {
+          "path": "docs/agent-readiness/index-before.png",
+          "status": "added"
+        },
+        {
+          "path": "scripts/site.test.ts",
+          "status": "modified"
+        },
+        {
+          "path": "scripts/verify-endpoints.ts",
+          "status": "modified"
+        },
+        {
+          "path": "site/pages/404.astro",
+          "status": "modified"
+        },
+        {
+          "path": "site/pages/contact.astro",
+          "status": "modified"
+        },
+        {
+          "path": "site/pages/index.astro",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "6279141f02b0be7621b5a7a8351b664cf95cb971",
+      "date": "2026-10-24T19:06:14-04:00",
+      "subject": "Show the official Vim logo next to dotfiles on the Projects page. (#43)",
+      "changes": [
+        {
+          "path": "public/assets/icons/vim.svg",
+          "status": "added"
+        },
+        {
+          "path": "site/content.config.ts",
+          "status": "modified"
+        },
+        {
+          "path": "site/content/projects/dotfiles.md",
+          "status": "modified"
+        },
+        {
+          "path": "site/pages/projects.astro",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "0315caac555c52c72e9eab363457ef789f9c75b0",
+      "date": "2026-10-27T15:32:24-04:00",
+      "subject": "Publish the updated PGP key with me [at] alexkan.xyz as the primary UID and the unused auth subkey revoked. (#44)",
+      "changes": [
+        {
+          "path": "public/pgp.txt",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "96d9d5a78f5cef6f2cf853533cd3553075603622",
+      "date": "2026-11-04T11:46:43-08:00",
+      "subject": "Embed the live mingus 3D taste map on the projects page (#45)",
+      "changes": [
+        {
+          "path": "scripts/test_screensaver_navigation.cjs",
+          "status": "modified"
+        },
+        {
+          "path": "site/components/MingusEmbed.astro",
+          "status": "added"
+        },
+        {
+          "path": "site/content.config.ts",
+          "status": "modified"
+        },
+        {
+          "path": "site/content/projects/mingus.md",
+          "status": "modified"
+        },
+        {
+          "path": "site/pages/projects.astro",
+          "status": "modified"
+        },
+        {
+          "path": "site/scripts/screensaver.js",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "00c58303b8736215a8282faf24d0ef917898f471",
+      "date": "2026-11-05T12:43:24-08:00",
+      "subject": "Give every page one URL and complete its search and preview metadata: 301 www and slash variants, bare-domain OG URLs, H1 page titles, a root favicon, HSTS and immutable bundles, and /mingus/ in the sitemap (#48)",
+      "changes": [
+        {
+          "path": "README.md",
+          "status": "modified"
+        },
+        {
+          "path": "astro.config.ts",
+          "status": "modified"
+        },
+        {
+          "path": "public/_headers",
+          "status": "added"
+        },
+        {
+          "path": "public/favicon.ico",
+          "status": "added"
+        },
+        {
+          "path": "scripts/agent-files.test.ts",
+          "status": "modified"
+        },
+        {
+          "path": "site/integrations/agent-files.ts",
+          "status": "modified"
+        },
+        {
+          "path": "site/pages/projects.astro",
+          "status": "modified"
+        },
+        {
+          "path": "site/pages/writing.astro",
+          "status": "modified"
+        },
+        {
+          "path": "src/lib.rs",
+          "status": "modified"
+        },
+        {
+          "path": "src/link_preview.rs",
+          "status": "modified"
+        }
+      ]
+    },
+    {
+      "sha": "017844f32e65b6173fe0fdd16b6423dadcd38265",
+      "date": "2026-11-05T12:45:35-08:00",
+      "subject": "Load the mingus map once, warm the subway figure offscreen, and add a SQL tab (#46)",
+      "changes": [
+        {
+          "path": "README.md",
+          "status": "modified"
+        },
+        {
+          "path": "public/assets/subway-vis.js",
+          "status": "modified"
+        },
+        {
+          "path": "scripts/test_page_navigation.cjs",
+          "status": "modified"
+        },
+        {
+          "path": "scripts/test_project_transition.cjs",
+          "status": "modified"
+        },
+        {
+          "path": "site/components/MingusEmbed.astro",
+          "status": "modified"
+        },
+        {
+          "path": "site/layouts/Page.astro",
+          "status": "modified"
+        },
+        {
+          "path": "site/scripts/mingus-tabs.js",
+          "status": "added"
+        },
+        {
+          "path": "site/scripts/page-navigation.js",
+          "status": "modified"
+        }
+      ]
+    }
+  ]
+}

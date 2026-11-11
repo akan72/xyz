@@ -1,0 +1,564 @@
+diff --git a/.dockerignore b/.dockerignore
+new file mode 100644
+index 0000000..e34d9c7
+--- /dev/null
++++ b/.dockerignore
+@@ -0,0 +1,2 @@
++fly.toml
++.git/
+diff --git a/.github/workflows/fly.yml b/.github/workflows/fly.yml
+new file mode 100644
+index 0000000..6eee566
+--- /dev/null
++++ b/.github/workflows/fly.yml
+@@ -0,0 +1,16 @@
++name: Fly Deploy
++on:
++  push:
++    branches:
++      - master    # change to main if needed
++jobs:
++  deploy:
++    name: Deploy app
++    runs-on: ubuntu-latest
++    concurrency: deploy-group    # optional: ensure only one action runs at a time
++    steps:
++      - uses: actions/checkout@v4
++      - uses: superfly/flyctl-actions/setup-flyctl@master
++      - run: flyctl deploy --remote-only
++        env:
++          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+\ No newline at end of file
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..03b1612
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,3 @@
++/target
++.vscode
++.DS_STORE
+diff --git a/Cargo.toml b/Cargo.toml
+new file mode 100644
+index 0000000..11a8e92
+--- /dev/null
++++ b/Cargo.toml
+@@ -0,0 +1,19 @@
++[package]
++name = "xyz"
++version = "0.1.0"
++edition = "2021"
++
++# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
++
++[dependencies]
++axum = "0.7.5"
++base64 = "0.22.1"
++image = "0.25.1"
++include_dir = "0.7.3"
++rand = "0.8.5"
++reqwest = "0.12.4"
++tokio = { version = "1.37.0", features = ["full"] }
++tower-http = { version = "0.5.2" , features = ["fs", "trace"] }
++tower-serve-static = "0.1.1"
++tracing = "0.1.40"
++tracing-subscriber = "0.3.18"
+\ No newline at end of file
+diff --git a/Dockerfile b/Dockerfile
+new file mode 100644
+index 0000000..56071be
+--- /dev/null
++++ b/Dockerfile
+@@ -0,0 +1,20 @@
++FROM lukemathwalker/cargo-chef:latest-rust-1 AS chef
++WORKDIR /app
++
++FROM chef AS planner
++COPY . .
++RUN cargo chef prepare --recipe-path recipe.json
++
++FROM chef AS builder
++COPY --from=planner /app/recipe.json recipe.json
++# Build dependencies - this is the caching Docker layer!
++RUN cargo chef cook --release --recipe-path recipe.json
++# Build application
++COPY . .
++RUN cargo build --release --bin xyz
++
++# We do not need the Rust toolchain to run the binary!
++FROM debian:bookworm-slim AS runtime
++WORKDIR /app
++COPY --from=builder /app/target/release/xyz /usr/local/bin
++ENTRYPOINT ["/usr/local/bin/xyz"]
+diff --git a/README.md b/README.md
+index ed832d1..d169819 100644
+--- a/README.md
++++ b/README.md
+@@ -1,2 +1,42 @@
+ # xyz
+-Personal Website
++
++Personal Website [`alexkan.xyz`](https://alexkan.xyz/) using [Axum](https://github.com/tokio-rs/axum), hosted on [fly.io](https://fly.io)
++
++## Local Build
++
++```{rust}
++cargo run
++```
++
++Navigate to `localhost:8080`
++
++## Deploy
++
++Install fly.io cli
++
++```{bash}
++brew install flyctl
++```
++
++Deploy
++
++```{bash}
++fly deploy
++```
++
++Generate Zyn Favicon
++
++```{python}
++python scripts/favicon.py
++```
++
++## Details
++
++- Axum webserver
++- [`tower_serve_static`](https://docs.rs/tower-serve-static/latest/tower_serve_static/) to embed static assets into the Rust binary
++
++## Inspiration
++
++- [Tom Schmidt's Website](https://github.com/tomhschmidt/PersonalWebsite)
++- [Artur Sapek's Website](https://github.com/artursapek/isometric-cubes/blob/main/artcx/src/main.rs)
++- [0xichigo's Website](https://github.com/0xIchigo/0xIchigo-Website/tree/main)
+\ No newline at end of file
+diff --git a/assets/404.html b/assets/404.html
+new file mode 100644
+index 0000000..f71ff17
+--- /dev/null
++++ b/assets/404.html
+@@ -0,0 +1,159 @@
++<!DOCTYPE html>
++<html lang="en">
++    <head>
++        <meta charset="utf-8">
++        <title>Page Not Found :(</title>
++        <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
++        <style>
++            ::-moz-selection {
++                background: #b3d4fc;
++                text-shadow: none;
++            }
++
++            ::selection {
++                background: #b3d4fc;
++                text-shadow: none;
++            }
++
++            html {
++                padding: 30px 10px;
++                font-size: 20px;
++                line-height: 1.4;
++                color: #737373;
++                background: #f0f0f0;
++                -webkit-text-size-adjust: 100%;
++                -ms-text-size-adjust: 100%;
++            }
++
++            html,
++            input {
++                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
++            }
++
++            body {
++                max-width: 500px;
++                _width: 500px;
++                padding: 30px 20px 50px;
++                border: 1px solid #b3b3b3;
++                border-radius: 4px;
++                margin: 0 auto;
++                box-shadow: 0 1px 10px #a7a7a7, inset 0 1px 0 #fff;
++                background: #fcfcfc;
++            }
++
++            h1 {
++                margin: 0 10px;
++                font-size: 50px;
++                text-align: center;
++            }
++
++            h1 span {
++                color: #bbb;
++            }
++
++            h3 {
++                margin: 1.5em 0 0.5em;
++            }
++
++            p {
++                margin: 1em 0;
++            }
++
++            ul {
++                padding: 0 0 0 40px;
++                margin: 1em 0;
++            }
++
++            .container {
++                max-width: 380px;
++                _width: 380px;
++                margin: 0 auto;
++            }
++
++            /* google search */
++
++            #goog-fixurl ul {
++                list-style: none;
++                padding: 0;
++                margin: 0;
++            }
++
++            #goog-fixurl form {
++                margin: 0;
++            }
++
++            #goog-wm-qt,
++            #goog-wm-sb {
++                border: 1px solid #bbb;
++                font-size: 16px;
++                line-height: normal;
++                vertical-align: top;
++                color: #444;
++                border-radius: 2px;
++            }
++
++            #goog-wm-qt {
++                width: 220px;
++                height: 20px;
++                padding: 5px;
++                margin: 5px 10px 0 0;
++                box-shadow: inset 0 1px 1px #ccc;
++            }
++
++            #goog-wm-sb {
++                display: inline-block;
++                height: 32px;
++                padding: 0 10px;
++                margin: 5px 0 0;
++                white-space: nowrap;
++                cursor: pointer;
++                background-color: #f5f5f5;
++                background-image: -webkit-linear-gradient(rgba(255,255,255,0), #f1f1f1);
++                background-image: -moz-linear-gradient(rgba(255,255,255,0), #f1f1f1);
++                background-image: -ms-linear-gradient(rgba(255,255,255,0), #f1f1f1);
++                background-image: -o-linear-gradient(rgba(255,255,255,0), #f1f1f1);
++                -webkit-appearance: none;
++                -moz-appearance: none;
++                appearance: none;
++                *overflow: visible;
++                *display: inline;
++                *zoom: 1;
++            }
++
++            #goog-wm-sb:hover,
++            #goog-wm-sb:focus {
++                border-color: #aaa;
++                box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
++                background-color: #f8f8f8;
++            }
++
++            #goog-wm-qt:hover,
++            #goog-wm-qt:focus {
++                border-color: #105cb6;
++                outline: 0;
++                color: #222;
++            }
++
++            input::-moz-focus-inner {
++                padding: 0;
++                border: 0;
++            }
++        </style>
++    </head>
++    <body>
++        <div class="container">
++            <h1>Not found <span>:(</span></h1>
++            <img src="./assets/cig.jpg" alt="Cigawrette" width="400" height="400">
++            <p>Sorry, but the page you were trying to view does not exist.</p>
++            <p>It looks like this was the result of either:</p>
++            <ul>
++                <li>a mistyped address</li>
++                <li>an out-of-date link</li>
++            </ul>
++            <script>
++                var GOOG_FIXURL_LANG = (navigator.language || '').slice(0,2),GOOG_FIXURL_SITE = location.host;
++            </script>
++            <script src="//linkhelp.clients.google.com/tbproxy/lh/wm/fixurl.js"></script>
++        </div>
++    </body>
++</html>
+\ No newline at end of file
+diff --git a/assets/akan72.txt b/assets/akan72.txt
+new file mode 100644
+index 0000000..46cfdfe
+--- /dev/null
++++ b/assets/akan72.txt
+@@ -0,0 +1,43 @@
++-----BEGIN PGP PUBLIC KEY BLOCK-----
++
++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
++NsM+Q6YKNsJUrQ1EhuCqOz1zU1LL
++=eUEK
++-----END PGP PUBLIC KEY BLOCK-----
+\ No newline at end of file
+diff --git a/assets/cig.jpg b/assets/cig.jpg
+new file mode 100644
+index 0000000..ea087e4
+Binary files /dev/null and b/assets/cig.jpg differ
+diff --git a/assets/favicon.ico b/assets/favicon.ico
+new file mode 100644
+index 0000000..5b50702
+Binary files /dev/null and b/assets/favicon.ico differ
+diff --git a/assets/ideology.html b/assets/ideology.html
+new file mode 100644
+index 0000000..2ca0aab
+--- /dev/null
++++ b/assets/ideology.html
+@@ -0,0 +1,23 @@
++<!DOCTYPE html>
++<html lang="en">
++    <head>
++        <meta charset="utf-8">
++        <title>alexkan.xyz</title>
++        <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
++        <body>
++            <h2> Likes </h2>
++            <ul>
++                <li> Black Metal </li>
++                <li> Urbanism </li>
++                <li> Vim </li>
++                <li> Privacy </li>
++                <li> Uniqlo </li>
++            </ul>
++            <h2> Dislikes </h2>
++            <ul>
++                <li> Bayesian Statistics </li>
++                <li> Modern Monetary Theory </li>
++                <li> Effective Altruism </li>
++            </ul>
++    </head>
++</html>
+\ No newline at end of file
+diff --git a/assets/index.html b/assets/index.html
+new file mode 100644
+index 0000000..d4bdf5e
+--- /dev/null
++++ b/assets/index.html
+@@ -0,0 +1,31 @@
++<!DOCTYPE html>
++<html lang="en">
++    <head>
++        <meta charset="utf-8">
++        <title>Privacy Maxx</title>
++        <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
++            gm
++        <script src="https://unpkg.com/htmx.org@1.9.12"></script>
++    </head>
++    <body>
++        <button
++            hx-get="/pgp"
++            hx-swap="outerHTML"
++            hx-disabled-elt="this"
++        >
++            Click for Ideology
++        </button>
++        <button
++            hx-get="/image"
++            hx-swap="outerHTML"
++            hx-target="#cig"
++            hx-disabled-elt="this"
++        >
++            Get Random Cig
++        </button>
++        <div class="container" id="main" >
++            <img id="remilio" src="./assets/remilio.jpg" alt="Remilio" width="400" height="400">
++            <img id="cig" src="./assets/cig.jpg" alt="Cigawrette" width="400" height="400">
++        </div>
++    </body>
++</html>
+\ No newline at end of file
+diff --git a/assets/pgp.html b/assets/pgp.html
+new file mode 100644
+index 0000000..0a5f88b
+--- /dev/null
++++ b/assets/pgp.html
+@@ -0,0 +1,11 @@
++<!DOCTYPE html>
++<html lang="en">
++    <head>
++        <meta charset="utf-8">
++        <title>alexkan.xyz</title>
++        <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
++        <body>
++            <h1>PGP Public Key</h1>
++            <embed src="./assets/akan72.txt" width="525" height="680" type="text/plain">
++    </head>
++</html>
+\ No newline at end of file
+diff --git a/assets/remilio.jpg b/assets/remilio.jpg
+new file mode 100644
+index 0000000..0ac5b01
+Binary files /dev/null and b/assets/remilio.jpg differ
+diff --git a/assets/zyn.webp b/assets/zyn.webp
+new file mode 100644
+index 0000000..3d7a3bd
+Binary files /dev/null and b/assets/zyn.webp differ
+diff --git a/fly.toml b/fly.toml
+new file mode 100644
+index 0000000..e73a872
+--- /dev/null
++++ b/fly.toml
+@@ -0,0 +1,18 @@
++app = 'alexkanxyz'
++primary_region = 'ewr'
++
++[build]
++
++[env]
++  PORT = '8080'
++
++[http_service]
++  internal_port = 8080
++  force_https = true
++  auto_stop_machines = true
++  auto_start_machines = true
++  min_machines_running = 0
++  processes = ['app']
++
++[[vm]]
++  size = 'shared-cpu-1x'
+diff --git a/scripts/favicon.py b/scripts/favicon.py
+new file mode 100644
+index 0000000..a6239cf
+--- /dev/null
++++ b/scripts/favicon.py
+@@ -0,0 +1,6 @@
++from PIL import Image
++
++filename = r'assets/zyn.webp'
++
++img = Image.open(filename)
++img.save('favicon.ico')
+\ No newline at end of file
+diff --git a/src/main.rs b/src/main.rs
+new file mode 100644
+index 0000000..4da8c0a
+--- /dev/null
++++ b/src/main.rs
+@@ -0,0 +1,61 @@
++use axum::{response::Html, Router};
++use reqwest;
++use base64::{engine::general_purpose, Engine as _};
++use axum::routing::get;
++use tower_serve_static::{ServeDir, ServeFile, include_file};
++use include_dir::{Dir, include_dir};
++use rand::Rng;
++use std::io::{BufWriter, Cursor};
++use image::{imageops::FilterType::{CatmullRom}, ImageFormat};
++
++#[tokio::main]
++async fn main() {
++    tracing_subscriber::fmt::init();
++
++    static ASSETS_DIR: Dir<'static> = include_dir!("$CARGO_MANIFEST_DIR/assets");
++
++    let app = Router::new()
++        .nest_service("/", root())
++        .nest_service("/assets", ServeDir::new(&ASSETS_DIR))
++        .nest_service("/pgp", ServeFile::new(include_file!("/assets/pgp.html")))
++        .nest_service("/ideology", ServeFile::new(include_file!("/assets/ideology.html")))
++        .nest_service("/image", get(get_image));
++
++    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
++    axum::serve(listener, app).await.unwrap();
++}
++
++fn root() -> Router {
++    Router::new()
++        .route_service("/", ServeFile::new(include_file!("/assets/index.html")))
++        .fallback_service(ServeFile::new(include_file!("/assets/404.html")))
++}
++
++pub async fn get_image() -> impl axum::response::IntoResponse {
++    // TODO: display default cig if error
++    let cig_id = rand::thread_rng().gen_range(1..9997);
++    let ipfs_link = format!("https://ipfs.io/ipfs/bafybeigvhgkcqqamlukxcmjodalpk2kuy5qzqtx6m4i6pvb7o3ammss3y4/{cig_id}.jpg");
++
++    let img_bytes = reqwest::get(ipfs_link)
++        .await
++        .unwrap()
++        .bytes()
++        .await
++        .unwrap();
++
++    let image = image::load_from_memory(&img_bytes)
++        .unwrap()
++        .resize(400, 400, CatmullRom);
++
++    let mut buffer = BufWriter::new(Cursor::new(Vec::new()));
++    image.write_to(&mut buffer, ImageFormat::Png).unwrap();
++    let arr: Vec<u8> = buffer.into_inner().unwrap().into_inner();
++
++    // Convert bytes to base64 string
++    let buf_string = general_purpose::STANDARD.encode(&arr);
++    let html_string = format!("<html><img id=\"cig\" alt=\"Cigawrette\" width=\"400\" height=\"400\" src=\"data:image/png;charset=utf-8;base64,{buf_string}\"></html>");
++    (
++        axum::response::AppendHeaders([(axum::http::header::CONTENT_TYPE, "text/html")]),
++        Html(html_string)
++    )
++}
+\ No newline at end of file

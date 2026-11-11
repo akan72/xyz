@@ -1,0 +1,137 @@
+diff --git a/astro.config.ts b/astro.config.ts
+index 8687bda..52b57be 100644
+--- a/astro.config.ts
++++ b/astro.config.ts
+@@ -30,6 +30,15 @@ export default defineConfig({
+         // per page, and page-navigation.js swaps those when it changes pages
+         inlineStylesheets: "always",
+     },
++    // Page-only development uses the deployed Worker for the random-cig images.
++    vite: {
++        server: {
++            proxy: {
++                "/image": { target: "https://alexkan.xyz", changeOrigin: true },
++                "/cig/": { target: "https://alexkan.xyz", changeOrigin: true },
++            },
++        },
++    },
+     markdown: { processor: satteri({ hastPlugins: [externalLinksInNewTab] }) },
+     integrations: [agentFiles({ sources: { "/projects": ["site/content/projects"] } })],
+ });
+diff --git a/docs/pr-evidence/move-cig-picker/projects.png b/docs/pr-evidence/move-cig-picker/projects.png
+new file mode 100644
+index 0000000..3402ae1
+Binary files /dev/null and b/docs/pr-evidence/move-cig-picker/projects.png differ
+diff --git a/site/components/CigPicker.astro b/site/components/CigPicker.astro
+new file mode 100644
+index 0000000..9c24421
+--- /dev/null
++++ b/site/components/CigPicker.astro
+@@ -0,0 +1,17 @@
++    <div class="cig-box">
++        <button id="cig-button" class="cig-button">Get Random Cig</button>
++        <img id="cig" class="cig" src="/assets/cig.jpg" alt="Cigawrette">
++    </div>
++
++<style>
++    .cig-box { display: flex; width: fit-content; max-width: 100%; margin-top: 1em; flex-direction: column; align-items: center; }
++    .cig { display: block; width: 260px; max-width: 100%; aspect-ratio: 4 / 5; object-fit: cover; margin-top: 12px; }
++    button { font: inherit; cursor: pointer; }
++    /* Dark mode outlines the button instead of the browser's gray fill */
++    :global(:root[data-theme="dark"]) .cig-button { background: transparent; color: var(--fg); border: 1px solid #6a6a6a; border-radius: 4px; padding: 2px 7px; }
++    :global(:root[data-theme="dark"]) .cig-button:hover { border-color: #9a9a9a; }
++    @media (prefers-color-scheme: dark) {
++        :global(:root:not([data-theme="light"])) .cig-button { background: transparent; color: var(--fg); border: 1px solid #6a6a6a; border-radius: 4px; padding: 2px 7px; }
++        :global(:root:not([data-theme="light"])) .cig-button:hover { border-color: #9a9a9a; }
++    }
++</style>
+diff --git a/site/content.config.ts b/site/content.config.ts
+index 5ef9dbc..556705c 100644
+--- a/site/content.config.ts
++++ b/site/content.config.ts
+@@ -24,8 +24,8 @@ const projects = defineCollection({
+         stack: z.array(z.string().trim().min(1)).nonempty(),
+         // Position in the list, smallest first; no two projects may share one
+         order: z.number().int(),
+-        // A live figure shown above the description (site/components/)
+-        media: z.enum(["subway-vis"]).optional(),
++        // Project media shown above the description (site/components/)
++        media: z.enum(["subway-vis", "cig-picker"]).optional(),
+     }),
+ });
+ 
+diff --git a/site/content/projects/cig-scraper.md b/site/content/projects/cig-scraper.md
+index 684bdb3..8ed26d5 100644
+--- a/site/content/projects/cig-scraper.md
++++ b/site/content/projects/cig-scraper.md
+@@ -9,9 +9,9 @@ stack:
+   - Modal
+   - Cloudflare R2
+ order: 5
++media: cig-picker
+ ---
+ 
+ Ingests all [Cigawrette Packs](https://opensea.io/collection/cigawrettepacks)
+ NFT images from IPFS and writes to an R2 bucket. Scale horizontally with Modal
+-to ingest them more quickly. This is what powers the random-cig button on the
+-homepage.
++to ingest them more quickly. This powers the random-cig picker here.
+diff --git a/site/pages/index.astro b/site/pages/index.astro
+index 4f4ac79..5faff08 100644
+--- a/site/pages/index.astro
++++ b/site/pages/index.astro
+@@ -16,22 +16,8 @@ const jsonLd = {
+ <Page title="alexkan.xyz" description="Alex Kan's personal website.">
+     <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+     <img id="milady" class="milady" src="/assets/milady.jpg" alt="Milady" width="410" height="512">
+-    <div class="cig-box">
+-        <button id="cig-button" class="cig-button">Get Random Cig</button>
+-        <img id="cig" class="cig" src="/assets/cig.jpg" alt="Cigawrette">
+-    </div>
+ </Page>
+ 
+ <style>
+     .milady { display: block; width: 260px; max-width: 100%; height: auto; margin: 0 0 16px; }
+-    .cig-box { display: inline-flex; flex-direction: column; align-items: center; }
+-    .cig { display: block; width: 260px; max-width: 100%; aspect-ratio: 4 / 5; object-fit: cover; margin-top: 12px; }
+-    button { font: inherit; cursor: pointer; }
+-    /* Dark mode outlines the button instead of the browser's gray fill */
+-    :global(:root[data-theme="dark"]) .cig-button { background: transparent; color: var(--fg); border: 1px solid #6a6a6a; border-radius: 4px; padding: 2px 7px; }
+-    :global(:root[data-theme="dark"]) .cig-button:hover { border-color: #9a9a9a; }
+-    @media (prefers-color-scheme: dark) {
+-        :global(:root:not([data-theme="light"])) .cig-button { background: transparent; color: var(--fg); border: 1px solid #6a6a6a; border-radius: 4px; padding: 2px 7px; }
+-        :global(:root:not([data-theme="light"])) .cig-button:hover { border-color: #9a9a9a; }
+-    }
+ </style>
+diff --git a/site/pages/projects.astro b/site/pages/projects.astro
+index a3de8e4..1c20730 100644
+--- a/site/pages/projects.astro
++++ b/site/pages/projects.astro
+@@ -1,5 +1,6 @@
+ ---
+ import { getCollection, render } from "astro:content";
++import CigPicker from "../components/CigPicker.astro";
+ import SubwayFigure from "../components/SubwayFigure.astro";
+ import SubwayHead from "../components/SubwayHead.astro";
+ import Page from "../layouts/Page.astro";
+@@ -28,6 +29,7 @@ const years = (y: Years) =>
+             <li>
+                 <a href={url} target="_blank">{name}</a> <span class="years">{years(project.years)}</span>
+                 {media === "subway-vis" && <SubwayFigure />}
++                {media === "cig-picker" && <CigPicker />}
+                 <Content />
+                 <p class="meta">{stack.join(" · ")}</p>
+             </li>
+diff --git a/site/scripts/cig-button.js b/site/scripts/cig-button.js
+index c3970a0..523c432 100644
+--- a/site/scripts/cig-button.js
++++ b/site/scripts/cig-button.js
+@@ -1,6 +1,6 @@
+-// The homepage's "Get Random Cig" button: ask the Worker for a random cig's
++// The cig_scraper project's "Get Random Cig" button: ask the Worker for a random cig's
+ // URL (/image), preload it, then swap it in. Listens on the document so it
+-// also works when page-navigation.js brings the homepage in without a reload.
++// also works when page-navigation.js brings the projects page in without a reload.
+ document.addEventListener('click', event => {
+     const button = event.target.closest?.('#cig-button');
+     if (!button) return;

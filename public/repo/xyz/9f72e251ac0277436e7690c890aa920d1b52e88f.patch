@@ -1,0 +1,189 @@
+diff --git a/.env.template b/.env.template
+new file mode 100644
+index 0000000..ca55f75
+--- /dev/null
++++ b/.env.template
+@@ -0,0 +1,5 @@
++R2_ACCOUNT_ID=
++R2_ACCESS_KEY_ID=
++R2_SECRET_ACCESS_KEY=
++R2_BUCKET=
++
+diff --git a/.gitignore b/.gitignore
+index 03b1612..299e1c5 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,3 +1,5 @@
+ /target
+ .vscode
+ .DS_STORE
++.env
++src/bin/
+diff --git a/Cargo.toml b/Cargo.toml
+index ec4e252..2c73452 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -2,18 +2,39 @@
+ name = "xyz"
+ version = "0.1.0"
+ edition = "2021"
++default-run = "xyz"
+ 
+ # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+ 
+ [dependencies]
++aws-sdk-s3 = "1"
+ axum = "0.7.5"
+ base64 = "0.22.1"
++dotenvy = "0.15"
+ image = "0.25.1"
+ include_dir = "0.7.3"
++markdown = "1.0.0-alpha.17"
++mdxjs = "0.2.2"
+ rand = "0.8.5"
+-reqwest = { version = "0.12.4", features = ["rustls-tls"] }
+ tokio = { version = "1.37.0", features = ["full"] }
+ tower-http = { version = "0.5.2" , features = ["fs", "trace"] }
+ tower-serve-static = "0.1.1"
+ tracing = "0.1.40"
+-tracing-subscriber = "0.3.18"
+\ No newline at end of file
++tracing-subscriber = "0.3.18"
++
++# Optimize image-processing crates in dev so both
++# cargo run and image processing are fast
++[profile.dev.package.image]
++opt-level = 3
++[profile.dev.package.zune-jpeg]
++opt-level = 3
++[profile.dev.package.zune-core]
++opt-level = 3
++[profile.dev.package.jpeg-decoder]
++opt-level = 3
++[profile.dev.package.png]
++opt-level = 3
++[profile.dev.package.miniz_oxide]
++opt-level = 3
++[profile.dev.package.flate2]
++opt-level = 3
+diff --git a/README.md b/README.md
+index d169819..b5955cb 100644
+--- a/README.md
++++ b/README.md
+@@ -4,7 +4,15 @@ Personal Website [`alexkan.xyz`](https://alexkan.xyz/) using [Axum](https://gith
+ 
+ ## Local Build
+ 
+-```{rust}
++Copy the env template and fill in your R2 credentials:
++
++```{bash}
++cp .env.template .env
++```
++
++Then run:
++
++```{bash}
+ cargo run
+ ```
+ 
+@@ -39,4 +47,5 @@ python scripts/favicon.py
+ 
+ - [Tom Schmidt's Website](https://github.com/tomhschmidt/PersonalWebsite)
+ - [Artur Sapek's Website](https://github.com/artursapek/isometric-cubes/blob/main/artcx/src/main.rs)
+-- [0xichigo's Website](https://github.com/0xIchigo/0xIchigo-Website/tree/main)
+\ No newline at end of file
++- [0xichigo's Website](https://github.com/0xIchigo/0xIchigo-Website/tree/main)
++
+diff --git a/src/main.rs b/src/main.rs
+index b014497..46c411a 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -1,25 +1,50 @@
+ use axum::{response::Html, Router};
+-use reqwest;
+ use base64::{engine::general_purpose, Engine as _};
+ use axum::routing::get;
++use axum::extract::State;
+ use tower_serve_static::{ServeDir, ServeFile, include_file};
+ use include_dir::{Dir, include_dir};
+ use rand::Rng;
+ use std::io::{BufWriter, Cursor};
+ use image::{imageops::FilterType::{CatmullRom}, ImageFormat};
++use aws_sdk_s3::{Client, config::{BehaviorVersion, Credentials, Region}};
++
++#[derive(Clone)]
++struct AppState {
++    s3: Client,
++    bucket: String,
++}
+ 
+ #[tokio::main]
+ async fn main() {
++    let _ = dotenvy::dotenv();
+     tracing_subscriber::fmt::init();
+ 
+     static ASSETS_DIR: Dir<'static> = include_dir!("$CARGO_MANIFEST_DIR/assets");
+ 
++    let account_id = std::env::var("R2_ACCOUNT_ID").expect("R2_ACCOUNT_ID");
++    let access_key = std::env::var("R2_ACCESS_KEY_ID").expect("R2_ACCESS_KEY_ID");
++    let secret_key = std::env::var("R2_SECRET_ACCESS_KEY").expect("R2_SECRET_ACCESS_KEY");
++    let bucket = std::env::var("R2_BUCKET").expect("R2_BUCKET");
++
++    let endpoint_url = format!("https://{account_id}.r2.cloudflarestorage.com");
++    let creds = Credentials::new(access_key, secret_key, None, None, "r2");
++    let cfg = aws_sdk_s3::Config::builder()
++        .region(Region::new("auto"))
++        .endpoint_url(&endpoint_url)
++        .credentials_provider(creds)
++        .behavior_version(BehaviorVersion::latest())
++        .build();
++    tracing::info!(bucket = %bucket, endpoint = %endpoint_url, "configured R2 client");
++    let state = AppState { s3: Client::from_conf(cfg), bucket };
++
+     let app = Router::new()
+         .nest_service("/", root())
+         .nest_service("/assets", ServeDir::new(&ASSETS_DIR))
+         .nest_service("/pgp", ServeFile::new(include_file!("/assets/pgp.html")))
+         .nest_service("/ideology", ServeFile::new(include_file!("/assets/ideology.html")))
+-        .nest_service("/image", get(get_image));
++        .route("/image", get(get_image))
++        .with_state(state);
+ 
+     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
+     axum::serve(listener, app).await.unwrap();
+@@ -31,19 +56,19 @@ fn root() -> Router {
+         .fallback_service(ServeFile::new(include_file!("/assets/404.html")))
+ }
+ 
+-pub async fn get_image() -> impl axum::response::IntoResponse {
+-    // TODO: display default cig if error
++async fn get_image(State(state): State<AppState>) -> impl axum::response::IntoResponse {
+     let cig_id = rand::thread_rng().gen_range(1..9997);
+-    let ipfs_link = format!("https://ipfs.io/ipfs/bafybeigvhgkcqqamlukxcmjodalpk2kuy5qzqtx6m4i6pvb7o3ammss3y4/{cig_id}.jpg");
++    let key = format!("cig-collection/{cig_id}.jpg");
+ 
+-    let client = reqwest::ClientBuilder::new().use_rustls_tls().build().unwrap();
+-    let img_bytes = client.get(ipfs_link)
++    tracing::info!(bucket = %state.bucket, key = %key, "fetching cig from R2");
++    let obj = state.s3.get_object()
++        .bucket(&state.bucket)
++        .key(&key)
+         .send()
+         .await
+-        .unwrap()
+-        .bytes()
+-        .await
+         .unwrap();
++    let img_bytes = obj.body.collect().await.unwrap().into_bytes();
++    tracing::info!(key = %key, bytes = img_bytes.len(), "fetched cig from R2");
+ 
+     let image = image::load_from_memory(&img_bytes)
+         .unwrap()
+@@ -60,4 +85,4 @@ pub async fn get_image() -> impl axum::response::IntoResponse {
+         axum::response::AppendHeaders([(axum::http::header::CONTENT_TYPE, "text/html")]),
+         Html(html_string)
+     )
+-}
+\ No newline at end of file
++}

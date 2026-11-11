@@ -1,0 +1,147 @@
+diff --git a/scripts/test_screensaver_navigation.cjs b/scripts/test_screensaver_navigation.cjs
+index 20059c9..7db0626 100644
+--- a/scripts/test_screensaver_navigation.cjs
++++ b/scripts/test_screensaver_navigation.cjs
+@@ -61,3 +61,20 @@ test('the first pointer press still dismisses the saver and consumes the rest of
+   [...s.timers.values()].find(timer => timer.ms === 0).fn();
+   assert.equal(s.overlays[0].hidden, true);
+ });
++
++test('input inside the mingus frame restarts the idle period; other messages do not', async () => {
++  const s = await saver(); const originalTimer = [...s.timers.keys()][0];
++  const message = s.browserEvents.message[0];
++  message({ origin: 'https://evil.example', data: { type: 'mingus:activity' } });
++  message({ origin: 'https://alexkan.xyz', data: { type: 'something-else' } });
++  assert.equal(s.timers.has(originalTimer), true);
++  message({ origin: 'https://alexkan.xyz', data: { type: 'mingus:activity' } });
++  assert.equal(s.timers.has(originalTimer), false);
++  assert.equal([...s.timers.values()][0].ms, 5000);
++});
++
++test('a frame message arriving after the saver starts leaves it up', async () => {
++  const s = await saver(); s.idle();
++  s.browserEvents.message[0]({ origin: 'https://alexkan.xyz', data: { type: 'mingus:activity' } });
++  assert.equal(s.overlays[0].hidden, false);
++});
+diff --git a/site/components/MingusEmbed.astro b/site/components/MingusEmbed.astro
+new file mode 100644
+index 0000000..59cc281
+--- /dev/null
++++ b/site/components/MingusEmbed.astro
+@@ -0,0 +1,27 @@
++---
++// The live mingus taste map on /projects, which opens in its 3D layout by
++// default. ?embed shows only the map and posts input to this page, which
++// site/scripts/screensaver.js counts as activity. mingus is its own Worker,
++// routed only at alexkan.xyz/mingus in production (see its wrangler.toml). The absolute URL keeps PR
++// previews and `wrangler dev` from framing this site's own 404 page instead.
++---
++<figure class="mingus-embed">
++    <iframe
++        src="https://alexkan.xyz/mingus/?embed"
++        title="mingus: interactive 3D map of every artist I've listened to, clustered by genre"
++        loading="lazy"
++        referrerpolicy="no-referrer"
++    ></iframe>
++</figure>
++
++<style>
++    /* Same 536px width as the Vesta board (2 x 260px figures + 16px gap) */
++    .mingus-embed { width: 536px; max-width: 100%; margin: 1em 0; }
++    iframe {
++        display: block; width: 100%; aspect-ratio: 4 / 3; border: 0;
++        background: color-mix(in srgb, currentColor 6%, var(--bg, Canvas));
++        box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 12%, transparent);
++    }
++    /* Taller on phones, where the map's own controls take more of the frame */
++    @media (max-width: 600px) { iframe { aspect-ratio: 3 / 4; } }
++</style>
+diff --git a/site/content.config.ts b/site/content.config.ts
+index 3ff36d4..3e6aac3 100644
+--- a/site/content.config.ts
++++ b/site/content.config.ts
+@@ -26,7 +26,7 @@ const projects = defineCollection({
+         // Position in the list, smallest first; no two projects may share one
+         order: z.number().int(),
+         // Project media shown above the description (site/components/)
+-        media: z.enum(["subway-vis", "cig-picker", "vesta-demo"]).optional(),
++        media: z.enum(["subway-vis", "cig-picker", "vesta-demo", "mingus-3d"]).optional(),
+         // Small logo shown after the years (public/assets/icons/<icon>.svg)
+         icon: z.enum(["vim"]).optional(),
+     }),
+diff --git a/site/content/projects/mingus.md b/site/content/projects/mingus.md
+index d82eb0a..8deae71 100644
+--- a/site/content/projects/mingus.md
++++ b/site/content/projects/mingus.md
+@@ -10,6 +10,7 @@ stack:
+   - Modal
+   - WebGL
+ order: 3
++media: mingus-3d
+ ---
+ 
+ Interactive viz of my music taste over time since 2014. Ingests a Spotify
+diff --git a/site/pages/projects.astro b/site/pages/projects.astro
+index a2eca67..5a8f90d 100644
+--- a/site/pages/projects.astro
++++ b/site/pages/projects.astro
+@@ -1,6 +1,7 @@
+ ---
+ import { getCollection, render } from "astro:content";
+ import CigPicker from "../components/CigPicker.astro";
++import MingusEmbed from "../components/MingusEmbed.astro";
+ import SubwayFigure from "../components/SubwayFigure.astro";
+ import SubwayHead from "../components/SubwayHead.astro";
+ import VestaPreview from "../components/VestaPreview.astro";
+@@ -36,6 +37,7 @@ const icons: Record<NonNullable<(typeof projects)[number]["icon"]>, string> = {
+                 {media === "subway-vis" && <SubwayFigure />}
+                 {media === "cig-picker" && <CigPicker />}
+                 {media === "vesta-demo" && <VestaPreview />}
++                {media === "mingus-3d" && <MingusEmbed />}
+                 <Content />
+                 <p class="meta">{stack.join(" · ")}</p>
+             </li>
+diff --git a/site/scripts/screensaver.js b/site/scripts/screensaver.js
+index 44f5225..893c66e 100644
+--- a/site/scripts/screensaver.js
++++ b/site/scripts/screensaver.js
+@@ -28,6 +28,9 @@ const THEMES = {
+ };
+ 
+ const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'wheel', 'scroll'];
++// Input inside the mingus map (site/components/MingusEmbed.astro) never reaches
++// this page's listeners, so its ?embed mode posts this message instead.
++const FRAME_ACTIVITY = { origin: 'https://alexkan.xyz', type: 'mingus:activity' };
+ const AXES = ['x', 'y'];
+ 
+ const darkMode = matchMedia('(prefers-color-scheme: dark)');
+@@ -43,7 +46,8 @@ const pos = { x: 0, y: 0 };
+ const vel = { x: 0, y: 0 };
+ const max = { x: 0, y: 0 };
+ 
+-if (ENABLED) {
++// Only the top page gets one: a page of this site shown in a frame stays still.
++if (ENABLED && globalThis.self === globalThis.top) {
+     init().catch((err) => console.warn('screensaver disabled:', err));
+ }
+ 
+@@ -71,6 +75,7 @@ async function init() {
+         addEventListener(type, onActivity, { capture: true, passive: type !== 'keydown' });
+     }
+     addEventListener('keydown', onHeldKey, true);
++    addEventListener('message', onFrameActivity);
+     addEventListener('keyup', onHeldKey, true);
+     addEventListener('resize', onResize);
+     // Stops the idle timer while the tab is hidden and restarts it on return.
+@@ -113,6 +118,11 @@ function onActivity(e) {
+     resetIdleTimer();
+ }
+ 
++function onFrameActivity(e) {
++    // While the saver is up it covers the frame, so a message then is a late one.
++    if (e.origin === FRAME_ACTIVITY.origin && e.data?.type === FRAME_ACTIVITY.type && !active) resetIdleTimer();
++}
++
+ function start() {
+     if (document.hidden) return;
+     active = true;

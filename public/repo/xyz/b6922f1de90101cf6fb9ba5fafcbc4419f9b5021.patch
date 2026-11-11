@@ -1,0 +1,1420 @@
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index f9115ed..6e089fa 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -47,6 +47,13 @@ jobs:
+           fetch-depth: 0
+           persist-credentials: false
+ 
++      - name: Setup Node.js
++        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
++        with:
++          node-version: '22'
++
++      - run: node --test scripts/test_project_transition.cjs scripts/test_page_navigation.cjs scripts/test_screensaver_navigation.cjs
++
+       - run: python3 -m unittest discover -s scripts
+ 
+       # Fails if a page is missing a <title> or <meta name="description">
+diff --git a/docs/mobile-transitions/crossfade/README.md b/docs/mobile-transitions/crossfade/README.md
+new file mode 100644
+index 0000000..a895d93
+--- /dev/null
++++ b/docs/mobile-transitions/crossfade/README.md
+@@ -0,0 +1,5 @@
++# Browser evidence
++
++Captured Home → Ideology at 390 × 844. The test-only diagnostic badge uses pageswap/pagereveal and the browser Animation API: before has no view transition; after has native old/new root animations with 150 ms durations. The badge is not shipped. A still screenshot cannot show motion; it records the measured before/after behavior. Home → Contact and browser Back also work. Forcing navigation: none retains ordinary navigation; the stylesheet declares the reduced-motion opt-out. The OS motion preference was not emulated.
++
++Screensaver source and activation/dismissal behavior are unchanged.
+diff --git a/docs/mobile-transitions/crossfade/crossfade-after.jpg b/docs/mobile-transitions/crossfade/crossfade-after.jpg
+new file mode 100644
+index 0000000..f42dae8
+Binary files /dev/null and b/docs/mobile-transitions/crossfade/crossfade-after.jpg differ
+diff --git a/docs/mobile-transitions/crossfade/crossfade-before.jpg b/docs/mobile-transitions/crossfade/crossfade-before.jpg
+new file mode 100644
+index 0000000..efe03a2
+Binary files /dev/null and b/docs/mobile-transitions/crossfade/crossfade-before.jpg differ
+diff --git a/docs/mobile-transitions/layout/README.md b/docs/mobile-transitions/layout/README.md
+new file mode 100644
+index 0000000..257b66c
+--- /dev/null
++++ b/docs/mobile-transitions/layout/README.md
+@@ -0,0 +1,7 @@
++# Browser evidence
++
++Captured at 390 × 844 using a local-only WebSocket fixture (25 running trains on route 1). The initial render is captured before delivering the snapshot; ready is captured after delivery. Before, figures and description move downward by 55.3359375 px. After, both remain fixed. The fixture is not shipped.
++
++After checks at widths 320 / 390 / 1024: figure/description displacement = 0 px. The unavailable-feed state also retains desktop geometry.
++
++Screensaver source and activation/dismissal behavior are unchanged.
+diff --git a/docs/mobile-transitions/layout/space-after-desktop.jpg b/docs/mobile-transitions/layout/space-after-desktop.jpg
+new file mode 100644
+index 0000000..f7d8638
+Binary files /dev/null and b/docs/mobile-transitions/layout/space-after-desktop.jpg differ
+diff --git a/docs/mobile-transitions/layout/space-after-initial.jpg b/docs/mobile-transitions/layout/space-after-initial.jpg
+new file mode 100644
+index 0000000..f9ab4e8
+Binary files /dev/null and b/docs/mobile-transitions/layout/space-after-initial.jpg differ
+diff --git a/docs/mobile-transitions/layout/space-after-ready.jpg b/docs/mobile-transitions/layout/space-after-ready.jpg
+new file mode 100644
+index 0000000..2ac8c00
+Binary files /dev/null and b/docs/mobile-transitions/layout/space-after-ready.jpg differ
+diff --git a/docs/mobile-transitions/layout/space-after-unavailable.jpg b/docs/mobile-transitions/layout/space-after-unavailable.jpg
+new file mode 100644
+index 0000000..87f2d61
+Binary files /dev/null and b/docs/mobile-transitions/layout/space-after-unavailable.jpg differ
+diff --git a/docs/mobile-transitions/layout/space-before-initial.jpg b/docs/mobile-transitions/layout/space-before-initial.jpg
+new file mode 100644
+index 0000000..270e073
+Binary files /dev/null and b/docs/mobile-transitions/layout/space-before-initial.jpg differ
+diff --git a/docs/mobile-transitions/layout/space-before-ready.jpg b/docs/mobile-transitions/layout/space-before-ready.jpg
+new file mode 100644
+index 0000000..217143f
+Binary files /dev/null and b/docs/mobile-transitions/layout/space-before-ready.jpg differ
+diff --git a/docs/mobile-transitions/typography/README.md b/docs/mobile-transitions/typography/README.md
+new file mode 100644
+index 0000000..d6b1a26
+--- /dev/null
++++ b/docs/mobile-transitions/typography/README.md
+@@ -0,0 +1,5 @@
++# Browser evidence
++
++Captured Ideology at 390 × 844 in the same light theme. Before: Times; after: Georgia, "Times New Roman", serif. The browser confirmed the same font family on Home, Ideology, Projects, Contact, and 404.
++
++Screensaver source and activation/dismissal behavior are unchanged.
+diff --git a/docs/mobile-transitions/typography/font-after.jpg b/docs/mobile-transitions/typography/font-after.jpg
+new file mode 100644
+index 0000000..caef0cd
+Binary files /dev/null and b/docs/mobile-transitions/typography/font-after.jpg differ
+diff --git a/docs/mobile-transitions/typography/font-before.jpg b/docs/mobile-transitions/typography/font-before.jpg
+new file mode 100644
+index 0000000..7c948a2
+Binary files /dev/null and b/docs/mobile-transitions/typography/font-before.jpg differ
+diff --git a/public/404.html b/public/404.html
+index a709a63..a7548ec 100644
+--- a/public/404.html
++++ b/public/404.html
+@@ -2,10 +2,12 @@
+ <html lang="en">
+     <head>
+         <meta charset="utf-8">
++        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+         <script src="/assets/theme.js"></script>
++        <link rel="stylesheet" href="/assets/typography.css">
+         <title>Page Not Found :(</title>
+         <meta name="robots" content="noindex">
+-        <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
++        <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+         <script type="module" src="/assets/screensaver.js"></script>
+         <style>
+             ::-moz-selection {
+@@ -54,23 +56,20 @@
+             }
+ 
+             html {
+-                padding: 30px 10px;
+-                font-size: 20px;
+-                line-height: 1.4;
++                padding: 0;
++                font-size: 16px;
++                line-height: normal;
+                 color: var(--text);
+                 background: var(--page);
+                 -webkit-text-size-adjust: 100%;
+                 -ms-text-size-adjust: 100%;
+             }
+ 
+-            html,
+-            input {
+-                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+-            }
+-
+-            body {
++            .error-card {
++                color: var(--text);
++                font-size: 20px;
++                line-height: 1.4;
+                 max-width: 500px;
+-                _width: 500px;
+                 padding: 30px 20px 50px;
+                 border: 1px solid var(--border);
+                 border-radius: 4px;
+@@ -86,7 +85,10 @@
+                 color: var(--heading);
+             }
+ 
++            .error-card img { display: block; max-width: 100%; height: auto; }
++
+             h1 span {
++                white-space: nowrap;
+                 color: var(--heading-muted);
+             }
+ 
+@@ -178,11 +180,25 @@
+                 border: 0;
+             }
+         </style>
++        <link rel="stylesheet" href="/assets/navigation.css">
++        <link rel="stylesheet" href="/assets/transitions.css">
++        <script src="/assets/page-navigation.js" defer></script>
+     </head>
+     <body>
+-        <div class="container">
++        <header class="site-header">
++            <h2>alexkan.xyz</h2>
++            <nav aria-label="Primary">
++                <a href="/">Main</a>
++                <a href="/ideology">Ideology</a>
++                <a href="/projects">Projects</a>
++                <a href="/contact">Contact</a>
++                <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode"><svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button>
++            </nav>
++        </header>
++        <main>
++        <div class="error-card"><div class="container">
+             <h1>Not found <span>:(</span></h1>
+-            <img src="./assets/cig.jpg" alt="Cigawrette" width="400" height="400">
++            <img src="/assets/cig.jpg" alt="Cigawrette" width="400" height="400">
+             <p>Sorry, but the page you were trying to view does not exist.</p>
+             <p>It looks like this was the result of either:</p>
+             <ul>
+@@ -193,6 +209,7 @@
+                 var GOOG_FIXURL_LANG = (navigator.language || '').slice(0,2),GOOG_FIXURL_SITE = location.host;
+             </script>
+             <script src="//linkhelp.clients.google.com/tbproxy/lh/wm/fixurl.js"></script>
+-        </div>
++        </div></div>
++        </main>
+     </body>
+ </html>
+\ No newline at end of file
+diff --git a/public/assets/navigation.css b/public/assets/navigation.css
+new file mode 100644
+index 0000000..076375c
+--- /dev/null
++++ b/public/assets/navigation.css
+@@ -0,0 +1,29 @@
++/* One position and appearance for navigation on every page. */
++:root { --bg: #f4f4f4; --fg: #111; }
++:root[data-theme="dark"] { --bg: #161616; --fg: #e8e8e8; }
++/* Reserve desktop scrollbar space so short and long routes stay aligned. */
++html { background: var(--bg); scrollbar-gutter: stable; }
++body { background: var(--bg); color: var(--fg); max-width: 720px; margin: 40px auto; padding: 0 16px; }
++main > :first-child { margin-top: 0; }
++.site-header { margin-bottom: 32px; font-size: 16px; line-height: 1.2; color: #111; view-transition-name: site-header; }
++.site-header h2 { margin: 0 0 24px; font-size: 24px; line-height: 1.2; }
++.site-header nav { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
++/* Keep every underline below descenders; only thickness marks the current page. */
++.site-header a, .site-header a:visited { color: #333; text-decoration-thickness: 1px; text-underline-offset: 5px; text-decoration-skip-ink: none; }
++.site-header .theme-toggle { font: inherit; color: #333; background: none; border: 0; padding: 2px; cursor: pointer; line-height: 0; }
++.site-header .theme-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
++.site-header .theme-toggle:hover { opacity: 0.7; }
++.icon-sun, :root[data-theme="dark"] .icon-moon { display: none; }
++:root[data-theme="dark"] .icon-sun { display: inline; }
++:root[data-theme="dark"] .site-header { color: #e8e8e8; }
++:root[data-theme="dark"] .site-header a, :root[data-theme="dark"] .site-header .theme-toggle { color: #c8c8c8; }
++/* Mark the current page without changing link widths or moving the menu. */
++:root .site-header a[aria-current="page"], :root .site-header a[aria-current="page"]:visited {
++    color: var(--fg);
++    text-decoration-line: underline;
++    text-decoration-thickness: 2px;
++}
++
++/* Only outgoing page content fades; the real header remains mounted and clickable. */
++.page-shell { position: relative; }
++.page-shell > [data-outgoing-page] { position: absolute; top: 0; left: 0; width: 100%; pointer-events: none; background: var(--bg); z-index: 1; }
+diff --git a/public/assets/page-navigation.js b/public/assets/page-navigation.js
+new file mode 100644
+index 0000000..9e3cad5
+--- /dev/null
++++ b/public/assets/page-navigation.js
+@@ -0,0 +1,166 @@
++// Keep the header, theme controls, and screensaver alive between the four pages.
++// HTML stays server-rendered: failed requests and ordinary links still navigate normally.
++(() => {
++    const routes = new Set(['/', '/ideology', '/projects', '/contact']);
++    const header = document.querySelector('.site-header');
++    let main = document.querySelector('main');
++    if (!header || !main || !routes.has(location.pathname) || location.search) return;
++
++    const shell = document.createElement('div');
++    shell.className = 'page-shell';
++    main.before(shell);
++    shell.append(main);
++    document.body.dataset.navigation = 'persistent';
++    document.querySelectorAll('head > style:not([data-inline-source])').forEach(s => s.dataset.pageStyle = '');
++
++    const cache = new Map();
++    const scrolls = new Map();
++    let request = 0, finishFade = () => {}, projectsScript;
++    let currentPath = location.pathname;
++    const newKey = () => crypto.randomUUID();
++    let key = newKey();
++    const historyState = k => ({ ...history.state, xyzNavigation: { key: k } });
++    history.replaceState(historyState(key), '', location.href);
++    history.scrollRestoration = 'manual';
++
++    function target(link, event) {
++        if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return null;
++        if (link.hasAttribute('download') || (link.target && link.target !== '_self')) return null;
++        const url = new URL(link.href, location.href);
++        return url.origin === location.origin && routes.has(url.pathname) && !url.search && !url.hash ? url : null;
++    }
++
++    function page(url) {
++        if (!cache.has(url.pathname)) {
++            const controller = new AbortController();
++            const timer = setTimeout(() => controller.abort(), 4000);
++            const loading = fetch(url.href, { signal: controller.signal, headers: { Accept: 'text/html' } })
++                .then(async response => {
++                    if (!response.ok || !response.headers.get('content-type')?.includes('text/html') || (new URL(response.url).origin !== url.origin || new URL(response.url).pathname !== url.pathname)) throw new Error('Not a site page');
++                    const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
++                    if (!doc.querySelector('main') || !doc.querySelector('.site-header') || !doc.title) throw new Error('Missing page content');
++                    return doc;
++                })
++                .catch(error => { cache.delete(url.pathname); throw error; })
++                .finally(() => clearTimeout(timer));
++            cache.set(url.pathname, loading);
++        }
++        return cache.get(url.pathname);
++    }
++
++    function metadata(doc) {
++        document.title = doc.title;
++        for (const selector of ['meta[name="description"]', 'link[rel="canonical"]', 'link[rel="alternate"][type="text/markdown"]', 'script[type="application/ld+json"]']) {
++            document.head.querySelectorAll(selector).forEach(el => el.remove());
++            doc.head.querySelectorAll(selector).forEach(el => document.head.append(document.importNode(el, true)));
++        }
++    }
++
++    async function mountProjects(content, finished) {
++        await finished;
++        if (main !== content || currentPath !== '/projects') return;
++        if (window.xyzMountProjects) window.xyzMountProjects();
++        else {
++            projectsScript ??= new Promise((resolve, reject) => {
++                const script = document.createElement('script');
++                script.src = '/assets/subway-vis.js';
++                script.onload = resolve;
++                script.onerror = () => { projectsScript = null; script.remove(); reject(new Error('Projects script failed')); };
++                document.head.append(script);
++            });
++            try { await projectsScript; }
++            catch { if (main === content) main.querySelector('#subway-vis-caption').textContent = 'Live transit preview unavailable. Visit istheldown.com for the current map.'; }
++        }
++    }
++
++    async function navigate(url, options = {}) {
++        const id = ++request;
++        if (url.pathname === currentPath) { finishFade(); return; }
++        let doc;
++        try { doc = await page(url); }
++        catch { if (id === request) location.assign(url.href); return; }
++        if (id !== request) return;
++
++        // Decode homepage images before exposing them; no shaders or feed scripts run here.
++        const incoming = document.importNode(doc.querySelector('main'), true);
++        incoming.querySelectorAll('script').forEach(script => script.remove());
++        await Promise.race([
++            Promise.all(Array.from(incoming.querySelectorAll('img'), async img => {
++                img.src = new URL(img.getAttribute('src'), url).href;
++                const preload = new Image();
++                preload.src = img.src;
++                try { await preload.decode(); } catch { /* A broken image must not block navigation. */ }
++            })),
++            new Promise(resolve => setTimeout(resolve, 1200)),
++        ]);
++        if (id !== request) return;
++
++        finishFade();
++        scrolls.set(key, [scrollX, scrollY]);
++        if (options.pop) key = options.key || newKey();
++        else { key = newKey(); history.pushState(historyState(key), '', url.href); }
++        currentPath = url.pathname;
++
++        const outgoing = main;
++        const oldStyles = Array.from(document.querySelectorAll('head > style[data-page-style]'));
++        const styleAnchor = document.querySelector('style[data-inline-source="/assets/navigation.css"], link[href="/assets/navigation.css"]');
++        doc.querySelectorAll('head > style:not([data-inline-source])').forEach(style => {
++            const copy = document.importNode(style, true);
++            copy.dataset.pageStyle = '';
++            document.head.insertBefore(copy, styleAnchor);
++        });
++        metadata(doc);
++        window.xyzPauseProjects?.();
++        const dispose = window.xyzDisposeProjects;
++        window.xyzDisposeProjects = null;
++        outgoing.inert = true;
++        outgoing.setAttribute('aria-hidden', 'true');
++        outgoing.dataset.outgoingPage = '';
++        outgoing.removeAttribute('id');
++        outgoing.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
++        shell.append(incoming);
++        main = incoming;
++        header.querySelectorAll('a').forEach(link => {
++            if (new URL(link.href).pathname === currentPath) link.setAttribute('aria-current', 'page');
++            else link.removeAttribute('aria-current');
++        });
++        const position = options.pop ? scrolls.get(key) || [0, 0] : [0, 0];
++        scrollTo({ left: position[0], top: position[1], behavior: 'instant' });
++        if (options.keyboard || options.pop) { main.tabIndex = -1; main.focus({ preventScroll: true }); }
++        document.dispatchEvent(new Event('xyz:navigated'));
++
++        let resolveFinished;
++        const finished = new Promise(resolve => { resolveFinished = resolve; });
++        window.__pageTransitionFinished = finished;
++        let animation;
++        finishFade = () => {
++            animation?.cancel();
++            outgoing.remove();
++            oldStyles.forEach(style => style.remove());
++            dispose?.();
++            resolveFinished();
++            finishFade = () => {};
++        };
++        if (!matchMedia('(prefers-reduced-motion: reduce)').matches && outgoing.animate) {
++            animation = outgoing.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 240, easing: 'ease-out', fill: 'both' });
++            animation.finished.then(finishFade, () => {});
++        } else finishFade();
++        if (currentPath === '/projects') void mountProjects(incoming, finished);
++    }
++
++    document.addEventListener('click', event => {
++        const url = target(event.target.closest?.('a'), event);
++        if (!url) return;
++        event.preventDefault();
++        void navigate(url, { keyboard: event.detail === 0 });
++    });
++    document.addEventListener('pointerover', event => {
++        const url = target(event.target.closest?.('a'), { button: 0 });
++        if (url && url.pathname !== currentPath) void page(url).catch(() => {});
++    });
++    addEventListener('popstate', event => {
++        const url = new URL(location.href);
++        if (!routes.has(url.pathname) || url.search || url.hash) { location.reload(); return; }
++        void navigate(url, { pop: true, key: event.state?.xyzNavigation?.key });
++    });
++})();
+diff --git a/public/assets/screensaver.js b/public/assets/screensaver.js
+index bd78926..14a1a17 100644
+--- a/public/assets/screensaver.js
++++ b/public/assets/screensaver.js
+@@ -94,6 +94,11 @@ async function init() {
+         overlay.addEventListener(type, (e) => e.preventDefault(), { passive: false });
+     }
+ 
++    // Content navigation has the same fresh idle period as loading a new document.
++    document.addEventListener('xyz:navigated', () => {
++        if (active) dismiss({ type: 'navigation' });
++        resetIdleTimer();
++    });
+     resetIdleTimer();
+ }
+ 
+diff --git a/public/assets/subway-vis.js b/public/assets/subway-vis.js
+index eb964c5..64edaa9 100644
+--- a/public/assets/subway-vis.js
++++ b/public/assets/subway-vis.js
+@@ -3,8 +3,8 @@
+ // Subscribes to istheldown's WebSocket (subway trains and subway alerts only),
+ // picks one subway line at random on every page load, and renders it with
+ // hydra-synth. A second canvas beside it maps every subway train, with the chosen
+-// line's trains in its color. The figure stays hidden until a snapshot arrives;
+-// if istheldown can't be reached, it is removed from the page.
++// line's trains in its color. Its space is reserved before the snapshot arrives;
++// if istheldown can't be reached, the same space shows an unavailable state.
+ //
+ // A train counts as "running" once it has left its first stop (it has a
+ // previousStopId). Scheduled trips still waiting at their origin terminal are
+@@ -28,23 +28,35 @@
+ // Fixed knobs (not data-driven): warp-noise scale 4 with 50 x 1 steps, warp 1,
+ // twist 1.57, pixel grid 112 x 140, feedback trail 0.12, three-tone thresholds
+ // 0.1 / 0.8, scanlines with a 3 px period, grain 0.12 at scale 300.
+-(function () {
++window.xyzMountProjects = function () {
++  window.xyzDisposeProjects?.();
+   const canvas = document.getElementById('subway-vis');
+   const caption = document.getElementById('subway-vis-caption');
+   if (!canvas) return;
++  let disposed = false, suspended = false, activeSocket = null, socketTimer, retryTimer;
+   const DEBUG = /[?&]debug\b/.test(location.search);
+   const box = canvas.parentElement, captionBlock = caption.parentElement;
+   const hide = reason => {
+     try { console.info('[subway-vis] figure hidden: ' + reason); } catch (e) {}
+     if (DEBUG) { captionBlock.hidden = false; caption.textContent = 'subway-vis hidden: ' + reason + ' | ' + navigator.userAgent; }
+   };
+-  // The renderer script loads async in <head>; wait for it, and try unpkg if the first CDN fails.
+-  function loadScript(src) { return new Promise(res => { const sc = document.createElement('script'); sc.src = src; sc.onload = () => res(typeof Hydra !== 'undefined'); sc.onerror = () => res(false); document.head.appendChild(sc); }); }
++  // Fetches can start early, but evaluating Hydra and compiling shaders must not interrupt the fade.
++  function loadScript(src) {
++    return new Promise(resolve => {
++      const sc = document.createElement('script');
++      const finish = () => { clearTimeout(timer); resolve(typeof Hydra !== 'undefined'); };
++      const timer = setTimeout(finish, 5000);
++      sc.onload = finish; sc.onerror = finish; sc.src = src;
++      document.head.appendChild(sc);
++    });
++  }
+   function ensureHydra() {
+     if (typeof Hydra !== 'undefined') return Promise.resolve(true);
+-    const tag = document.getElementById('hydra-script');
+-    const primary = tag && !window.__hydraFailed ? new Promise(res => { tag.addEventListener('load', () => res(typeof Hydra !== 'undefined')); tag.addEventListener('error', () => res(false)); setTimeout(() => res(typeof Hydra !== 'undefined'), 5000); }) : Promise.resolve(false);
+-    return primary.then(ok => ok || loadScript('https://unpkg.com/hydra-synth@1.4.0/dist/hydra-synth.js'));
++    if (window.xyzHydraLoading) return window.xyzHydraLoading;
++    window.xyzHydraLoading = loadScript('https://cdn.jsdelivr.net/npm/hydra-synth@1.4.0/dist/hydra-synth.js')
++      .then(ok => ok || loadScript('https://unpkg.com/hydra-synth@1.4.0/dist/hydra-synth.js'))
++      .then(ok => { if (!ok) window.xyzHydraLoading = null; return ok; });
++    return window.xyzHydraLoading;
+   }
+ 
+   const LINE = { '1': '#D82233', '2': '#D82233', '3': '#D82233', '4': '#009952', '5': '#009952', '6': '#009952', '7': '#9A38A1', A: '#0062CF', C: '#0062CF', E: '#0062CF', B: '#EB6800', D: '#EB6800', F: '#EB6800', M: '#EB6800', G: '#799534', J: '#8E5C33', Z: '#8E5C33', L: '#7C858C', N: '#F6BC26', Q: '#F6BC26', R: '#F6BC26', W: '#F6BC26' };
+@@ -59,8 +71,13 @@
+   // --- renderer (created only once a snapshot has arrived, so a dead feed never shows a black box) ---
+   let hydra = null, S = null;
+   const wrap = box.closest('.figs') || box;
+-  function show() { wrap.hidden = false; captionBlock.hidden = false; }
+-  function remove(reason) { stop(); wrap.hidden = true; captionBlock.hidden = true; hide(reason || 'unknown'); }
++  function show() { wrap.dataset.state = 'ready'; }
++  function remove(reason) {
++    stop();
++    wrap.dataset.state = 'unavailable';
++    caption.textContent = 'Live transit preview unavailable. Visit istheldown.com for the current map.';
++    hide(reason || 'unknown');
++  }
+   function createRenderer() {
+     const W = Math.max(2, Math.min(260, Math.round(box.parentElement.clientWidth || 260))), H = Math.round(W * 1.25);
+     hydra = new Hydra({ canvas, width: W, height: H, detectAudio: false, makeGlobal: false, autoLoop: false, enableStreamCapture: false });
+@@ -107,14 +124,50 @@
+   }
+ 
+   // --- frame loop: pauses offscreen, on hidden tabs, and for reduced motion ---
+-  let raf = null, last = 0, visible = true, frameNo = 0, scene = null;
++  let raf = null, last = 0, visible = true, frameNo = 0, scene = null, warmup = 0;
+   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+-  function frame(t) { if (!hydra) { raf = null; return; } const dt = Math.min(t - last, 100); last = t; frameNo++; if (scene && frameNo % 30 === 0) drawInputs(scene); hydra.tick(dt); raf = requestAnimationFrame(frame); }
+-  function start() { if (!hydra || raf || reduced || document.hidden || !visible) return; last = performance.now(); raf = requestAnimationFrame(frame); }
++  function frame(t) {
++    raf = null;
++    if (!hydra || document.hidden || !visible) return;
++    if (warmup) {
++      // Settle the feedback a frame at a time so navigation and scrolling stay responsive.
++      hydra.tick(16);
++      if (--warmup === 0) show();
++    } else {
++      const dt = Math.min(t - last, 100);
++      frameNo++;
++      if (scene && frameNo % 30 === 0) drawInputs(scene);
++      hydra.tick(dt);
++    }
++    last = t;
++    if (warmup || !reduced) raf = requestAnimationFrame(frame);
++  }
++  function start() { if (disposed || suspended || !hydra || !scene || raf !== null || (reduced && !warmup) || document.hidden || !visible) return; last = performance.now(); raf = requestAnimationFrame(frame); }
+   function stop() { cancelAnimationFrame(raf); raf = null; }
+-  const settle = () => { if (hydra) for (let k = 0; k < 24; k++) hydra.tick(16); };
+-  new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? start() : stop(); }, { threshold: 0 }).observe(box);
+-  document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
++  const settle = () => { warmup = 24; start(); };
++  const observer = new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? start() : stop(); }, { threshold: 0 });
++  observer.observe(box);
++  const onVisibility = () => (document.hidden ? stop() : start());
++  document.addEventListener('visibilitychange', onVisibility);
++  const pause = () => { suspended = true; stop(); };
++  window.xyzPauseProjects = pause;
++  window.xyzDisposeProjects = () => {
++    if (disposed) return;
++    disposed = true;
++    stop();
++    observer.disconnect();
++    document.removeEventListener('visibilitychange', onVisibility);
++    clearTimeout(socketTimer); clearTimeout(retryTimer);
++    if (activeSocket) { activeSocket.onclose = null; activeSocket.onmessage = null; activeSocket.close(); }
++    if (window.__subway) {
++      window.__subway.ws.removeEventListener('message', window.__subway.onmsg);
++      if (window.__subway.ws !== activeSocket) window.__subway.ws.close();
++      delete window.__subway;
++    }
++    if (window.xyzPauseProjects === pause) window.xyzPauseProjects = null;
++    hydra?.regl.destroy();
++    hydra = null;
++  };
+ 
+   // --- data: one random line from the live feed ---
+   function project(lat, lon, w, h) {
+@@ -189,25 +242,32 @@
+   }
+ 
+   (async () => {
+-    if (!(await ensureHydra())) return remove('hydra-synth did not load from jsDelivr or unpkg');
++    await window.__pageTransitionFinished;
++    if (disposed || suspended) return;
++    if (!(await ensureHydra())) return disposed ? undefined : remove('hydra-synth did not load from jsDelivr or unpkg');
++    if (disposed || suspended) return;
+     // Create the renderer and compile the shader graph now, so the only work left when the snapshot lands is one rebuild with real numbers.
+     try { createRenderer(); buildGraph(); hydra.tick(16); }
+     catch (e) { return remove('renderer failed (WebGL?): ' + e); }
+     const pre = window.__subway || null;
+     let stations;
+     try { stations = await (pre && pre.stations ? pre.stations : fetch(STATIONS_URL).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })); } catch (e) { return remove('station file failed: ' + e); }
++    if (disposed || suspended) return;
+     let attempts = 0;
+     const connect = () => {
++    if (disposed || suspended) return;
+     attempts++;
+     // First attempt: adopt the socket the page opened in <head>, replaying anything it already queued.
+     const early = attempts === 1 && pre && pre.ws && pre.closed === null ? pre : null;
+     let ws;
+     if (early) ws = early.ws; else { try { ws = new WebSocket(WS_URL); } catch (e) { return remove('WebSocket constructor failed: ' + e); } }
++    activeSocket = ws;
+     const elapsed = early ? performance.now() - early.t0 : 0;
+-    const timer = setTimeout(() => { if (!scene) { try { ws.close(); } catch (e) {} remove('no snapshot within 20 s'); } }, Math.max(2000, 20000 - elapsed));
++    const timer = socketTimer = setTimeout(() => { if (!disposed && !scene) { try { ws.close(); } catch (e) {} remove('no snapshot within 20 s'); } }, Math.max(2000, 20000 - elapsed));
+     const subway = t => (t.system || 'subway') === 'subway';
+     let lastBuild = 0, dirty = false;
+     ws.onmessage = ev => {
++      if (disposed || suspended) return;
+       let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+       if (m.type === 'snapshot' && !scene) {
+         clearTimeout(timer);
+@@ -218,7 +278,7 @@
+         scene = { route, stations, trains: new Map(), all: new Map(), alerts: 0, serverTime: m.serverTime, receivedAt: performance.now() };
+         m.trains.forEach(t => { if (!subway(t)) return; scene.all.set(t.tripId, t); if (t.routeId === route) scene.trains.set(t.tripId, t); });
+         scene.alerts = m.alerts.filter(a => (a.system || 'subway') === 'subway' && a.routeIds.includes(route)).length;
+-        drawInputs(scene); const k = knobs(scene); applyKnobs(k); describe(scene, k, true); settle(); show(); start(); lastBuild = performance.now();
++        drawInputs(scene); const k = knobs(scene); applyKnobs(k); describe(scene, k, true); settle(); lastBuild = performance.now();
+       } else if (!scene) return;
+       else if (m.type === 'trains') { m.updated.forEach(t => { if (!subway(t)) return; scene.all.set(t.tripId, t); if (t.routeId === scene.route) scene.trains.set(t.tripId, t); }); m.removed.forEach(id => { scene.trains.delete(id); scene.all.delete(id); }); dirty = true; }
+       else if (m.type === 'alerts') { scene.alerts = m.alerts.filter(a => (a.system || 'subway') === 'subway' && a.routeIds.includes(scene.route)).length; dirty = true; }
+@@ -229,12 +289,14 @@
+     // Before the first snapshot, any failure means "no figure". After it, the last state simply stays on screen.
+     ws.onerror = () => {};
+     ws.onclose = ev => {
++      if (disposed || suspended) return;
+       if (scene) return describe(scene, knobs(scene), false);
+       clearTimeout(timer);
+-      if (attempts < 2) setTimeout(connect, 1500); else remove('socket closed before a snapshot (code ' + ev.code + ')');
++      if (attempts < 2) retryTimer = setTimeout(connect, 1500); else remove('socket closed before a snapshot (code ' + ev.code + ')');
+     };
+     if (early) { ws.removeEventListener('message', early.onmsg); const q = early.queue.splice(0); q.forEach(d => ws.onmessage({ data: d })); if (early.closed !== null && !scene) ws.onclose({ code: early.closed }); }
+     };
+     connect();
+   })();
+-})();
++};
++window.xyzMountProjects();
+diff --git a/public/assets/transitions.css b/public/assets/transitions.css
+new file mode 100644
+index 0000000..05acfa0
+--- /dev/null
++++ b/public/assets/transitions.css
+@@ -0,0 +1,29 @@
++/* Progressive enhancement for ordinary same-origin page navigation. */
++@view-transition { navigation: auto; }
++
++/* Keep the header fixed and reveal the new content beneath one fading snapshot. */
++::view-transition-group(root),
++::view-transition-group(site-header) { animation: none; }
++::view-transition-old(root) {
++    z-index: 1;
++    mix-blend-mode: normal;
++    animation: page-fade-out 240ms ease-out both;
++}
++::view-transition-new(root) {
++    z-index: 0;
++    mix-blend-mode: normal;
++    animation: none;
++}
++::view-transition-old(site-header) { animation: none; opacity: 0; }
++::view-transition-new(site-header) { animation: none; mix-blend-mode: normal; }
++@keyframes page-fade-out { from { opacity: 1; } to { opacity: 0; } }
++
++@media (prefers-reduced-motion: reduce) {
++    @view-transition { navigation: none; }
++    ::view-transition-group(root),
++    ::view-transition-group(site-header),
++    ::view-transition-old(root),
++    ::view-transition-new(root),
++    ::view-transition-old(site-header),
++    ::view-transition-new(site-header) { animation: none; }
++}
+diff --git a/public/assets/typography.css b/public/assets/typography.css
+new file mode 100644
+index 0000000..2e06b7c
+--- /dev/null
++++ b/public/assets/typography.css
+@@ -0,0 +1,3 @@
++/* Match the homepage typography throughout the site, including form controls. */
++html { font-family: Georgia, "Times New Roman", serif; }
++body, button, input, select, textarea { font-family: inherit; }
+diff --git a/public/contact.html b/public/contact.html
+index 25219a6..4c5e890 100644
+--- a/public/contact.html
++++ b/public/contact.html
+@@ -4,6 +4,7 @@
+         <meta charset="utf-8">
+         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+         <script src="/assets/theme.js"></script>
++        <link rel="stylesheet" href="/assets/typography.css">
+         <title>Contact | alexkan.xyz</title>
+         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+         <meta name="description" content="How to reach me.">
+@@ -18,8 +19,22 @@
+             a { color: var(--link, LinkText); }
+             a:visited { color: var(--visited, VisitedText); }
+         </style>
++        <link rel="stylesheet" href="/assets/navigation.css">
++        <link rel="stylesheet" href="/assets/transitions.css">
++        <script src="/assets/page-navigation.js" defer></script>
+     </head>
+     <body>
++        <header class="site-header">
++            <h2>alexkan.xyz</h2>
++            <nav aria-label="Primary">
++                <a href="/">Main</a>
++                <a href="/ideology">Ideology</a>
++                <a href="/projects">Projects</a>
++                <a href="/contact" aria-current="page">Contact</a>
++                <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode"><svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button>
++            </nav>
++        </header>
++        <main>
+         <h2> Contact </h2>
+         <ul>
+             <li> <a href="https://github.com/akan72" target="_blank">GitHub</a> </li>
+@@ -27,7 +42,6 @@
+             <li> <a href="/pgp.txt" target="_blank">PGP</a> </li>
+             <li> <a href="https://www.linkedin.com/in/alexanderkan/" target="_blank">LinkedIn</a> </li>
+         </ul>
+-        <br>
+-        <nav><a href="/">Home</a></nav>
++        </main>
+     </body>
+ </html>
+diff --git a/public/ideology.html b/public/ideology.html
+index 9f00f09..a4b9a13 100644
+--- a/public/ideology.html
++++ b/public/ideology.html
+@@ -4,6 +4,7 @@
+         <meta charset="utf-8">
+         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+         <script src="/assets/theme.js"></script>
++        <link rel="stylesheet" href="/assets/typography.css">
+         <title>Ideology | alexkan.xyz</title>
+         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+         <meta name="description" content="Likes and dislikes.">
+@@ -18,8 +19,22 @@
+             a { color: var(--link, LinkText); }
+             a:visited { color: var(--visited, VisitedText); }
+         </style>
++        <link rel="stylesheet" href="/assets/navigation.css">
++        <link rel="stylesheet" href="/assets/transitions.css">
++        <script src="/assets/page-navigation.js" defer></script>
+     </head>
+     <body>
++        <header class="site-header">
++            <h2>alexkan.xyz</h2>
++            <nav aria-label="Primary">
++                <a href="/">Main</a>
++                <a href="/ideology" aria-current="page">Ideology</a>
++                <a href="/projects">Projects</a>
++                <a href="/contact">Contact</a>
++                <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode"><svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button>
++            </nav>
++        </header>
++        <main>
+         <h2> Likes </h2>
+         <ul>
+             <li> Black Metal </li>
+@@ -33,7 +48,6 @@
+             <li> Bayesian Statistics </li>
+             <li> Modern Monetary Theory </li>
+         </ul>
+-        <br>
+-        <nav><a href="/">Home</a></nav>
++        </main>
+     </body>
+ </html>
+\ No newline at end of file
+diff --git a/public/index.html b/public/index.html
+index 8ca3c23..cbf1ebf 100644
+--- a/public/index.html
++++ b/public/index.html
+@@ -4,6 +4,7 @@
+         <meta charset="utf-8">
+         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+         <script src="/assets/theme.js"></script>
++        <link rel="stylesheet" href="/assets/typography.css">
+         <title>alexkan.xyz</title>
+         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+         <meta name="description" content="Alex Kan's personal website.">
+@@ -35,40 +36,38 @@
+                 :root:not([data-theme="light"]) { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --nav: #c8c8c8; }
+             }
+             :root[data-theme="dark"] { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --nav: #c8c8c8; }
+-            body { background: var(--bg); color: var(--fg); font-family: Georgia, "Times New Roman", serif; margin: 0; }
+-            main { max-width: 720px; margin: 40px auto; padding: 0 16px; }
+-            h2 { margin: 0 0 24px; }
+-            nav a { color: var(--nav); margin-right: 14px; }
+-            #milady { display: block; width: 260px; max-width: 100%; height: auto; margin: 32px 0 16px; }
++            body { background: var(--bg); color: var(--fg); }
++            .milady { display: block; width: 260px; max-width: 100%; height: auto; margin: 0 0 16px; }
+             button { font: inherit; cursor: pointer; }
+-            .theme-toggle { color: var(--nav); background: none; border: 0; padding: 2px; margin-left: 0; cursor: pointer; line-height: 0; vertical-align: -4px; }
+-            .theme-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+-            .theme-toggle:hover { opacity: 0.7; }
+-            .icon-sun, :root[data-theme="dark"] .icon-moon { display: none; }
+-            :root[data-theme="dark"] .icon-sun { display: inline; }
+             /* Dark mode: outline the cig button instead of the browser's gray fill; light mode keeps the native button */
+             @media (prefers-color-scheme: dark) {
+-                :root:not([data-theme="light"]) #cig-button { background: transparent; color: var(--fg); border: 1px solid #6a6a6a; border-radius: 4px; padding: 2px 7px; }
+-                :root:not([data-theme="light"]) #cig-button:hover { border-color: #9a9a9a; }
++                :root:not([data-theme="light"]) .cig-button { background: transparent; color: var(--fg); border: 1px solid #6a6a6a; border-radius: 4px; padding: 2px 7px; }
++                :root:not([data-theme="light"]) .cig-button:hover { border-color: #9a9a9a; }
+             }
+-            :root[data-theme="dark"] #cig-button { background: transparent; color: var(--fg); border: 1px solid #6a6a6a; border-radius: 4px; padding: 2px 7px; }
+-            :root[data-theme="dark"] #cig-button:hover { border-color: #9a9a9a; }
++            :root[data-theme="dark"] .cig-button { background: transparent; color: var(--fg); border: 1px solid #6a6a6a; border-radius: 4px; padding: 2px 7px; }
++            :root[data-theme="dark"] .cig-button:hover { border-color: #9a9a9a; }
+             .cig-box { display: inline-flex; flex-direction: column; align-items: center; }
+-            #cig { display: block; width: 260px; max-width: 100%; aspect-ratio: 4 / 5; object-fit: cover; margin-top: 12px; }
++            .cig { display: block; width: 260px; max-width: 100%; aspect-ratio: 4 / 5; object-fit: cover; margin-top: 12px; }
+         </style>
++        <link rel="stylesheet" href="/assets/navigation.css">
++        <link rel="stylesheet" href="/assets/transitions.css">
++        <script src="/assets/page-navigation.js" defer></script>
+     </head>
+     <body>
+-        <main>
++        <header class="site-header">
+             <h2>alexkan.xyz</h2>
+-            <nav>
++            <nav aria-label="Primary">
++                <a href="/" aria-current="page">Main</a>
+                 <a href="/ideology">Ideology</a>
+                 <a href="/projects">Projects</a>
+                 <a href="/contact">Contact</a>
+                 <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode"><svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button>
+             </nav>
+-            <img id="milady" src="./assets/milady.jpg" alt="Milady">
++        </header>
++        <main>
++            <img id="milady" class="milady" src="./assets/milady.jpg" alt="Milady" width="410" height="512">
+             <div class="cig-box">
+-                <button id="cig-button" onclick="
++                <button id="cig-button" class="cig-button" onclick="
+                     const btn = this;
+                     btn.disabled = true;
+                     fetch('/image')
+@@ -84,7 +83,7 @@
+                 ">
+                     Get Random Cig
+                 </button>
+-                <img id="cig" src="./assets/cig.jpg" alt="Cigawrette">
++                <img id="cig" class="cig" src="./assets/cig.jpg" alt="Cigawrette">
+             </div>
+         </main>
+     </body>
+diff --git a/public/projects.html b/public/projects.html
+index e82f0b5..49183ad 100644
+--- a/public/projects.html
++++ b/public/projects.html
+@@ -4,12 +4,21 @@
+         <meta charset="utf-8">
+         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+         <script src="/assets/theme.js"></script>
++        <link rel="stylesheet" href="/assets/typography.css">
+         <title>Projects | alexkan.xyz</title>
+         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+         <meta name="description" content="Things I've built.">
+         <link rel="preconnect" href="https://istheldown.com">
+         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+         <script>
++            // Register before the first paint; defer WebGL work until the page fade is over.
++            window.__pageTransitionFinished = new Promise(function (resolve) {
++                if (!('onpagereveal' in window)) { resolve(); return; }
++                window.addEventListener('pagereveal', function (event) {
++                    if (event.viewTransition) event.viewTransition.finished.then(resolve, resolve);
++                    else resolve();
++                }, { once: true });
++            });
+             // Open the istheldown feed and fetch the station table right away, before the
+             // renderer has loaded; assets/subway-vis.js picks these up (messages are queued).
+             window.__subway = (function () {
+@@ -24,7 +33,7 @@
+                 } catch (e) { return null; }
+             })();
+         </script>
+-        <script id="hydra-script" src="https://cdn.jsdelivr.net/npm/hydra-synth@1.4.0/dist/hydra-synth.js" async onerror="window.__hydraFailed = true"></script>
++        <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/hydra-synth@1.4.0/dist/hydra-synth.js">
+         <script src="/assets/subway-vis.js" defer></script>
+         <script type="module" src="/assets/screensaver.js"></script>
+         <style>
+@@ -39,17 +48,37 @@
+             /* The stack line under each description */
+             .meta { color: var(--muted, #666); font-size: 0.9em; margin-top: -0.4em; }
+             /* The live istheldown figure: same 260px width as the images on the homepage */
+-            .figs { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; margin-top: 1em; }
+-            .fig { width: 260px; max-width: 100%; aspect-ratio: 4 / 5; background: #111; }
+-            .fig.map { background: #000; }
+-            .fig canvas { display: block; width: 100%; height: 100%; }
++            .figs { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; margin-top: 8px; }
++            .fig { width: 260px; max-width: 100%; aspect-ratio: 4 / 5; background: color-mix(in srgb, currentColor 6%, var(--bg, Canvas)); box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 12%, transparent); }
++            .fig canvas { display: block; width: 100%; height: 100%; opacity: 0; transition: opacity 240ms ease-out; }
++            .figs[data-state="ready"] canvas { opacity: 1; }
++            @media (prefers-reduced-motion: reduce) { .fig canvas { transition: none; } }
++            /* Keep the caption and both figures in flow while the feed loads or fails. */
++            .live-caption { margin-bottom: 0; }
++            .live-caption small { display: block; min-height: calc(3.2em + 1px); line-height: 1.6; }
++            @media (min-width: 600px) { .live-caption small { min-height: calc(1.6em + 1px); } }
++            .figs:not([data-state="ready"]) canvas { visibility: hidden; }
+             .bullet { width: 1.4em; height: 1.4em; vertical-align: middle; }
+             /* Wrap descriptions at the right edge of the figure and map (2 x 260px + 16px gap),
+                and never past 70ch in case the font gets wider */
+             ul p { max-width: min(536px, 70ch); }
+         </style>
++        <link rel="stylesheet" href="/assets/navigation.css">
++        <link rel="stylesheet" href="/assets/transitions.css">
++        <script src="/assets/page-navigation.js" defer></script>
+     </head>
+     <body>
++        <header class="site-header">
++            <h2>alexkan.xyz</h2>
++            <nav aria-label="Primary">
++                <a href="/">Main</a>
++                <a href="/ideology">Ideology</a>
++                <a href="/projects" aria-current="page">Projects</a>
++                <a href="/contact">Contact</a>
++                <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode"><svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button>
++            </nav>
++        </header>
++        <main>
+         <h2> Projects </h2>
+         <!-- Each project is one <li>, in this shape:
+             <li> <a href="URL" target="_blank">NAME</a> <span class="years">(2020-Present)</span>
+@@ -72,8 +101,8 @@
+                 <p class="meta">Python &middot; polars &middot; Modal &middot; WebGL</p>
+             </li>
+             <li> <a href="https://istheldown.com" target="_blank">istheldown.com</a> <span class="years">(2026)</span>
+-                <p hidden><small id="subway-vis-caption"></small></p>
+-                <div class="figs" hidden>
++                <p class="live-caption"><small id="subway-vis-caption" role="status">Loading live transit preview…</small></p>
++                <div class="figs" data-state="loading">
+                     <div class="fig"><canvas id="subway-vis" aria-label="Generative figure driven by one subway line's live train positions"></canvas></div>
+                     <div class="fig map"><canvas id="subway-map" width="520" height="650" aria-label="Map of every subway train right now, with the chosen line highlighted"></canvas></div>
+                 </div>
+@@ -85,7 +114,6 @@
+                 <p class="meta">Python &middot; Modal &middot; Cloudflare R2</p>
+             </li>
+         </ul>
+-        <br>
+-        <nav><a href="/">Home</a></nav>
++        </main>
+     </body>
+ </html>
+diff --git a/scripts/sitegen.py b/scripts/sitegen.py
+index e5c6713..3d0ffdb 100644
+--- a/scripts/sitegen.py
++++ b/scripts/sitegen.py
+@@ -541,6 +541,30 @@ def with_head_links(text: str, page: Page) -> str:
+     return f"{text[:match.start()]}{added}{text[match.start():]}"
+ 
+ 
++# Tiny render-blocking assets belong in the HTML: a page change should not wait
++# for another round trip to revalidate its theme, font, navigation, or fade CSS.
++CRITICAL_STYLES = ("typography.css", "navigation.css", "transitions.css")
++
++
++def with_critical_assets(text: str, public: Path) -> str:
++    def asset(name: str) -> str:
++        try:
++            return (public / "assets" / name).read_text(encoding="utf-8")
++        except FileNotFoundError:
++            raise SiteError([f"public/assets/{name}: missing render-blocking asset"])
++
++    theme_tag = '<script src="/assets/theme.js"></script>'
++    if theme_tag in text:
++        # An HTML parser recognizes closing script tags even inside JS comments.
++        script = re.sub(r"</script", r"<\\/script", asset("theme.js"), flags=re.IGNORECASE)
++        text = text.replace(theme_tag, f'<script data-inline-source="/assets/theme.js">\n{script}\n</script>')
++    for name in CRITICAL_STYLES:
++        tag = f'<link rel="stylesheet" href="/assets/{name}">'
++        if tag in text:
++            text = text.replace(tag, f'<style data-inline-source="/assets/{name}">\n{asset(name)}\n</style>')
++    return text
++
++
+ def build(public: Path, dist: Path, lastmods: dict) -> list:
+     """Writes public/ plus the generated files to dist/ and returns the pages."""
+     pages = load_pages(public, lastmods)
+@@ -550,8 +574,11 @@ def build(public: Path, dist: Path, lastmods: dict) -> list:
+     for path in sorted(p for p in public.rglob("*") if p.is_file()):
+         rel = PurePosixPath(path.relative_to(public).as_posix())
+         data = path.read_bytes()
+-        if rel in by_source:
+-            data = with_head_links(data.decode("utf-8"), by_source[rel]).encode("utf-8")
++        if rel.suffix.lower() == ".html":
++            text = with_critical_assets(data.decode("utf-8"), public)
++            if rel in by_source:
++                text = with_head_links(text, by_source[rel])
++            data = text.encode("utf-8")
+         files[rel] = data
+ 
+     headers = files.pop(PurePosixPath("_headers"), b"").decode("utf-8")
+diff --git a/scripts/test_page_navigation.cjs b/scripts/test_page_navigation.cjs
+new file mode 100644
+index 0000000..e24ef3e
+--- /dev/null
++++ b/scripts/test_page_navigation.cjs
+@@ -0,0 +1,153 @@
++const { test } = require('node:test');
++const assert = require('node:assert/strict');
++const fs = require('node:fs');
++const vm = require('node:vm');
++const source = fs.readFileSync(require('node:path').join(__dirname, '../public/assets/page-navigation.js'), 'utf8');
++const flush = () => new Promise(resolve => setImmediate(resolve));
++
++// A small DOM fixture exercises the real navigation controller, not a second router.
++function app(reduced = false) {
++  const events = {}, browserEvents = {}, requests = [], animations = [], assigned = [];
++  let counter = 0, mounts = 0, disposals = 0;
++  class Element {
++    constructor(tag) { this.tag = tag; this.children = []; this.dataset = {}; this.attrs = {}; }
++    append(el) { el.remove(); this.children.push(el); el.parent = this; }
++    before(el) { const siblings = this.parent.children; siblings.splice(siblings.indexOf(this), 0, el); el.parent = this.parent; }
++    remove() { if (this.parent) this.parent.children.splice(this.parent.children.indexOf(this), 1); this.parent = null; }
++    setAttribute(k, v) { this.attrs[k] = v; }
++    removeAttribute(k) { delete this.attrs[k]; }
++    hasAttribute(k) { return Object.hasOwn(this.attrs, k); }
++    focus() { document.focused = this; }
++    querySelectorAll(selector) { return selector === 'a' ? this.links || [] : []; }
++    querySelector() { return null; }
++    animate() {
++      let resolve, reject;
++      const animation = { finished: new Promise((yes, no) => { resolve = yes; reject = no; }), cancel() { reject(new Error('cancelled')); }, finish: () => resolve() };
++      animations.push(animation);
++      return animation;
++    }
++  }
++  const body = new Element('body'), head = new Element('head'), header = new Element('header'), initialMain = new Element('main');
++  header.links = ['/', '/ideology', '/projects', '/contact'].map(path => {
++    const link = new Element('a'); link.href = 'https://example.test' + path; link.target = ''; link.closest = () => link; return link;
++  });
++  body.append(header); body.append(initialMain);
++  const initialStyle = new Element('style'), navigationStyle = new Element('style');
++  navigationStyle.dataset.inlineSource = '/assets/navigation.css';
++  head.append(initialStyle); head.append(navigationStyle);
++  head.insertBefore = (el, anchor) => { const i = head.children.indexOf(anchor); head.children.splice(i, 0, el); el.parent = head; };
++  const mains = () => body.children.flatMap(el => el.tag === 'main' ? [el] : el.children.filter(child => child.tag === 'main'));
++  const pageStyles = () => head.children.filter(el => el.tag === 'style' && Object.hasOwn(el.dataset, 'pageStyle'));
++  const document = {
++    body, head, title: 'Main',
++    querySelector(selector) { if (selector === '.site-header') return header; if (selector === 'main') return mains()[0]; return navigationStyle; },
++    querySelectorAll(selector) { if (selector.includes('not(')) return [initialStyle]; return pageStyles(); },
++    createElement: tag => new Element(tag),
++    importNode(el) { const copy = new Element(el.tag); copy.path = el.path; copy.dataset = { ...el.dataset }; return copy; },
++    addEventListener: (name, fn) => { events[name] = fn; },
++    dispatchEvent: event => { document.lastEvent = event.type; },
++  };
++  const location = new URL('https://example.test/');
++  location.assign = url => assigned.push(url);
++  location.reload = () => assigned.push(location.href);
++  const history = { state: { unrelated: 'preserved' }, entries: [], replaceState(state) { this.state = state; }, pushState(state, _, url) { this.state = state; this.entries.push({ state, url }); location.href = url; } };
++  const context = vm.createContext({
++    document, location, history, URL, Event, AbortController,
++    crypto: { randomUUID: () => String(++counter) }, scrollX: 0, scrollY: 0,
++    scrollTo: pos => { context.scrollX = pos.left; context.scrollY = pos.top; },
++    matchMedia: () => ({ matches: reduced }), setTimeout: () => 1, clearTimeout() {},
++    addEventListener: (name, fn) => { browserEvents[name] = fn; },
++    window: { xyzMountProjects() { mounts++; context.window.xyzDisposeProjects = () => { disposals++; }; }, xyzPauseProjects() {} },
++    fetch: url => new Promise((resolve, reject) => requests.push({ url, resolve, reject })),
++    DOMParser: class {
++      parseFromString(path) {
++        const main = new Element('main'); main.path = path;
++        const style = new Element('style');
++        return { title: path, head: { querySelectorAll: () => [] }, querySelector: selector => selector === 'main' ? main : header, querySelectorAll: () => [style] };
++      }
++    },
++  });
++  head.querySelectorAll = () => [];
++  vm.runInContext(source, context);
++  return {
++    header, initialMain, body, head, document, history, location, requests, assigned, mains, pageStyles,
++    get position() { return [context.scrollX, context.scrollY]; },
++    get mounts() { return mounts; }, get disposals() { return disposals; },
++    click(path, extra = {}) {
++      const link = header.links.find(link => new URL(link.href).pathname === path) || { href: 'https://elsewhere.test/', hasAttribute: () => false, closest() { return this; } };
++      const event = { target: link, button: 0, detail: 1, preventDefault() { this.defaultPrevented = true; }, ...extra };
++      events.click(event); return event;
++    },
++    respond(path, ok = true) { requests.find(r => new URL(r.url).pathname === path).resolve({ ok, url: 'https://example.test' + path, headers: { get: () => 'text/html' }, text: async () => path }); },
++    async settle() { animations.splice(0).forEach(a => a.finish()); await flush(); },
++    async back(path, state) { location.href = 'https://example.test' + path; browserEvents.popstate({ state }); await flush(); },
++    scroll(x, y) { context.scrollX = x; context.scrollY = y; },
++  };
++}
++
++test('header and controls remain the same nodes while content, title, and URL change', async () => {
++  const a = app(); const links = a.header.links;
++  assert.equal(a.click('/ideology').defaultPrevented, true);
++  a.respond('/ideology'); await flush();
++  assert.equal(a.body.children[0], a.header);
++  assert.equal(a.header.links, links);
++  assert.equal(a.document.title, '/ideology');
++  assert.equal(a.location.pathname, '/ideology');
++  assert.equal(a.header.links[1].attrs['aria-current'], 'page');
++  assert.equal(a.history.state.unrelated, 'preserved');
++  assert.equal(a.document.lastEvent, 'xyz:navigated');
++  await a.settle();
++  assert.equal(a.mains().length, 1);
++  assert.equal(a.pageStyles().length, 1);
++});
++
++test('a slower earlier response cannot replace the last clicked page', async () => {
++  const a = app(); a.click('/ideology'); a.click('/contact');
++  a.respond('/contact'); await flush(); a.respond('/ideology'); await flush();
++  assert.equal(a.location.pathname, '/contact');
++  assert.equal(a.document.title, '/contact');
++  assert.equal(a.history.entries.length, 1);
++});
++
++test('failed requests fall back to the original link without losing visible content', async () => {
++  const a = app(); a.click('/ideology'); a.respond('/ideology', false); await flush();
++  assert.deepEqual(a.assigned, ['https://example.test/ideology']);
++  assert.equal(a.mains()[0], a.initialMain);
++});
++
++test('modified, prevented, and external clicks retain ordinary browser behavior', () => {
++  const a = app();
++  for (const extra of [{ metaKey: true }, { ctrlKey: true }, { shiftKey: true }, { altKey: true }, { button: 1 }, { defaultPrevented: true }]) a.click('/projects', extra);
++  a.click('/outside');
++  assert.equal(a.requests.length, 0);
++});
++
++test('Back restores content and scroll without pushing another history entry', async () => {
++  const a = app(); const initialState = a.history.state;
++  a.scroll(0, 250); a.click('/ideology'); a.respond('/ideology'); await flush(); await a.settle();
++  a.click('/contact'); a.respond('/contact'); await flush(); await a.settle();
++  const ideologyState = a.history.entries[0].state;
++  await a.back('/ideology', ideologyState); await a.settle();
++  assert.equal(a.document.title, '/ideology');
++  assert.equal(a.history.entries.length, 2);
++  assert.equal(a.document.focused, a.mains()[0]);
++  await a.back('/', initialState); a.respond('/'); await flush(); await a.settle();
++  assert.equal(a.location.pathname, '/');
++  assert.deepEqual(a.position, [0, 250]);
++});
++
++test('clicking Projects twice still mounts its renderer, and leaving disposes it once', async () => {
++  const a = app(); a.click('/projects'); a.respond('/projects'); await flush();
++  a.click('/projects'); await flush();
++  assert.equal(a.mounts, 1);
++  a.click('/contact'); a.respond('/contact'); await flush(); await a.settle();
++  assert.equal(a.disposals, 1);
++  assert.equal(a.mains().length, 1);
++});
++
++test('reduced motion swaps content immediately without leaving an outgoing page', async () => {
++  const a = app(true); a.click('/projects'); a.respond('/projects'); await flush();
++  assert.equal(a.mains().length, 1);
++  assert.equal(a.pageStyles().length, 1);
++  assert.equal(a.mounts, 1);
++});
+diff --git a/scripts/test_project_transition.cjs b/scripts/test_project_transition.cjs
+new file mode 100644
+index 0000000..aec4c8e
+--- /dev/null
++++ b/scripts/test_project_transition.cjs
+@@ -0,0 +1,168 @@
++const { test } = require('node:test');
++const assert = require('node:assert/strict');
++const fs = require('node:fs');
++const vm = require('node:vm');
++const path = require('node:path');
++const root = path.resolve(__dirname, '..');
++const html = fs.readFileSync(path.join(root, 'public/projects.html'), 'utf8');
++const head = html.match(/<script>\s*([\s\S]*?)<\/script>/)[1];
++const renderer = fs.readFileSync(path.join(root, 'public/assets/subway-vis.js'), 'utf8');
++
++function page(supported = true) {
++  let reveal;
++  const scripts = [];
++  const context = vm.createContext({
++    window: { ...(supported ? { onpagereveal: null } : {}), addEventListener: (_, fn) => { reveal = fn; } },
++    document: {
++      getElementById: id => id === 'subway-vis' ? { parentElement: { closest: () => ({ dataset: {} }) } } : id === 'subway-vis-caption' ? { parentElement: {} } : null,
++      createElement: kind => kind === 'canvas' ? { getContext: () => ({}) } : {},
++      head: { appendChild: script => scripts.push(script) },
++      addEventListener() {}, removeEventListener() {}, hidden: false,
++    },
++    WebSocket: class { constructor() { throw new Error('No feed in lifecycle test'); } },
++    IntersectionObserver: class { observe() {} disconnect() {} },
++    matchMedia: () => ({ matches: false }), location: { search: '' },
++    setTimeout: () => 0, clearTimeout() {}, cancelAnimationFrame() {}, console,
++  });
++  vm.runInContext(head, context);
++  vm.runInContext(renderer, context);
++  return { scripts, reveal: event => reveal(event), pause: () => context.window.xyzPauseProjects() };
++}
++const flush = () => new Promise(resolve => setImmediate(resolve));
++
++test('Hydra is not evaluated while the incoming page is fading', async () => {
++  const p = page();
++  await flush();
++  assert.equal(p.scripts.length, 0);
++  let finish;
++  p.reveal({ viewTransition: { finished: new Promise(resolve => { finish = resolve; }) } });
++  await flush();
++  assert.equal(p.scripts.length, 0);
++  finish();
++  await flush();
++  assert.equal(p.scripts.length, 1);
++  assert.match(p.scripts[0].src, /cdn\.jsdelivr\.net/);
++});
++
++test('leaving before reveal prevents late renderer startup during the outgoing fade', async () => {
++  const p = page();
++  p.pause();
++  p.reveal({ viewTransition: null });
++  await flush();
++  assert.equal(p.scripts.length, 0);
++});
++
++test('a skipped transition still starts the live preview', async () => {
++  const p = page();
++  p.reveal({ viewTransition: { finished: Promise.reject(new Error('Skipped')) } });
++  await flush();
++  assert.equal(p.scripts.length, 1);
++});
++
++test('direct loads and reduced-motion navigation do not wait for a transition', async () => {
++  const p = page();
++  p.reveal({ viewTransition: null });
++  await flush();
++  assert.equal(p.scripts.length, 1);
++});
++
++test('browsers without pagereveal keep the live preview', async () => {
++  const p = page(false);
++  await flush();
++  assert.equal(p.scripts.length, 1);
++});
++
++test('a failed CDN starts the fallback loader after the transition', async () => {
++  const p = page(false);
++  await flush();
++  p.scripts[0].onerror();
++  await flush();
++  assert.equal(p.scripts.length, 2);
++  assert.match(p.scripts[1].src, /unpkg\.com/);
++});
++
++// Exercise the real frame scheduler without WebGL or a live network feed.
++function scheduler(reduced = false) {
++  const callbacks = new Map();
++  let next = 1, ticks = 0, shown = 0, destroyed = 0, intersect, visibility;
++  const context = vm.createContext({
++    hydra: { tick() { ticks++; }, regl: { destroy() { destroyed++; } } },
++    window: {}, disposed: false, suspended: false, activeSocket: null, socketTimer: null, retryTimer: null, clearTimeout() {},
++    document: { hidden: false, addEventListener: (_, fn) => { visibility = fn; }, removeEventListener() {} },
++    matchMedia: () => ({ matches: reduced }), performance: { now: () => 0 },
++    requestAnimationFrame: fn => { const id = next++; callbacks.set(id, fn); return id; },
++    cancelAnimationFrame: id => callbacks.delete(id),
++    IntersectionObserver: class { constructor(fn) { intersect = fn; } observe() {} disconnect() {} },
++    box: {}, show() { shown++; }, drawInputs() {},
++  });
++  const loop = renderer.slice(renderer.indexOf('  // --- frame loop:'), renderer.indexOf('  // --- data:'));
++  vm.runInContext(loop + '\nthis.begin = () => { scene = {}; settle(); }; this.start = start;', context);
++  return {
++    begin: () => context.begin(), start: () => context.start(),
++    step(t = 16) { const [id, fn] = callbacks.entries().next().value; callbacks.delete(id); fn(t); },
++    visible(value) { intersect([{ isIntersecting: value }]); },
++    hidden(value) { context.document.hidden = value; visibility(); },
++    pause: () => context.window.xyzPauseProjects(), dispose: () => context.window.xyzDisposeProjects(),
++    get destroyed() { return destroyed; }, get ticks() { return ticks; }, get shown() { return shown; }, get pending() { return callbacks.size; },
++  };
++}
++
++test('the preview settles across frames and reveals only when the feedback is ready', () => {
++  const s = scheduler();
++  s.start();
++  assert.equal(s.pending, 0, 'no animation before the first snapshot');
++  s.begin();
++  assert.equal(s.ticks, 0, 'startup must yield before rendering');
++  for (let i = 1; i <= 24; i++) {
++    s.step(i * 16);
++    assert.equal(s.ticks, i, 'one warmup tick per animation frame');
++    assert.equal(s.shown, i === 24 ? 1 : 0);
++    assert.equal(s.pending, 1, 'one loop, including after reveal');
++  }
++  s.step(400);
++  assert.equal(s.ticks, 25, 'normal animation continues');
++  assert.equal(s.shown, 1, 'no repeated reveal');
++});
++
++test('reduced motion settles a static preview and leaves no ongoing frame loop', () => {
++  const s = scheduler(true);
++  s.begin();
++  for (let i = 0; i < 24; i++) s.step();
++  assert.equal(s.ticks, 24);
++  assert.equal(s.shown, 1);
++  assert.equal(s.pending, 0);
++  s.hidden(true); s.hidden(false); s.visible(false); s.visible(true);
++  assert.equal(s.pending, 0);
++});
++
++test('warmup pauses offscreen and on hidden tabs, then resumes without a second loop', () => {
++  const s = scheduler();
++  s.begin(); s.step();
++  s.visible(false);
++  assert.equal(s.pending, 0);
++  assert.equal(s.ticks, 1);
++  s.visible(true); s.start();
++  assert.equal(s.pending, 1);
++  s.step(); s.hidden(true);
++  assert.equal(s.pending, 0);
++  s.hidden(false); s.start();
++  assert.equal(s.pending, 1);
++  for (let i = 2; i < 24; i++) s.step();
++  assert.equal(s.ticks, 24);
++  assert.equal(s.shown, 1);
++});
++
++test('leaving Projects cancels rendering permanently and returning creates a fresh scheduler', () => {
++  const first = scheduler();
++  first.begin(); first.step(); first.pause();
++  assert.equal(first.pending, 0);
++  first.visible(true); first.hidden(false);
++  assert.equal(first.pending, 0);
++  first.dispose(); first.dispose();
++  assert.equal(first.destroyed, 1, "paused renderer releases WebGL resources exactly once");
++  first.start();
++  assert.equal(first.pending, 0);
++  const second = scheduler(); second.begin(); second.step();
++  assert.equal(second.ticks, 1);
++  assert.equal(second.pending, 1);
++});
+diff --git a/scripts/test_screensaver_navigation.cjs b/scripts/test_screensaver_navigation.cjs
+new file mode 100644
+index 0000000..8ffc853
+--- /dev/null
++++ b/scripts/test_screensaver_navigation.cjs
+@@ -0,0 +1,63 @@
++const { test } = require('node:test');
++const assert = require('node:assert/strict');
++const vm = require('node:vm');
++const fs = require('node:fs');
++const source = fs.readFileSync(require('node:path').join(__dirname, '../public/assets/screensaver.js'), 'utf8');
++const flush = () => new Promise(resolve => setImmediate(resolve));
++
++async function saver() {
++  const events = {}, timers = new Map(), overlays = [], browserEvents = {};
++  let next = 0;
++  const context = vm.createContext({
++    URL, import: undefined, console,
++    fetch: async () => ({ ok: true, text: async () => '<svg />' }),
++    matchMedia: () => ({ matches: false, addEventListener() {} }),
++    MutationObserver: class { observe() {} },
++    document: {
++      hidden: false, documentElement: { dataset: { theme: 'light' } },
++      body: { append: el => overlays.push(el) },
++      addEventListener: (type, fn) => { events[type] = fn; },
++      createElement: () => ({
++        style: {}, firstElementChild: { style: {} }, clientWidth: 390, clientHeight: 844, offsetWidth: 100, offsetHeight: 50,
++        setAttribute() {}, append() {}, addEventListener() {}, animate: () => ({ cancel() {} }),
++      }),
++    },
++    setTimeout: (fn, ms = 0) => { timers.set(++next, { fn, ms }); return next; },
++    clearTimeout: id => timers.delete(id), setInterval: () => 0, clearInterval() {},
++    requestAnimationFrame: () => 1, cancelAnimationFrame() {},
++    addEventListener: (type, fn) => { (browserEvents[type] ||= []).push(fn); },
++  });
++  // Only substitute the module's static URL resolution; run its real idle/dismiss logic.
++  vm.runInContext(source.replace('import.meta.url', "'https://example.test/assets/screensaver.js'"), context);
++  await flush();
++  return { events, timers, overlays, browserEvents,
++    idle() { const [id, timer] = [...timers].find(([, timer]) => timer.ms === 5000); timers.delete(id); timer.fn(); },
++  };
++}
++
++test('content navigation starts the same five-second idle period without another overlay', async () => {
++  const s = await saver(); const originalTimer = [...s.timers.keys()][0];
++  s.events['xyz:navigated'](); s.events['xyz:navigated']();
++  assert.equal(s.timers.has(originalTimer), false);
++  assert.equal(s.timers.size, 1);
++  assert.equal([...s.timers.values()][0].ms, 5000);
++  assert.equal(s.overlays.length, 1);
++});
++
++test('Back/Forward navigation dismisses an active saver as a new document would', async () => {
++  const s = await saver(); s.idle();
++  assert.equal(s.overlays[0].hidden, false);
++  s.events['xyz:navigated']();
++  assert.equal(s.overlays[0].hidden, true);
++  assert.equal([...s.timers.values()][0].ms, 5000);
++});
++
++test('the first pointer press still dismisses the saver and consumes the rest of that click', async () => {
++  const s = await saver(); s.idle();
++  s.browserEvents.mousedown[0]({ type: 'mousedown' });
++  assert.equal(s.overlays[0].style.opacity, '0');
++  assert.equal(s.overlays[0].hidden, false, 'overlay stays through mouse release');
++  s.browserEvents.mouseup[0]();
++  [...s.timers.values()].find(timer => timer.ms === 0).fn();
++  assert.equal(s.overlays[0].hidden, true);
++});
+diff --git a/scripts/test_sitegen.py b/scripts/test_sitegen.py
+index c72b81a..a0754f2 100644
+--- a/scripts/test_sitegen.py
++++ b/scripts/test_sitegen.py
+@@ -329,6 +329,50 @@ class SiteTests(unittest.TestCase):
+             for p in pages:
+                 self.assertTrue((Path(tmp) / p.markdown_path.lstrip("/")).is_file())
+ 
++class CriticalAssetTests(unittest.TestCase):
++    def test_inlines_only_small_render_blocking_assets_and_escapes_script_comments(self):
++        with tempfile.TemporaryDirectory() as tmp:
++            public = Path(tmp)
++            (public / 'assets').mkdir()
++            theme = '// Example: </script>\nwindow.themeReady = true;'
++            (public / 'assets/theme.js').write_text(theme)
++            for name in sitegen.CRITICAL_STYLES:
++                (public / 'assets' / name).write_text('body { color: black; }')
++            source = '<head><script src="/assets/theme.js"></script>' + ''.join(
++                f'<link rel="stylesheet" href="/assets/{name}">' for name in sitegen.CRITICAL_STYLES
++            ) + '<script type="module" src="/assets/screensaver.js"></script></head>'
++            result = sitegen.with_critical_assets(source, public)
++            self.assertNotIn('<link rel="stylesheet"', result)
++            self.assertNotIn('<script src="/assets/theme.js">', result)
++            doc = sitegen.parse_html(result)
++            scripts = [el for el in doc.iter() if el.tag == 'script']
++            self.assertEqual(len(scripts), 2)
++            self.assertIn('window.themeReady = true;', scripts[0].text())
++            self.assertEqual(scripts[1].attrs['src'], '/assets/screensaver.js')
++            self.assertEqual(scripts[1].attrs['type'], 'module')
++
++    def test_missing_critical_asset_fails_instead_of_building_a_broken_page(self):
++        with tempfile.TemporaryDirectory() as tmp:
++            with self.assertRaises(sitegen.SiteError):
++                sitegen.with_critical_assets('<script src="/assets/theme.js"></script>', Path(tmp))
++
++    def test_all_real_pages_include_critical_styles_even_the_not_found_page(self):
++        with tempfile.TemporaryDirectory() as tmp:
++            dist = Path(tmp)
++            sitegen.build(sitegen.PUBLIC, dist, {})
++            for name in ['index', 'ideology', 'projects', 'contact', '404']:
++                html = (dist / (name + '.html')).read_text()
++                self.assertIn('data-inline-source="/assets/theme.js"', html)
++                for style in sitegen.CRITICAL_STYLES:
++                    self.assertIn(f'data-inline-source="/assets/{style}"', html)
++                doc = sitegen.parse_html(html)
++                headers = [el for el in doc.iter() if el.tag == 'header']
++                self.assertEqual(len(headers), 1)
++                links = [(el.text(), el.attrs.get('href')) for el in headers[0].iter() if el.tag == 'a']
++                self.assertEqual(links, [('Main', '/'), ('Ideology', '/ideology'), ('Projects', '/projects'), ('Contact', '/contact')])
++                self.assertNotIn('>Home</a>', html)
++                self.assertEqual(html.count('src="/assets/page-navigation.js"'), 1)
++
+ 
+ if __name__ == "__main__":
+     unittest.main()

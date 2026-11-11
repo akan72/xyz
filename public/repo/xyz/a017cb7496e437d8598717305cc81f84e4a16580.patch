@@ -1,0 +1,352 @@
+diff --git a/public/404.html b/public/404.html
+index 593b746..0fb0d17 100644
+--- a/public/404.html
++++ b/public/404.html
+@@ -2,6 +2,7 @@
+ <html lang="en">
+     <head>
+         <meta charset="utf-8">
++        <script src="/assets/theme.js"></script>
+         <title>Page Not Found :(</title>
+         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+         <script type="module" src="/assets/screensaver.js"></script>
+@@ -16,12 +17,47 @@
+                 text-shadow: none;
+             }
+ 
++            :root {
++                color-scheme: light;
++                --text: #737373;
++                --page: #f0f0f0;
++                --card: #fcfcfc;
++                --border: #b3b3b3;
++                --shadow: 0 1px 10px #a7a7a7, inset 0 1px 0 #fff;
++                --heading: #737373;
++                --heading-muted: #bbb;
++            }
++
++            @media (prefers-color-scheme: dark) {
++                :root:not([data-theme="light"]) {
++                    color-scheme: dark;
++                    --text: #a8a8a8;
++                    --page: #161616;
++                    --card: #1f1f1f;
++                    --border: #333;
++                    --shadow: 0 1px 10px #000, inset 0 1px 0 #2a2a2a;
++                    --heading: #e8e8e8;
++                    --heading-muted: #666;
++                }
++            }
++
++            :root[data-theme="dark"] {
++                color-scheme: dark;
++                --text: #a8a8a8;
++                --page: #161616;
++                --card: #1f1f1f;
++                --border: #333;
++                --shadow: 0 1px 10px #000, inset 0 1px 0 #2a2a2a;
++                --heading: #e8e8e8;
++                --heading-muted: #666;
++            }
++
+             html {
+                 padding: 30px 10px;
+                 font-size: 20px;
+                 line-height: 1.4;
+-                color: #737373;
+-                background: #f0f0f0;
++                color: var(--text);
++                background: var(--page);
+                 -webkit-text-size-adjust: 100%;
+                 -ms-text-size-adjust: 100%;
+             }
+@@ -35,21 +71,22 @@
+                 max-width: 500px;
+                 _width: 500px;
+                 padding: 30px 20px 50px;
+-                border: 1px solid #b3b3b3;
++                border: 1px solid var(--border);
+                 border-radius: 4px;
+                 margin: 0 auto;
+-                box-shadow: 0 1px 10px #a7a7a7, inset 0 1px 0 #fff;
+-                background: #fcfcfc;
++                box-shadow: var(--shadow);
++                background: var(--card);
+             }
+ 
+             h1 {
+                 margin: 0 10px;
+                 font-size: 50px;
+                 text-align: center;
++                color: var(--heading);
+             }
+ 
+             h1 span {
+-                color: #bbb;
++                color: var(--heading-muted);
+             }
+ 
+             h3 {
+diff --git a/public/assets/screensaver.js b/public/assets/screensaver.js
+index 65bf8db..bd78926 100644
+--- a/public/assets/screensaver.js
++++ b/public/assets/screensaver.js
+@@ -79,6 +79,8 @@ async function init() {
+         if (!active) resetIdleTimer();
+     });
+     darkMode.addEventListener('change', paint);
++    // Follow the page's theme switch (see theme.js), not just the OS setting
++    new MutationObserver(paint).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+     reducedMotion.addEventListener('change', () => {
+         if (active) {
+             stopMotion();
+@@ -208,11 +210,13 @@ function draw() {
+     logo.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
+ }
+ 
++// The page's theme when it sets one on <html data-theme> (theme.js), otherwise the OS setting.
+ function currentTheme() {
+-    return darkMode.matches ? THEMES.dark : THEMES.light;
++    const theme = document.documentElement.dataset.theme ?? (darkMode.matches ? 'dark' : 'light');
++    return THEMES[theme] ?? THEMES.light;
+ }
+ 
+-// Also runs when the OS theme changes, so a running screensaver switches immediately.
++// Also runs when the theme changes, so a running screensaver switches immediately.
+ function paint() {
+     const { background, palette } = currentTheme();
+     colorIndex %= palette.length;
+diff --git a/public/assets/theme.js b/public/assets/theme.js
+new file mode 100644
+index 0000000..2079161
+--- /dev/null
++++ b/public/assets/theme.js
+@@ -0,0 +1,58 @@
++// Light/dark theme. Loaded as a blocking script at the top of <head> so the
++// theme is set before the page paints:
++// <script src="/assets/theme.js"></script>
++//
++// <html data-theme> always holds the theme in use: the visitor's saved choice
++// if they've switched, otherwise their system setting. Pages style dark mode
++// off it, and other scripts (like the screensaver) can read it and watch it
++// for changes. Any element with data-theme-toggle switches the theme on click
++// and gets an aria-label/title describing what it will do.
++
++(() => {
++    const STORAGE_KEY = 'theme';
++    const BAR_COLORS = { light: '#f4f4f4', dark: '#161616' }; // browser UI tint, matches the homepage background
++
++    const root = document.documentElement;
++    const systemDark = matchMedia('(prefers-color-scheme: dark)');
++
++    function saved() {
++        try {
++            const theme = localStorage.getItem(STORAGE_KEY);
++            return theme === 'light' || theme === 'dark' ? theme : null;
++        } catch (e) {
++            return null;
++        }
++    }
++
++    function apply() {
++        const theme = saved() ?? (systemDark.matches ? 'dark' : 'light');
++        root.dataset.theme = theme;
++        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', BAR_COLORS[theme]);
++        const label = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
++        for (const el of document.querySelectorAll('[data-theme-toggle]')) {
++            el.setAttribute('aria-label', label);
++            el.title = label;
++        }
++    }
++
++    function toggle() {
++        const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
++        try {
++            localStorage.setItem(STORAGE_KEY, next);
++        } catch (e) {}
++        apply();
++    }
++
++    apply();
++    systemDark.addEventListener('change', apply);
++    // Another tab switched the theme
++    addEventListener('storage', (e) => {
++        if (e.key === STORAGE_KEY || e.key === null) apply();
++    });
++    document.addEventListener('DOMContentLoaded', () => {
++        for (const el of document.querySelectorAll('[data-theme-toggle]')) {
++            el.addEventListener('click', toggle);
++        }
++        apply(); // the theme-color tag and toggles are parsed after this script first runs
++    });
++})();
+diff --git a/public/contact.html b/public/contact.html
+index a4fca98..0eb6ed7 100644
+--- a/public/contact.html
++++ b/public/contact.html
+@@ -3,12 +3,25 @@
+     <head>
+         <meta charset="utf-8">
+         <meta name="viewport" content="width=device-width, initial-scale=1.0">
++        <script src="/assets/theme.js"></script>
+         <title>Contact | alexkan.xyz</title>
+         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+         <meta name="description" content="How to reach me.">
+         <script type="module" src="/assets/screensaver.js"></script>
+         <style>
+-            body { max-width: 720px; margin: 40px auto; padding: 0 16px; }
++            :root { color-scheme: light; }
++            @media (prefers-color-scheme: dark) {
++                :root:not([data-theme="light"]) { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --link: #8ab4f8; --visited: #c58af9; }
++            }
++            :root[data-theme="dark"] { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --link: #8ab4f8; --visited: #c58af9; }
++            body { max-width: 720px; margin: 40px auto; padding: 0 16px; background: var(--bg, Canvas); color: var(--fg, CanvasText); }
++            a { color: var(--link, LinkText); }
++            a:visited { color: var(--visited, VisitedText); }
++            .theme-toggle { color: inherit; background: none; border: 0; padding: 2px; margin-left: 14px; cursor: pointer; line-height: 0; vertical-align: -4px; }
++            .theme-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
++            .theme-toggle:hover { opacity: 0.7; }
++            .icon-sun, :root[data-theme="dark"] .icon-moon { display: none; }
++            :root[data-theme="dark"] .icon-sun { display: inline; }
+         </style>
+     </head>
+     <body>
+@@ -18,5 +31,6 @@
+         </ul>
+         <br>
+         <a href="/">[ Home ]</a>
++        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode"><svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button>
+     </body>
+ </html>
+diff --git a/public/ideology.html b/public/ideology.html
+index f7e8f0a..7fbf735 100644
+--- a/public/ideology.html
++++ b/public/ideology.html
+@@ -3,12 +3,25 @@
+     <head>
+         <meta charset="utf-8">
+         <meta name="viewport" content="width=device-width, initial-scale=1.0">
++        <script src="/assets/theme.js"></script>
+         <title>Ideology | alexkan.xyz</title>
+         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+         <meta name="description" content="Likes and dislikes.">
+         <script type="module" src="/assets/screensaver.js"></script>
+         <style>
+-            body { max-width: 720px; margin: 40px auto; padding: 0 16px; }
++            :root { color-scheme: light; }
++            @media (prefers-color-scheme: dark) {
++                :root:not([data-theme="light"]) { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --link: #8ab4f8; --visited: #c58af9; }
++            }
++            :root[data-theme="dark"] { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --link: #8ab4f8; --visited: #c58af9; }
++            body { max-width: 720px; margin: 40px auto; padding: 0 16px; background: var(--bg, Canvas); color: var(--fg, CanvasText); }
++            a { color: var(--link, LinkText); }
++            a:visited { color: var(--visited, VisitedText); }
++            .theme-toggle { color: inherit; background: none; border: 0; padding: 2px; margin-left: 14px; cursor: pointer; line-height: 0; vertical-align: -4px; }
++            .theme-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
++            .theme-toggle:hover { opacity: 0.7; }
++            .icon-sun, :root[data-theme="dark"] .icon-moon { display: none; }
++            :root[data-theme="dark"] .icon-sun { display: inline; }
+         </style>
+     </head>
+     <body>
+@@ -27,5 +40,6 @@
+         </ul>
+         <br>
+         <a href="/">[ Home ]</a>
++        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode"><svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button>
+     </body>
+ </html>
+\ No newline at end of file
+diff --git a/public/index.html b/public/index.html
+index 9be794a..e0a4650 100644
+--- a/public/index.html
++++ b/public/index.html
+@@ -3,17 +3,35 @@
+     <head>
+         <meta charset="utf-8">
+         <meta name="viewport" content="width=device-width, initial-scale=1.0">
++        <script src="/assets/theme.js"></script>
+         <title>alexkan.xyz</title>
+         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+         <meta name="description" content="Alex Kan's personal website.">
+         <script type="module" src="/assets/screensaver.js"></script>
+         <style>
+-            body { background: #f4f4f4; color: #111; font-family: Georgia, "Times New Roman", serif; margin: 0; }
++            :root { color-scheme: light; --bg: #f4f4f4; --fg: #111; --nav: #333; }
++            @media (prefers-color-scheme: dark) {
++                :root:not([data-theme="light"]) { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --nav: #c8c8c8; }
++            }
++            :root[data-theme="dark"] { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --nav: #c8c8c8; }
++            body { background: var(--bg); color: var(--fg); font-family: Georgia, "Times New Roman", serif; margin: 0; }
+             main { max-width: 720px; margin: 40px auto; padding: 0 16px; }
+             h2 { margin: 0 0 24px; }
+-            nav a { color: #333; margin-right: 14px; }
++            nav a { color: var(--nav); margin-right: 14px; }
+             #milady { display: block; width: 260px; max-width: 100%; height: auto; margin: 32px 0 16px; }
+             button { font: inherit; cursor: pointer; }
++            .theme-toggle { color: var(--nav); background: none; border: 0; padding: 2px; margin-left: 0; cursor: pointer; line-height: 0; vertical-align: -4px; }
++            .theme-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
++            .theme-toggle:hover { opacity: 0.7; }
++            .icon-sun, :root[data-theme="dark"] .icon-moon { display: none; }
++            :root[data-theme="dark"] .icon-sun { display: inline; }
++            /* Dark mode: outline the cig button instead of the browser's gray fill; light mode keeps the native button */
++            @media (prefers-color-scheme: dark) {
++                :root:not([data-theme="light"]) #cig-button { background: transparent; color: var(--fg); border: 1px solid #6a6a6a; border-radius: 4px; padding: 2px 7px; }
++                :root:not([data-theme="light"]) #cig-button:hover { border-color: #9a9a9a; }
++            }
++            :root[data-theme="dark"] #cig-button { background: transparent; color: var(--fg); border: 1px solid #6a6a6a; border-radius: 4px; padding: 2px 7px; }
++            :root[data-theme="dark"] #cig-button:hover { border-color: #9a9a9a; }
+             .cig-box { display: inline-flex; flex-direction: column; align-items: center; }
+             #cig { display: block; width: 260px; max-width: 100%; aspect-ratio: 4 / 5; object-fit: cover; margin-top: 12px; }
+         </style>
+@@ -25,10 +43,11 @@
+                 <a href="/ideology.html">Ideology</a>
+                 <a href="/projects.html">Projects</a>
+                 <a href="/contact.html">Contact</a>
++                <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode"><svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button>
+             </nav>
+             <img id="milady" src="./assets/milady.jpg" alt="Milady">
+             <div class="cig-box">
+-                <button onclick="
++                <button id="cig-button" onclick="
+                     const btn = this;
+                     btn.disabled = true;
+                     fetch('/image')
+diff --git a/public/projects.html b/public/projects.html
+index 0ca5d30..f511414 100644
+--- a/public/projects.html
++++ b/public/projects.html
+@@ -3,12 +3,25 @@
+     <head>
+         <meta charset="utf-8">
+         <meta name="viewport" content="width=device-width, initial-scale=1.0">
++        <script src="/assets/theme.js"></script>
+         <title>Projects | alexkan.xyz</title>
+         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+         <meta name="description" content="Things I've built.">
+         <script type="module" src="/assets/screensaver.js"></script>
+         <style>
+-            body { max-width: 720px; margin: 40px auto; padding: 0 16px; }
++            :root { color-scheme: light; }
++            @media (prefers-color-scheme: dark) {
++                :root:not([data-theme="light"]) { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --link: #8ab4f8; --visited: #c58af9; }
++            }
++            :root[data-theme="dark"] { color-scheme: dark; --bg: #161616; --fg: #e8e8e8; --link: #8ab4f8; --visited: #c58af9; }
++            body { max-width: 720px; margin: 40px auto; padding: 0 16px; background: var(--bg, Canvas); color: var(--fg, CanvasText); }
++            a { color: var(--link, LinkText); }
++            a:visited { color: var(--visited, VisitedText); }
++            .theme-toggle { color: inherit; background: none; border: 0; padding: 2px; margin-left: 14px; cursor: pointer; line-height: 0; vertical-align: -4px; }
++            .theme-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
++            .theme-toggle:hover { opacity: 0.7; }
++            .icon-sun, :root[data-theme="dark"] .icon-moon { display: none; }
++            :root[data-theme="dark"] .icon-sun { display: inline; }
+         </style>
+     </head>
+     <body>
+@@ -22,5 +35,6 @@
+         </ul>
+         <br>
+         <a href="/">[ Home ]</a>
++        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode"><svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button>
+     </body>
+ </html>

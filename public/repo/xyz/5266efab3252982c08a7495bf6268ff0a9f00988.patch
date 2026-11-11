@@ -1,0 +1,699 @@
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index b8f3a68..f9115ed 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -11,9 +11,11 @@ concurrency:
+   cancel-in-progress: true
+ 
+ # Pin Wrangler to a single exact version everywhere so CI matches what
+-# you'd get running `npx wrangler@${WRANGLER_VERSION}` locally.
++# you'd get running `npx wrangler@${WRANGLER_VERSION}` locally. Worker
++# Previews (`wrangler preview`) need 4.143.1 or later. pr-preview-cleanup.yml
++# pins the same version (scripts/test_previews.py checks they match).
+ env:
+-  WRANGLER_VERSION: "4.90.0"
++  WRANGLER_VERSION: "4.143.1"
+ 
+ jobs:
+   rust:
+@@ -21,6 +23,8 @@ jobs:
+     runs-on: ubuntu-latest
+     steps:
+       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
++        with:
++          persist-credentials: false
+ 
+       - name: Add WebAssembly target
+         run: rustup target add wasm32-unknown-unknown
+@@ -41,6 +45,7 @@ jobs:
+         with:
+           # sitegen reads each page's last commit date for sitemap.xml
+           fetch-depth: 0
++          persist-credentials: false
+ 
+       - run: python3 -m unittest discover -s scripts
+ 
+@@ -60,15 +65,16 @@ jobs:
+       contents: read
+       deployments: write
+       pull-requests: write
++    # The Cloudflare secrets go only to the two steps that deploy, so
++    # `cargo install` and the cache actions never see them.
+     env:
+-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+       WRANGLER_SEND_METRICS: "false"
+     steps:
+       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+         with:
+           # The wrangler build runs sitegen, which dates pages from git history
+           fetch-depth: 0
++          persist-credentials: false
+ 
+       - name: Add WebAssembly target
+         run: rustup target add wasm32-unknown-unknown
+@@ -92,41 +98,46 @@ jobs:
+           node-version: '22'
+ 
+       # Production: push to the default branch → create-or-update the Worker
+-      # at its production URL. `wrangler deploy` creates the script on first
+-      # run, so no separate bootstrap is needed.
++      # at its custom domains. `wrangler deploy` creates the script on first
++      # run, so no separate bootstrap is needed. It's the only step that
++      # deploys production.
+       - name: Deploy to production
+         if: github.event_name == 'push'
+-        run: npx --yes wrangler@${{ env.WRANGLER_VERSION }} deploy
+-
+-      # Pull requests: deploy to a per-PR Worker using wrangler.preview.toml,
+-      # which mirrors wrangler.toml but omits the [[routes]] blocks. That
+-      # way each PR's Worker publishes only to its workers.dev URL and
+-      # cannot hijack the production custom domains. (We deliberately do
+-      # NOT use `wrangler deploy --env preview` — wrangler's --env / --name
+-      # interaction is inconsistent enough that previews ended up grabbing
+-      # production routes.) The companion `pr-preview-cleanup.yml` workflow
+-      # tears the Worker down when the PR is closed.
++        env:
++          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
++          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
++          # Masks the token owner's email, as in the preview step.
++          CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
++        run: |
++          : "${CLOUDFLARE_EMAIL:?the CLOUDFLARE_EMAIL secret is missing, so the log could show the email of the account that owns the token}"
++          npx --yes "wrangler@${WRANGLER_VERSION}" deploy
++
++      # Pull requests: a Worker Preview of the one xyz Worker, named pr-<N>,
++      # at its own pr-<N>-xyz.<subdomain>.workers.dev URL. It builds from
++      # wrangler.toml, whose [previews] block declares the bindings previews
++      # get; previews never get the [[routes]], so a PR can't take the custom
++      # domains or ship production. pr-preview-cleanup.yml deletes the
++      # Preview when the PR closes.
+       - name: Deploy PR preview
+         id: preview
+-        if: github.event_name == 'pull_request'
++        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
++        env:
++          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
++          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
++          # wrangler names the email of the account that owns the token, in
++          # its JSON and after an authentication error, and these logs are
++          # public. GitHub masks a secret anywhere in the log of a job that
++          # uses it.
++          CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
++          PR_NUMBER: ${{ github.event.pull_request.number }}
+         run: |
+           set -euo pipefail
+-          PR_NUMBER="${{ github.event.pull_request.number }}"
+-          PREVIEW_NAME="xyz-pr-${PR_NUMBER}"
+-          echo "preview_name=${PREVIEW_NAME}" >>"$GITHUB_OUTPUT"
+-
+-          DEPLOY_LOG="$(mktemp)"
+-          npx --yes wrangler@${{ env.WRANGLER_VERSION }} deploy \
+-            --config wrangler.preview.toml --name "${PREVIEW_NAME}" 2>&1 | tee "${DEPLOY_LOG}"
+-
+-          # Capture the first https://*.workers.dev URL printed by wrangler;
+-          # that's the deployed preview's public URL.
+-          PREVIEW_URL="$(grep -oE 'https://[^[:space:]]+\.workers\.dev' "${DEPLOY_LOG}" | head -n1)"
+-          if [ -z "${PREVIEW_URL}" ]; then
+-            echo "::error::Failed to detect preview URL in wrangler output"
+-            exit 1
+-          fi
+-          echo "preview_url=${PREVIEW_URL}" >>"$GITHUB_OUTPUT"
++          : "${CLOUDFLARE_EMAIL:?the CLOUDFLARE_EMAIL secret is missing, so the log could show the email of the account that owns the token}"
++          npx --yes "wrangler@${WRANGLER_VERSION}" preview --name "pr-${PR_NUMBER}" --json | tee /tmp/preview.log
++          URL="$(sh scripts/preview-url.sh /tmp/preview.log)"
++          echo "preview_name=pr-${PR_NUMBER}" >>"$GITHUB_OUTPUT"
++          echo "preview_url=${URL}" >>"$GITHUB_OUTPUT"
++          echo "::notice::Preview at ${URL}"
+ 
+       - name: Comment preview URL on PR
+         if: github.event_name == 'pull_request' && steps.preview.outputs.preview_url
+@@ -147,7 +158,7 @@ jobs:
+               `Preview deployed for commit \`${sha}\`:`,
+               '',
+               `- URL: ${previewUrl}`,
+-              `- Worker: \`${previewName}\``,
++              `- Preview: \`${previewName}\` of the \`xyz\` Worker`,
+               '',
+               'This preview environment will be deleted when the PR is closed.',
+             ].join('\n');
+diff --git a/.github/workflows/pr-preview-cleanup.yml b/.github/workflows/pr-preview-cleanup.yml
+index 2655ff4..4df9d36 100644
+--- a/.github/workflows/pr-preview-cleanup.yml
++++ b/.github/workflows/pr-preview-cleanup.yml
+@@ -5,13 +5,14 @@ on:
+     types: [closed]
+ 
+ # Pin Wrangler to a single exact version everywhere so CI matches what
+-# you'd get running `npx wrangler@${WRANGLER_VERSION}` locally.
++# you'd get running `npx wrangler@${WRANGLER_VERSION}` locally. Keep it in step
++# with deploy.yml (scripts/test_previews.py checks they match).
+ env:
+-  WRANGLER_VERSION: "4.90.0"
++  WRANGLER_VERSION: "4.143.1"
+ 
+ jobs:
+   cleanup:
+-    name: Delete preview Worker
++    name: Delete preview
+     runs-on: ubuntu-latest
+     # Forks never had a preview deployed (secrets aren't exposed to PRs
+     # from forks), so there's nothing to clean up.
+@@ -19,53 +20,54 @@ jobs:
+     permissions:
+       contents: read
+       pull-requests: write
+-    env:
+-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+     steps:
++      # The delete script and wrangler.toml (which names the Worker) come from
++      # the commit this workflow runs from, so they always match it.
+       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
++        with:
++          persist-credentials: false
+ 
+       - name: Setup Node.js
+         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+         with:
+           node-version: '22'
+ 
+-      - name: Delete preview Worker
++      # scripts/delete-preview.sh deletes the Worker Preview pr-<N>. It exits 0
++      # when it was deleted or never existed and fails the job on anything
++      # else, so a preview that's still live is never reported as already gone.
++      - name: Delete preview
+         id: delete
++        env:
++          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
++          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
++          # Masks the token owner's email, which wrangler prints after an
++          # authentication error.
++          CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
++          PR_NUMBER: ${{ github.event.pull_request.number }}
+         run: |
+-          set -uo pipefail
+-          PR_NUMBER="${{ github.event.pull_request.number }}"
+-          PREVIEW_NAME="xyz-pr-${PR_NUMBER}"
+-          echo "preview_name=${PREVIEW_NAME}" >>"$GITHUB_OUTPUT"
+-          echo "Deleting Worker: ${PREVIEW_NAME}"
+-
+-          # Tolerate failure: the most likely reason `wrangler delete`
+-          # exits non-zero here is that the Worker was never created
+-          # (e.g. the deploy job failed on every commit of the PR), so
+-          # cleanup is effectively a no-op.
+-          if npx --yes wrangler@${{ env.WRANGLER_VERSION }} delete \
+-              --name "${PREVIEW_NAME}"; then
+-            echo "deleted=true" >>"$GITHUB_OUTPUT"
+-          else
+-            echo "::warning::wrangler delete returned non-zero — assuming Worker was already gone"
+-            echo "deleted=false" >>"$GITHUB_OUTPUT"
+-          fi
++          : "${CLOUDFLARE_EMAIL:?the CLOUDFLARE_EMAIL secret is missing, so the log could show the email of the account that owns the token}"
++          WRANGLER="npx --yes wrangler@${WRANGLER_VERSION}" sh scripts/delete-preview.sh "${PR_NUMBER}"
+ 
+       - name: Update PR comment
+         if: always()
+         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+         env:
+-          PREVIEW_NAME: ${{ steps.delete.outputs.preview_name }}
++          PREVIEW_NAME: pr-${{ github.event.pull_request.number }}
++          RESULT: ${{ steps.delete.outcome }}
+           DELETED: ${{ steps.delete.outputs.deleted }}
+         with:
+           script: |
+             const marker = '<!-- preview-deployment -->';
+             const previewName = process.env.PREVIEW_NAME;
+-            const deleted = process.env.DELETED === 'true';
+             const action = context.payload.pull_request.merged ? 'merged' : 'closed';
+-            const status = deleted
+-              ? `Preview environment \`${previewName}\` torn down (PR ${action}).`
+-              : `Preview environment \`${previewName}\` was already gone — nothing to tear down (PR ${action}).`;
++            let status;
++            if (process.env.RESULT !== 'success') {
++              status = `Teardown of \`${previewName}\` failed, so it may still be live. See the PR Preview Cleanup run (PR ${action}).`;
++            } else if (process.env.DELETED === 'true') {
++              status = `Preview \`${previewName}\` torn down (PR ${action}).`;
++            } else {
++              status = `Preview \`${previewName}\` was already gone — nothing to tear down (PR ${action}).`;
++            }
+             const body = [
+               marker,
+               '### Cloudflare Workers preview',
+diff --git a/README.md b/README.md
+index d5d618a..32eccf1 100644
+--- a/README.md
++++ b/README.md
+@@ -26,7 +26,9 @@ serves the HTML/images from the edge; an
+   `Accept: text/markdown`. Unmatched paths get `404.html`.
+ - `src/link_preview.rs` — adds Open Graph / Twitter tags to every HTML page.
+ - `wrangler.toml` — build command, assets directory, R2 binding, custom
+-  domain routes.
++  domain routes, and the `[previews]` block with the bindings PR previews get.
++- `scripts/preview-url.sh`, `scripts/delete-preview.sh` — read a PR
++  preview's URL and delete it, for the workflows in `.github/workflows/`.
+ - `Cargo.toml` — `workers-rs` deps; compiled to WASM by `worker-build`.
+ 
+ ## Adding a page
+@@ -64,12 +66,28 @@ Pushes to `master` deploy via GitHub Actions
+ 
+     wrangler deploy
+ 
++Each PR gets a [Worker Preview](https://developers.cloudflare.com/workers/previews/)
++of the `xyz` Worker, named `pr-<N>`, made with
++`wrangler preview --name pr-<N>`, and CI comments its URL
++(`https://pr-<N>-xyz.<subdomain>.workers.dev`) on the PR. Previews use
++`wrangler.toml` too: they never get its custom-domain routes, and they
++inherit none of its bindings, so its `[previews]` block declares them again
++(`scripts/test_previews.py` checks it). A preview only gets a URL while
++Preview URLs are on for the Worker (`preview_urls = true`, which production
++deploys apply). `.github/workflows/pr-preview-cleanup.yml` deletes the
++preview when the PR closes.
++
+ First-time setup:
+ 
+-1. Set `bucket_name` in `wrangler.toml` to your R2 bucket.
++1. Set `bucket_name` in `wrangler.toml` (under `[[r2_buckets]]` and
++   `[[previews.r2_buckets]]`) to your R2 bucket.
+ 2. `wrangler login` (or set `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`).
+-3. Add repo secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` for
+-   GitHub Actions.
++3. Add repo secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` and
++   `CLOUDFLARE_EMAIL` for GitHub Actions. `CLOUDFLARE_EMAIL` is the email of
++   the Cloudflare account that owns the token: wrangler prints it, and the
++   Actions logs are public, but GitHub masks a secret in the log of any job
++   that uses it. So each step that uses the token gets it too, and stops if
++   it's missing.
+ 4. Add your custom domain to Clodufalre.
+ 
+ ## Generate Zyn Favicon
+diff --git a/scripts/delete-preview.sh b/scripts/delete-preview.sh
+new file mode 100644
+index 0000000..ea8993c
+--- /dev/null
++++ b/scripts/delete-preview.sh
+@@ -0,0 +1,36 @@
++#!/bin/sh
++# Tears down a PR's Worker Preview, pr-<N> of the xyz Worker, for
++# .github/workflows/pr-preview-cleanup.yml. Exits 0 when it was deleted or
++# never existed, and 1 on any other failure, so a preview that's still live
++# never reads as "never deployed". Writes deleted=true|false to
++# $GITHUB_OUTPUT when that variable is set.
++# Usage, from the repo root (wrangler reads the Worker's name from wrangler.toml):
++#   WRANGLER="npx --yes wrangler@<version>" sh scripts/delete-preview.sh <pr-number>
++set -u
++pr="${1:-}"
++# Only a PR number, so this only ever deletes a pr-<N> Preview.
++case "$pr" in
++  '' | *[!0-9]*)
++    echo "usage: sh scripts/delete-preview.sh <pr-number>" >&2
++    exit 1
++    ;;
++esac
++wrangler="${WRANGLER:-npx --yes wrangler}"
++
++# $wrangler is split into words on purpose.
++out=$($wrangler preview delete --name "pr-$pr" --skip-confirmation 2>&1)
++code=$?
++printf '%s\n' "$out"
++if [ "$code" -eq 0 ]; then
++  deleted=true
++elif printf '%s' "$out" | grep -qi -e 'not found' -e 'does not exist'; then
++  deleted=false
++else
++  echo "::error::Deleting the Worker Preview pr-$pr failed (wrangler exited $code), so it may still be live."
++  exit 1
++fi
++
++if [ -n "${GITHUB_OUTPUT:-}" ]; then
++  echo "deleted=$deleted" >>"$GITHUB_OUTPUT"
++fi
++echo "deleted=$deleted"
+diff --git a/scripts/preview-url.sh b/scripts/preview-url.sh
+new file mode 100644
+index 0000000..58df770
+--- /dev/null
++++ b/scripts/preview-url.sh
+@@ -0,0 +1,19 @@
++#!/bin/sh
++# Prints the Worker Preview's URL from the output of `wrangler preview --json`,
++# saved in a file. Wrangler prints asset-upload progress before the JSON, so
++# this reads from the first line that opens it. Exits 1 when there's no URL in
++# it; the workflow has already shown wrangler's output.
++# Usage: sh scripts/preview-url.sh <file>
++set -u
++file="${1:?usage: sh scripts/preview-url.sh <wrangler-output-file>}"
++json=$(sed -n '/^{/,$p' "$file")
++if printf '%s\n' "$json" | jq -er '.preview.urls[0] // empty' 2>/dev/null; then
++  exit 0
++fi
++# To stderr: the workflow captures stdout as the URL, and the error must still
++# show in the log.
++echo "::error::wrangler preview didn't report a preview URL" >&2
++if printf '%s\n' "$json" | jq -e '.preview' >/dev/null 2>&1; then
++  echo "::error::The Preview deployed without a URL, so Preview URLs are off for the Worker. preview_urls = true in wrangler.toml turns them on at the next production deploy." >&2
++fi
++exit 1
+diff --git a/scripts/test_previews.py b/scripts/test_previews.py
+new file mode 100644
+index 0000000..6d3ddb7
+--- /dev/null
++++ b/scripts/test_previews.py
+@@ -0,0 +1,239 @@
++"""Tests for PR previews: scripts/preview-url.sh, scripts/delete-preview.sh,
++the [previews] block in wrangler.toml and the two workflows that use them.
++Run: python3 -m unittest discover -s scripts"""
++
++import re
++import subprocess
++import tempfile
++import tomllib
++import unittest
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parent.parent
++DEPLOY = ROOT / ".github/workflows/deploy.yml"
++CLEANUP = ROOT / ".github/workflows/pr-preview-cleanup.yml"
++
++
++def run(args, env=None):
++    return subprocess.run(args, cwd=ROOT, env=env, capture_output=True, text=True)
++
++
++def steps(path):
++    """(name, text) of each step in a workflow: from its `- ` line to the next
++    step or the end of its job."""
++    found, current = [], None
++    for line in path.read_text().splitlines():
++        if re.match(r"^ {6}- ", line):
++            current = [line]
++            found.append(current)
++        elif current is not None and line.strip() and not line.startswith(" " * 8):
++            current = None
++        elif current is not None:
++            current.append(line)
++    named = []
++    for lines in found:
++        text = "\n".join(lines)
++        name = re.search(r"^ {6}[- ] name: (.+)$", text, re.M)
++        named.append((name.group(1) if name else "", text))
++    return named
++
++
++# What `wrangler preview --json` prints: asset-upload progress, then the JSON.
++PREVIEW_OUTPUT = """\U0001f300 Building list of assets...
++✨ Read 52 files from the assets directory /home/runner/work/xyz/xyz/dist
++\U0001f300 Starting asset upload...
++No updated asset files to upload. Proceeding with deployment...
++{
++  "preview": {
++    "id": "6af3c6b70bae4da09af62508998cab4e",
++    "name": "pr-7",
++    "urls": [
++      "https://pr-7-xyz.akan72.workers.dev"
++    ]
++  },
++  "deployment": {
++    "id": "e7999ec3-8f16-4d76-99cb-4c9d69c10c4b",
++    "urls": [
++      "https://e7999ec3-xyz.akan72.workers.dev"
++    ]
++  }
++}
++"""
++
++
++class PreviewUrlTests(unittest.TestCase):
++    def preview_url(self, output):
++        with tempfile.TemporaryDirectory() as tmp:
++            log = Path(tmp) / "preview.log"
++            log.write_text(output)
++            return run(["sh", "scripts/preview-url.sh", str(log)])
++
++    def test_reads_the_preview_url_after_the_progress_lines(self):
++        result = self.preview_url(PREVIEW_OUTPUT)
++        self.assertEqual(result.returncode, 0, result.stderr)
++        self.assertEqual(result.stdout, "https://pr-7-xyz.akan72.workers.dev\n")
++        self.assertEqual(result.stderr, "")
++
++    def test_fails_on_stderr_when_there_is_no_preview_url(self):
++        # stderr, because the workflow captures stdout as the URL. wrangler's
++        # own output is already in the log, so this doesn't show it again.
++        result = self.preview_url("✘ [ERROR] Authentication error [code: 10000]\n")
++        self.assertEqual(result.returncode, 1)
++        self.assertEqual(result.stdout, "")
++        self.assertIn("didn't report a preview URL", result.stderr)
++        self.assertNotIn("Authentication error", result.stderr)
++
++    def test_says_preview_urls_are_off_when_the_preview_has_no_url(self):
++        no_urls = '{\n  "preview": { "name": "pr-7", "urls": [] },\n  "deployment": { "urls": [] }\n}\n'
++        result = self.preview_url(no_urls)
++        self.assertEqual(result.returncode, 1)
++        self.assertEqual(result.stdout, "")
++        self.assertIn("Preview URLs are off", result.stderr)
++
++DELETED = 'echo "Preview \\"pr-7\\" deleted successfully."; exit 0'
++MISSING = 'echo "The Preview \\"pr-7\\" was not found."; exit 1'
++AUTH_ERROR = 'echo "Authentication error [code: 10000]"; exit 1'
++
++
++class DeletePreviewTests(unittest.TestCase):
++    def delete_preview(self, answer, pr="7"):
++        """Runs scripts/delete-preview.sh against a stand-in wrangler that
++        prints its arguments, then runs `answer`."""
++        with tempfile.TemporaryDirectory() as tmp:
++            wrangler = Path(tmp) / "wrangler"
++            wrangler.write_text(f'echo "args: $*"\n{answer}\n')
++            outputs = Path(tmp) / "github-output"
++            outputs.write_text("")
++            env = {"PATH": "/usr/bin:/bin", "WRANGLER": f"sh {wrangler}", "GITHUB_OUTPUT": str(outputs)}
++            result = run(["sh", "scripts/delete-preview.sh", pr], env=env)
++            return result, outputs.read_text()
++
++    def test_deletes_the_worker_preview_without_asking_and_runs_nothing_else(self):
++        result, outputs = self.delete_preview(DELETED)
++        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
++        self.assertIn("deleted=true", outputs)
++        calls = re.findall(r"^args: .*$", result.stdout, re.M)
++        self.assertEqual(calls, ["args: preview delete --name pr-7 --skip-confirmation"])
++
++    def test_treats_a_preview_that_never_existed_as_nothing_to_delete(self):
++        result, outputs = self.delete_preview(MISSING)
++        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
++        self.assertIn("deleted=false", outputs)
++
++    def test_fails_loudly_on_any_other_error_so_a_live_preview_never_reads_as_gone(self):
++        result, outputs = self.delete_preview(AUTH_ERROR)
++        self.assertEqual(result.returncode, 1)
++        self.assertIn("may still be live", result.stdout + result.stderr)
++        self.assertNotIn("deleted=", outputs)
++
++    def test_refuses_anything_but_a_pr_number(self):
++        # Without --name, `wrangler preview delete` picks the git branch's Preview
++        for pr in ["", "7 --name main", "../7"]:
++            result, outputs = self.delete_preview(DELETED, pr=pr)
++            self.assertEqual(result.returncode, 1)
++            self.assertNotIn("args:", result.stdout)
++            self.assertEqual(outputs, "")
++
++# Binding types a Worker Preview doesn't inherit from production
++BINDING_KEYS = [
++    "ai", "analytics_engine_datasets", "browser", "d1_databases", "durable_objects", "hyperdrive",
++    "images", "kv_namespaces", "queues", "r2_buckets", "ratelimits", "secrets_store_secrets",
++    "send_email", "services", "vars", "vectorize", "version_metadata", "workflows",
++]
++
++
++class WranglerConfigTests(unittest.TestCase):
++    config = tomllib.loads((ROOT / "wrangler.toml").read_text())
++
++    def test_names_the_one_worker_that_previews_belong_to(self):
++        self.assertEqual(self.config["name"], "xyz")
++
++    def test_turns_on_preview_urls_but_not_production_on_workers_dev(self):
++        # A Worker Preview only gets a URL when the Worker has Preview URLs on;
++        # with custom domains, both default to off
++        self.assertIs(self.config["preview_urls"], True)
++        self.assertIs(self.config["workers_dev"], False)
++
++    def test_declares_every_binding_again_for_previews(self):
++        previews = self.config.get("previews", {})
++        self.assertEqual(previews.get("r2_buckets"), self.config["r2_buckets"])
++        for key in BINDING_KEYS:
++            if key in self.config:
++                self.assertEqual(previews.get(key), self.config[key], f"[previews] is missing {key}")
++
++
++class WorkflowTests(unittest.TestCase):
++    def test_give_the_cloudflare_secrets_only_to_the_deploy_and_delete_steps(self):
++        for path, allowed in [(DEPLOY, ["Deploy to production", "Deploy PR preview"]), (CLEANUP, ["Delete preview"])]:
++            with_secrets = [name for name, text in steps(path) if "secrets." in text]
++            self.assertEqual(with_secrets, allowed, path.name)
++            self.assertEqual(path.read_text().count("secrets."), sum(t.count("secrets.") for _, t in steps(path)))
++
++    def test_pr_previews_never_run_wrangler_deploy_or_print_the_preview_json(self):
++        preview = dict(steps(DEPLOY))["Deploy PR preview"]
++        self.assertNotRegex(preview, r"\bdeploy\b")
++        # The JSON reaches the log, where GitHub masks the token owner's
++        # email (CLOUDFLARE_EMAIL), and scripts/preview-url.sh reads the URL
++        # from it
++        self.assertIn("set -euo pipefail", preview)
++        self.assertIn('preview --name "pr-${PR_NUMBER}" --json | tee /tmp/preview.log', preview)
++        self.assertIn('URL="$(sh scripts/preview-url.sh /tmp/preview.log)"', preview)
++
++    def test_only_the_production_step_runs_wrangler_deploy(self):
++        deploys = [name for name, text in steps(DEPLOY) if re.search(r"wrangler\S*\s+deploy\b(?! --dry-run)", text)]
++        self.assertEqual(deploys, ["Deploy to production"])
++        production = dict(steps(DEPLOY))["Deploy to production"]
++        self.assertIn("if: github.event_name == 'push'", production)
++
++    def test_give_every_step_with_the_token_the_email_secret_and_stop_without_it(self):
++        # wrangler names the email of the account that owns the token, and
++        # GitHub masks a secret only in the log of a job that uses it
++        for path in (DEPLOY, CLEANUP):
++            for name, text in steps(path):
++                if "secrets.CLOUDFLARE_API_TOKEN" not in text:
++                    continue
++                self.assertIn("CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}", text, name)
++                guard = text.find(': "${CLOUDFLARE_EMAIL:?')
++                self.assertGreater(guard, -1, name)
++                first_wrangler = re.search(r"wrangler@\S*\s+(preview|deploy)|delete-preview\.sh", text)
++                self.assertLess(guard, first_wrangler.start(), f"{name}: the guard comes before wrangler")
++
++    def test_run_blocks_parse_as_bash(self):
++        # The shell GitHub runs them with; an apostrophe inside "${X:?...}"
++        # once broke a step this way
++        for path in (DEPLOY, CLEANUP):
++            for name, text in steps(path):
++                block = re.search(r"^ {6}[- ] run: \|\n((?: {10}.*\n?|\s*\n)+)", text + "\n", re.M)
++                line = re.search(r"^ {6}[- ] run: (?!\|)(.+)$", text, re.M)
++                if not (block or line):
++                    continue
++                body = re.sub(r"^ {10}", "", block.group(1), flags=re.M) if block else line.group(1)
++                check = subprocess.run(["bash", "-n"], input=body, capture_output=True, text=True)
++                self.assertEqual((check.returncode, check.stderr), (0, ""), f"{path.name}: {name}")
++
++    def test_cleanup_deletes_through_the_script(self):
++        self.assertIn('sh scripts/delete-preview.sh "${PR_NUMBER}"', dict(steps(CLEANUP))["Delete preview"])
++
++    def test_pin_the_same_wrangler_version(self):
++        versions = [re.search(r'WRANGLER_VERSION: "([^"]+)"', p.read_text()).group(1) for p in (DEPLOY, CLEANUP)]
++        self.assertEqual(versions, ["4.143.1", "4.143.1"])
++
++    def test_dont_leave_the_github_token_in_git_config(self):
++        for path in (DEPLOY, CLEANUP):
++            for name, text in steps(path):
++                if "actions/checkout@" in text:
++                    self.assertIn("persist-credentials: false", text, f"{path.name}: {name or text.splitlines()[0]}")
++
++    def test_give_every_top_level_block_a_value(self):
++        # GitHub rejects a workflow with an empty top-level block (say, `env:`
++        # after its last variable is removed) and runs none of its jobs
++        for path in (DEPLOY, CLEANUP):
++            lines = path.read_text().splitlines()
++            for i, line in enumerate(lines):
++                if re.match(r"^[\w-]+:\s*$", line):
++                    rest = [l for l in lines[i + 1 :] if l.strip() and not l.lstrip().startswith("#")]
++                    self.assertTrue(rest and rest[0].startswith(" "), f"{path.name}: {line} is empty")
++
++
++if __name__ == "__main__":
++    unittest.main()
+diff --git a/src/link_preview.rs b/src/link_preview.rs
+index 88c877b..38d7b19 100644
+--- a/src/link_preview.rs
++++ b/src/link_preview.rs
+@@ -155,10 +155,10 @@ mod tests {
+ 
+     #[test]
+     fn preview_host_gets_its_own_urls() {
+-        let html = add_tags(&page(""), "https://xyz-pr-9.akan72.workers.dev", "/");
++        let html = add_tags(&page(""), "https://pr-9-xyz.akan72.workers.dev", "/");
+         assert_eq!(
+             meta(&html, "og:image").unwrap(),
+-            "https://xyz-pr-9.akan72.workers.dev/assets/og.jpg"
++            "https://pr-9-xyz.akan72.workers.dev/assets/og.jpg"
+         );
+     }
+ 
+diff --git a/wrangler.preview.toml b/wrangler.preview.toml
+deleted file mode 100644
+index 1da80cb..0000000
+--- a/wrangler.preview.toml
++++ /dev/null
+@@ -1,34 +0,0 @@
+-# Preview-only wrangler config used by .github/workflows/deploy.yml for
+-# PR previews. Mirrors wrangler.toml exactly except the [[routes]]
+-# blocks are omitted so each PR Worker publishes only to its
+-# <name>.<subdomain>.workers.dev URL and cannot deploy to the production
+-# custom domain. The Worker name is passed via `--name` at deploy
+-# time (e.g. `--name xyz-pr-5`); the `name` field below is a
+-# placeholder that gets overridden.
+-name = "xyz"
+-main = "build/worker/shim.mjs"
+-compatibility_date = "2026-05-01"
+-
+-[build]
+-# sitegen.py writes dist/: public/ plus llms.txt, sitemaps and Markdown copies of pages
+-command = "command -v worker-build >/dev/null 2>&1 || cargo install worker-build; worker-build --release --no-opt && python3 scripts/sitegen.py"
+-watch_dir = ["src", "public", "scripts"]
+-
+-[assets]
+-# Built from public/ by scripts/sitegen.py (see [build])
+-directory = "./dist"
+-binding = "ASSETS"
+-# Missing paths get 404.html with a 404 status
+-not_found_handling = "404-page"
+-# Paths without a file extension (pages, /image, /cig/*) run the Worker first,
+-# so it can add link-preview tags (src/link_preview.rs) and answer
+-# `Accept: text/markdown` with a page's Markdown copy. Paths with one
+-# (images, .md, .txt, .xml) are served straight from assets.
+-run_worker_first = ["/*", "!/*.*"]
+-
+-[[r2_buckets]]
+-binding = "BUCKET"
+-bucket_name = "cigawrette-packs"
+-
+-[observability]
+-enabled = true
+diff --git a/wrangler.toml b/wrangler.toml
+index 324c0e0..4b8449e 100644
+--- a/wrangler.toml
++++ b/wrangler.toml
+@@ -1,7 +1,23 @@
++# The Worker's only config. Pushes to master deploy it to production with
++# `wrangler deploy`, and each PR gets a Worker Preview of it with
++# `wrangler preview --name pr-<N>` (.github/workflows/deploy.yml). The
++# [[routes]] below only ever apply to production; previews answer only at
++# their own workers.dev URL. Previews inherit none of the bindings, so the
++# [previews] block at the end declares them again (scripts/test_previews.py
++# checks it).
+ name = "xyz"
+ main = "build/worker/shim.mjs"
+ compatibility_date = "2026-05-01"
+ 
++# Production answers only at the custom domains in [[routes]], not at
++# xyz.<subdomain>.workers.dev. Preview URLs stay on, because a Worker Preview
++# only gets its pr-<N>-xyz.<subdomain>.workers.dev URL when they are; with
++# custom domains, both would default to off. Production deploys (and
++# `wrangler triggers deploy`) apply these two settings; `wrangler preview`
++# doesn't.
++workers_dev = false
++preview_urls = true
++
+ [build]
+ # sitegen.py writes dist/: public/ plus llms.txt, sitemaps and Markdown copies of pages
+ command = "command -v worker-build >/dev/null 2>&1 || cargo install worker-build; worker-build --release && python3 scripts/sitegen.py"
+@@ -33,3 +49,12 @@ custom_domain = true
+ 
+ [observability]
+ enabled = true
++
++# Worker Previews (one per PR). They get the assets and observability settings
++# above but none of the bindings, so each binding is declared again here. The
++# Worker only reads the cig packs, so previews share production's bucket.
++[previews]
++
++[[previews.r2_buckets]]
++binding = "BUCKET"
++bucket_name = "cigawrette-packs"

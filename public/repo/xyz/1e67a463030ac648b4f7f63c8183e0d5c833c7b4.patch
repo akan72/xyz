@@ -1,0 +1,12 @@
+diff --git a/public/contact.html b/public/contact.html
+index 5f80cc5..25219a6 100644
+--- a/public/contact.html
++++ b/public/contact.html
+@@ -23,6 +23,7 @@
+         <h2> Contact </h2>
+         <ul>
+             <li> <a href="https://github.com/akan72" target="_blank">GitHub</a> </li>
++            <li> <a href="https://x.com/0xUltraviolence" target="_blank">Twitter</a> </li>
+             <li> <a href="/pgp.txt" target="_blank">PGP</a> </li>
+             <li> <a href="https://www.linkedin.com/in/alexanderkan/" target="_blank">LinkedIn</a> </li>
+         </ul>

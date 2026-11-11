@@ -1,0 +1,332 @@
+diff --git a/README.md b/README.md
+index 6c35c50..f412d3f 100644
+--- a/README.md
++++ b/README.md
+@@ -97,6 +97,9 @@ sentence or two about it as the body:
+     What it does. Links like [this one](https://example.com) open in a new tab.
+ 
+ `media: subway-vis` puts the live istheldown figure above the description.
++`media: vesta-demo` embeds Vesta's generated offline board preview and text view.
++See [docs/vesta/README.md](docs/vesta/README.md) for regeneration instructions
++and the plan for securely serving refreshed market prices in a future update.
+ `astro build` fails if an entry doesn't match the schema in
+ `site/content.config.ts` (https URL, a known kind of years with the start
+ before the end, a non-empty stack), or if two projects share an `order`.
+diff --git a/docs/vesta/README.md b/docs/vesta/README.md
+new file mode 100644
+index 0000000..455a57a
+--- /dev/null
++++ b/docs/vesta/README.md
+@@ -0,0 +1,151 @@
++# Vesta on /projects
++
++## Demo shipped now
++
++`site/content/projects/vesta.md` adds Vesta to the projects collection.
++`VestaPreview.astro` embeds only the board cells from
++`site/generated/vesta-demo.html`, the actual output of Vesta's offline demo.
++It adapts the surrounding styles to xyz's project column and theme, without
++adding a browser script, fetching prices, or requiring any API key. The
++projects page labels the rendering "Sample Prices" and omits the CLI's text view.
++
++The checked-in HTML was generated from Vesta at `0bb2acc`, with
++Bitcoin's fixed sample price of $83,436:
++
++```bash
++# Run from an updated Vesta checkout with its CLI installed.
++vesta --demo --preview-file /absolute/path/to/xyz/site/generated/vesta-demo.html
++```
++
++`vesta --demo` alone prints the terminal preview; `--preview-file` produces
++the HTML used here. Commit the regenerated file when the demo changes. xyz's
++build needs no Python installation or live market-data access.
++
++## Future: refreshed market prices
++
++This is a proposed follow-up, not deployed functionality.
++
++```mermaid
++flowchart LR
++    Cron[Cloudflare cron: every 5 minutes] --> Worker[Price refresh Worker]
++    Secret[Worker secret: data API key] --> Worker
++    Worker --> Provider[Market data provider]
++    Provider --> Worker
++    Worker --> KV[KV: latest complete snapshot]
++    Visitor[Projects page visitor] --> API[xyz GET /api/vesta]
++    API --> KV
++    API --> Visitor
++```
++
++### Provider and price meaning
++
++Start by evaluating Twelve Data's business display offering: it covers US
++equities, ETFs, and crypto under one integration. Confirm coverage for all six
++instruments and get the required public website display rights and attribution
++before subscribing. A key for private use does not automatically authorize a
++public projects page. Twelve Data distinguishes internal non-display use from
++[external display plans](https://twelvedata.com/pricing-business), and lists
++[exchange-specific conditions](https://support.twelvedata.com/en/articles/5332349-commercial-and-personal-usage).
++Massive Business is an alternative; its
++[display policy](https://massive.com/knowledge-base/article/which-plan-do-i-need-to-show-massive-data-in-my-app)
++also requires a business subscription when other people see the data.
++
++Confirm that the display license covers delivery of the small quote snapshot
++to the browser as JSON, plus any caching limits. If that delivery requires a
++different entitlement, choose an authorized display approach before exposing
++the endpoint; CORS does not stop others from downloading a public response.
++
++Request a quote for this small, non-commercial six-symbol display, including
++delayed data if it lowers cost. Do not choose a subscription based only on a
++personal/free-tier price. Six symbols every five minutes, around the clock,
++means 288 refreshes and up to 1,728 symbol credits per day; batching can reduce
++HTTP requests without reducing symbol credits. The free 800-credit daily
++Twelve Data allowance is insufficient for that schedule.
++
++Use an explicit instrument map. The demo's `BTC` label represents Bitcoin,
++with a fixed sample price of $83,436. Map it to the provider's BTC/USD pair,
++not a stock/ETF ticker named BTC. Keep provider IDs, display names, asset
++types, currencies, and exchanges separate.
++
++For stocks and ETFs, display the most recent eligible trade/price and change
++relative to the previous regular-session close; keep both values from the
++same feed and adjustment convention. For crypto, define the comparison as
++the previous UTC daily close. Record the provider's price timestamp, the
++comparison timestamp, currency, feed delay, and market-session state.
++Refreshing every five minutes does not make a delayed feed real-time.
++
++### Cloudflare implementation
++
++1. Add a small scheduled refresh Worker, separate from the xyz page-serving
++   Worker. Configure a [Cron Trigger](https://developers.cloudflare.com/workers/configuration/cron-triggers/)
++   for every five minutes. A cron is UTC; handle the US exchange calendar,
++   holidays, and daylight-saving time in the provider/session logic.
++2. Store the market-data key in a
++   [Worker secret](https://developers.cloudflare.com/workers/configuration/secrets/),
++   provisioned with `wrangler secret put MARKET_DATA_API_KEY`. Prefer a key
++   limited to market-data reads, with no trading permissions. The refresh
++   Worker receives the key; xyz and the browser never need it. Use a
++   production key only in the production refresh Worker. PR previews keep
++   demo data or isolated staging bindings, and never run the production cron.
++3. Fetch only a fixed allowlist of instruments from fixed HTTPS provider
++   endpoints. Use timeouts, bounded retries with backoff, and the provider's
++   rate-limit guidance. Never accept a visitor-supplied URL, symbol list, or
++   refresh command. Do not log credentials, authorization headers, or URLs
++   containing keys; emit sanitized status/error codes instead of raw errors.
++4. Validate a full snapshot: expected symbols/currencies, finite positive
++   prices, usable comparison prices, timestamps, and values that fit the
++   board. Normalize it to a small JSON record containing `mode`, `provider`,
++   `fetchedAt`, `feedDelaySeconds`, and per-instrument quote/comparison data.
++   Write one complete value to KV only after every instrument is valid, so
++   readers cannot get a mix of old and new rows. Keep the last successful
++   snapshot on timeout, 429, or incomplete data.
++5. Bind that namespace to xyz for `GET /api/vesta`. Serve only the sanitized
++   cached snapshot with a short public cache lifetime (e.g. 60 seconds), no
++   credentials or raw provider responses, and no cross-origin access unless
++   needed. All visitors share the scheduled fetches; page traffic cannot
++   consume provider credits. An empty store yields an unavailable response,
++   not fabricated market prices. [KV is eventually consistent](https://developers.cloudflare.com/kv/concepts/how-kv-works/),
++   which is acceptable for a five-minute display; include timestamps because
++   a region can briefly see the prior complete snapshot.
++6. Fetch that endpoint once when the Vesta preview enters view. Update the
++   tiles and text view with text nodes and allowlisted color codes, not
++   provider HTML. Mark prices as delayed when applicable, show their last
++   update time, and distinguish market-closed data from a failed refresh.
++   While loading or unavailable, retain the explicitly labeled demo; do not
++   silently present demo prices as market data. For an already visible page,
++   an optional five-minute poll can keep it current.
++
++The web integration displays data only. It never stores a Vestaboard key or
++sends to the physical board. The CLI keeps using the Vestaboard SDK.
++
++### Before releasing market mode
++
++- Confirm the provider's coverage, public display rights, delay, budget, and
++  attribution for the chosen instruments.
++- Reuse Vesta's formatter rules through a small documented grid contract or
++  a compatible port. Compare against the Python output, especially rounding
++  to `0.0%`, negative zero, narrow rows, and oversized prices.
++- Verify that inspecting assets, page source, responses, and browser network
++  requests reveals no API key; repeated page visits must not cause provider
++  fetches. Validate the CI/preview secret boundaries too.
++- Exercise missing data, partial batches, 429s, timeouts, weekends, market
++  holidays, stale timestamps, and an initially empty KV store.
++- Monitor scheduled successes, snapshot age, and quota failures. Rotate keys
++  without rebuilding frontend assets. Keep a demo-only rollback path.
++
++## Current verification
++
++`npm run check` and `npm run build` succeeded. The checker reports one existing
++unused-variable hint in `404.astro`, with no errors or warnings.
++Browser checks confirmed all 132 cells, the six expected color indicators,
++the "Sample Prices" caption, no text view, and no horizontal page overflow
++at a 390px viewport. Bitcoin's $83,436 price fits the eight-cell price field
++within the 22-cell row, including its percentage and color indicator.
++The demo was checked in light and dark themes. No market-data API or Vestaboard
++send was needed. Automated tests and CI configuration were not added.
++
++![Desktop project entry](desktop.png)
++
++![Mobile project entry](mobile.png)
++
++![Mobile dark theme](mobile-dark.png)
+diff --git a/docs/vesta/desktop.png b/docs/vesta/desktop.png
+new file mode 100644
+index 0000000..d005e53
+Binary files /dev/null and b/docs/vesta/desktop.png differ
+diff --git a/docs/vesta/mobile-dark.png b/docs/vesta/mobile-dark.png
+new file mode 100644
+index 0000000..a62ce30
+Binary files /dev/null and b/docs/vesta/mobile-dark.png differ
+diff --git a/docs/vesta/mobile.png b/docs/vesta/mobile.png
+new file mode 100644
+index 0000000..83a6785
+Binary files /dev/null and b/docs/vesta/mobile.png differ
+diff --git a/site/components/VestaPreview.astro b/site/components/VestaPreview.astro
+new file mode 100644
+index 0000000..a35bfd5
+--- /dev/null
++++ b/site/components/VestaPreview.astro
+@@ -0,0 +1,35 @@
++---
++import { parse } from "node-html-parser";
++import demoHtml from "../generated/vesta-demo.html?raw";
++
++// Keep the board cells from Vesta's actual --demo HTML output.
++// Only its standalone page shell is replaced by the projects page's layout.
++const demo = parse(demoHtml);
++const board = demo.querySelector(".board");
++if (!board) throw new Error("Vesta demo HTML must contain a board");
++---
++<figure class="vesta-preview">
++    <figcaption>Sample Prices</figcaption>
++    <div class="rendering" set:html={board.outerHTML} />
++</figure>
++
++<style>
++    .vesta-preview { width: 536px; max-width: 100%; margin: 1em 0; container-type: inline-size; }
++    figcaption { color: var(--muted, #666); font-size: 0.9em; margin-bottom: 8px; }
++    .rendering :global(.board) {
++        display: grid; grid-template-columns: repeat(22, minmax(0, 1fr));
++        gap: clamp(2px, 0.45cqw, 6px); padding: clamp(8px, 2cqw, 26px);
++        background: #111210; border: 1px solid #383a33; border-radius: 8px;
++    }
++    .rendering :global(.tile) {
++        position: relative; display: flex; align-items: center; justify-content: center;
++        aspect-ratio: 0.72; border-radius: 3px; background: linear-gradient(#292b27, #20221e);
++        color: #f2f0e8; font-family: ui-monospace, Menlo, Consolas, monospace;
++        font-size: clamp(8px, 2.8cqw, 18px); font-weight: 600;
++        box-shadow: inset 0 0 0 1px #34362f;
++    }
++    .rendering :global(.tile::after) {
++        content: ""; position: absolute; left: 0; right: 0; top: 50%;
++        border-top: 1px solid #090a08; opacity: 0.75;
++    }
++</style>
+diff --git a/site/content.config.ts b/site/content.config.ts
+index 556705c..4134473 100644
+--- a/site/content.config.ts
++++ b/site/content.config.ts
+@@ -25,7 +25,7 @@ const projects = defineCollection({
+         // Position in the list, smallest first; no two projects may share one
+         order: z.number().int(),
+         // Project media shown above the description (site/components/)
+-        media: z.enum(["subway-vis", "cig-picker"]).optional(),
++        media: z.enum(["subway-vis", "cig-picker", "vesta-demo"]).optional(),
+     }),
+ });
+ 
+diff --git a/site/content/projects/vesta.md b/site/content/projects/vesta.md
+new file mode 100644
+index 0000000..d1d77e2
+--- /dev/null
++++ b/site/content/projects/vesta.md
+@@ -0,0 +1,15 @@
++---
++name: vesta
++url: https://github.com/akan72/vesta
++years:
++  kind: single
++  year: 2026
++stack:
++  - Python
++  - uv
++  - Vestaboard SDK
++order: 6
++media: vesta-demo
++---
++
++A CLI + uv tool for displaying crypto and equity prices on your Vestaboard.
+diff --git a/site/generated/vesta-demo.html b/site/generated/vesta-demo.html
+new file mode 100644
+index 0000000..7f480cf
+--- /dev/null
++++ b/site/generated/vesta-demo.html
+@@ -0,0 +1,48 @@
++<!doctype html>
++<html lang="en">
++<head>
++<meta charset="utf-8">
++<meta name="viewport" content="width=device-width, initial-scale=1">
++<title>Vesta — Board Preview — Demo</title>
++<style>
++* { box-sizing: border-box; }
++body { margin:0; min-height:100vh; background:#eeeae2; color:#252720;
++ font-family:system-ui,sans-serif; padding:clamp(24px,6vw,88px); }
++main { max-width:1120px; margin:auto; }
++.brand { font-size:15px; font-weight:750; letter-spacing:.2em; text-transform:uppercase; }
++h1 { font-family:Georgia,serif; font-size:clamp(32px,5vw,58px); font-weight:400;
++ letter-spacing:-.035em; margin:60px 0 14px; }
++.board { display:grid; grid-template-columns:repeat(22,minmax(0,1fr));
++ gap:clamp(2px,.45vw,6px); padding:clamp(10px,2vw,26px); background:#111210;
++ border-radius:12px; border:1px solid #383a33; box-shadow:0 20px 40px #25272022;
++ margin:36px 0 28px; }
++.tile { position:relative; display:flex; align-items:center; justify-content:center;
++ aspect-ratio: .72; border-radius:3px; background:linear-gradient(#292b27,#20221e);
++ color:#f2f0e8; font-family:ui-monospace,Menlo,Consolas,monospace;
++ font-size:clamp(9px,2.3vw,30px); font-weight:600; box-shadow:inset 0 0 0 1px #34362f; }
++.tile::after { content:""; position:absolute; left:0; right:0; top:50%;
++ border-top:1px solid #090a08; opacity:.75; }
++details { margin-top:28px; color:#62655c; font-size:13px; }
++summary { cursor:pointer; }
++pre { overflow:auto; padding:20px; background:#e4e1d8; line-height:1.8; }
++</style>
++</head>
++<body><main>
++<header><span class="brand">Vesta</span></header>
++<h1>Board Preview — Demo</h1>
++<div class="board" role="img" aria-label="Vestaboard preview: BTC     $83,436 +2.8% 🟩
++SPCX       $169 +1.7% 🟩
++GLD        $377 -1.5% 🟥
++GOOG       $343 -0.5% 🟥
++META       $723 +2.1% 🟩
++VTI        $380 +0.0% ⬛">
++<span class="tile">B</span><span class="tile">T</span><span class="tile">C</span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile">$</span><span class="tile">8</span><span class="tile">3</span><span class="tile">,</span><span class="tile">4</span><span class="tile">3</span><span class="tile">6</span><span class="tile"> </span><span class="tile">+</span><span class="tile">2</span><span class="tile">.</span><span class="tile">8</span><span class="tile">%</span><span class="tile chip" style="background:#51aa6a" aria-label="Color chip 66"></span><span class="tile">S</span><span class="tile">P</span><span class="tile">C</span><span class="tile">X</span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile">$</span><span class="tile">1</span><span class="tile">6</span><span class="tile">9</span><span class="tile"> </span><span class="tile">+</span><span class="tile">1</span><span class="tile">.</span><span class="tile">7</span><span class="tile">%</span><span class="tile chip" style="background:#51aa6a" aria-label="Color chip 66"></span><span class="tile">G</span><span class="tile">L</span><span class="tile">D</span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile">$</span><span class="tile">3</span><span class="tile">7</span><span class="tile">7</span><span class="tile"> </span><span class="tile">-</span><span class="tile">1</span><span class="tile">.</span><span class="tile">5</span><span class="tile">%</span><span class="tile chip" style="background:#eb4842" aria-label="Color chip 63"></span><span class="tile">G</span><span class="tile">O</span><span class="tile">O</span><span class="tile">G</span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile">$</span><span class="tile">3</span><span class="tile">4</span><span class="tile">3</span><span class="tile"> </span><span class="tile">-</span><span class="tile">0</span><span class="tile">.</span><span class="tile">5</span><span class="tile">%</span><span class="tile chip" style="background:#eb4842" aria-label="Color chip 63"></span><span class="tile">M</span><span class="tile">E</span><span class="tile">T</span><span class="tile">A</span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile">$</span><span class="tile">7</span><span class="tile">2</span><span class="tile">3</span><span class="tile"> </span><span class="tile">+</span><span class="tile">2</span><span class="tile">.</span><span class="tile">1</span><span class="tile">%</span><span class="tile chip" style="background:#51aa6a" aria-label="Color chip 66"></span><span class="tile">V</span><span class="tile">T</span><span class="tile">I</span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile"> </span><span class="tile">$</span><span class="tile">3</span><span class="tile">8</span><span class="tile">0</span><span class="tile"> </span><span class="tile">+</span><span class="tile">0</span><span class="tile">.</span><span class="tile">0</span><span class="tile">%</span><span class="tile chip" style="background:#151515" aria-label="Color chip 70"></span>
++</div>
++<details><summary>Text view</summary><pre>BTC     $83,436 +2.8% 🟩
++SPCX       $169 +1.7% 🟩
++GLD        $377 -1.5% 🟥
++GOOG       $343 -0.5% 🟥
++META       $723 +2.1% 🟩
++VTI        $380 +0.0% ⬛</pre></details>
++</main></body>
++</html>
+diff --git a/site/pages/projects.astro b/site/pages/projects.astro
+index 1c20730..dd970e3 100644
+--- a/site/pages/projects.astro
++++ b/site/pages/projects.astro
+@@ -3,6 +3,7 @@ import { getCollection, render } from "astro:content";
+ import CigPicker from "../components/CigPicker.astro";
+ import SubwayFigure from "../components/SubwayFigure.astro";
+ import SubwayHead from "../components/SubwayHead.astro";
++import VestaPreview from "../components/VestaPreview.astro";
+ import Page from "../layouts/Page.astro";
+ 
+ // Each project is a Markdown file in site/content/projects/ (schema in site/content.config.ts)
+@@ -30,6 +31,7 @@ const years = (y: Years) =>
+                 <a href={url} target="_blank">{name}</a> <span class="years">{years(project.years)}</span>
+                 {media === "subway-vis" && <SubwayFigure />}
+                 {media === "cig-picker" && <CigPicker />}
++                {media === "vesta-demo" && <VestaPreview />}
+                 <Content />
+                 <p class="meta">{stack.join(" · ")}</p>
+             </li>

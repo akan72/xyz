@@ -1,0 +1,452 @@
+diff --git a/README.md b/README.md
+index 24ffb09..f45a35f 100644
+--- a/README.md
++++ b/README.md
+@@ -17,8 +17,9 @@ serves the HTML/images from the edge; an
+ - `docs/screensaver/` — design log for the screensaver: screenshots and
+   recordings from each iteration. Not deployed.
+ - `src/lib.rs` — the Worker code. Handles `GET /image` (random cig HTML) and
+-  `GET /cig/{id}` (R2 fetch + stream). Falls back to `404.html` for
+-  unmatched paths.
++  `GET /cig/{id}` (R2 fetch + stream), serves pages with link-preview tags
++  added, and falls back to `404.html` for unmatched paths.
++- `src/link_preview.rs` — adds Open Graph / Twitter tags to every HTML page.
+ - `wrangler.toml` — assets directory, R2 binding, custom domain routes.
+ - `Cargo.toml` — `workers-rs` deps; compiled to WASM by `worker-build`.
+ 
+@@ -55,10 +56,19 @@ First-time setup:
+ 
+     python scripts/favicon.py
+ 
+-## Generate Link Preview Card
++## Link Previews
+ 
+-`public/assets/og.jpg` is the Open Graph image shown when a link to the site
+-is pasted into iMessage, Slack, Discord, etc. Uses macOS system Georgia.
++Every HTML page gets link-preview tags (iMessage, Slack, Discord, etc.)
++from the Worker: `og:title` from the page's `<title>`, `og:description`
++from its `<meta name="description">`, and the default card
++`public/assets/og.jpg`. New pages need nothing extra.
++
++To override a default on one page, declare that tag in the page's `<head>`;
++root-relative paths are fine:
++
++    <meta property="og:image" content="/assets/other-card.jpg">
++
++Regenerate the default card (uses macOS system Georgia):
+ 
+     uv run --with pillow python scripts/og.py          # add --dark for the dark card
+ 
+diff --git a/public/contact.html b/public/contact.html
+index 9722e5f..a4fca98 100644
+--- a/public/contact.html
++++ b/public/contact.html
+@@ -5,27 +5,7 @@
+         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+         <title>Contact | alexkan.xyz</title>
+         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+-        <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+-        <meta name="theme-color" content="#f4f4f4">
+         <meta name="description" content="How to reach me.">
+-        <!-- Link previews (iMessage, Slack, Discord, etc.). Scrapers need absolute URLs. -->
+-        <meta property="og:type" content="website">
+-        <meta property="og:site_name" content="alexkan.xyz">
+-        <meta property="og:locale" content="en_US">
+-        <meta property="og:title" content="Contact | alexkan.xyz">
+-        <meta property="og:description" content="How to reach me.">
+-        <meta property="og:url" content="https://alexkan.xyz/contact">
+-        <meta property="og:image" content="https://alexkan.xyz/assets/og.jpg">
+-        <meta property="og:image:type" content="image/jpeg">
+-        <meta property="og:image:width" content="1200">
+-        <meta property="og:image:height" content="630">
+-        <meta property="og:image:alt" content="alexkan.xyz, Alex Kan's personal website">
+-        <!-- X reads twitter:*; set explicitly rather than relying on its og:* fallback -->
+-        <meta name="twitter:card" content="summary_large_image">
+-        <meta name="twitter:title" content="Contact | alexkan.xyz">
+-        <meta name="twitter:description" content="How to reach me.">
+-        <meta name="twitter:image" content="https://alexkan.xyz/assets/og.jpg">
+-        <meta name="twitter:image:alt" content="alexkan.xyz, Alex Kan's personal website">
+         <script type="module" src="/assets/screensaver.js"></script>
+         <style>
+             body { max-width: 720px; margin: 40px auto; padding: 0 16px; }
+diff --git a/public/ideology.html b/public/ideology.html
+index f25020b..f7e8f0a 100644
+--- a/public/ideology.html
++++ b/public/ideology.html
+@@ -5,27 +5,7 @@
+         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+         <title>Ideology | alexkan.xyz</title>
+         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+-        <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+-        <meta name="theme-color" content="#f4f4f4">
+         <meta name="description" content="Likes and dislikes.">
+-        <!-- Link previews (iMessage, Slack, Discord, etc.). Scrapers need absolute URLs. -->
+-        <meta property="og:type" content="website">
+-        <meta property="og:site_name" content="alexkan.xyz">
+-        <meta property="og:locale" content="en_US">
+-        <meta property="og:title" content="Ideology | alexkan.xyz">
+-        <meta property="og:description" content="Likes and dislikes.">
+-        <meta property="og:url" content="https://alexkan.xyz/ideology">
+-        <meta property="og:image" content="https://alexkan.xyz/assets/og.jpg">
+-        <meta property="og:image:type" content="image/jpeg">
+-        <meta property="og:image:width" content="1200">
+-        <meta property="og:image:height" content="630">
+-        <meta property="og:image:alt" content="alexkan.xyz, Alex Kan's personal website">
+-        <!-- X reads twitter:*; set explicitly rather than relying on its og:* fallback -->
+-        <meta name="twitter:card" content="summary_large_image">
+-        <meta name="twitter:title" content="Ideology | alexkan.xyz">
+-        <meta name="twitter:description" content="Likes and dislikes.">
+-        <meta name="twitter:image" content="https://alexkan.xyz/assets/og.jpg">
+-        <meta name="twitter:image:alt" content="alexkan.xyz, Alex Kan's personal website">
+         <script type="module" src="/assets/screensaver.js"></script>
+         <style>
+             body { max-width: 720px; margin: 40px auto; padding: 0 16px; }
+diff --git a/public/index.html b/public/index.html
+index 25fbcc2..9be794a 100644
+--- a/public/index.html
++++ b/public/index.html
+@@ -5,27 +5,7 @@
+         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+         <title>alexkan.xyz</title>
+         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+-        <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+-        <meta name="theme-color" content="#f4f4f4">
+         <meta name="description" content="Alex Kan's personal website.">
+-        <!-- Link previews (iMessage, Slack, Discord, etc.). Scrapers need absolute URLs. -->
+-        <meta property="og:type" content="website">
+-        <meta property="og:site_name" content="alexkan.xyz">
+-        <meta property="og:locale" content="en_US">
+-        <meta property="og:title" content="alexkan.xyz">
+-        <meta property="og:description" content="Alex Kan's personal website.">
+-        <meta property="og:url" content="https://alexkan.xyz/">
+-        <meta property="og:image" content="https://alexkan.xyz/assets/og.jpg">
+-        <meta property="og:image:type" content="image/jpeg">
+-        <meta property="og:image:width" content="1200">
+-        <meta property="og:image:height" content="630">
+-        <meta property="og:image:alt" content="alexkan.xyz, Alex Kan's personal website">
+-        <!-- X reads twitter:*; set explicitly rather than relying on its og:* fallback -->
+-        <meta name="twitter:card" content="summary_large_image">
+-        <meta name="twitter:title" content="alexkan.xyz">
+-        <meta name="twitter:description" content="Alex Kan's personal website.">
+-        <meta name="twitter:image" content="https://alexkan.xyz/assets/og.jpg">
+-        <meta name="twitter:image:alt" content="alexkan.xyz, Alex Kan's personal website">
+         <script type="module" src="/assets/screensaver.js"></script>
+         <style>
+             body { background: #f4f4f4; color: #111; font-family: Georgia, "Times New Roman", serif; margin: 0; }
+diff --git a/public/projects.html b/public/projects.html
+index a7c80bf..0ca5d30 100644
+--- a/public/projects.html
++++ b/public/projects.html
+@@ -5,27 +5,7 @@
+         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+         <title>Projects | alexkan.xyz</title>
+         <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+-        <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+-        <meta name="theme-color" content="#f4f4f4">
+         <meta name="description" content="Things I've built.">
+-        <!-- Link previews (iMessage, Slack, Discord, etc.). Scrapers need absolute URLs. -->
+-        <meta property="og:type" content="website">
+-        <meta property="og:site_name" content="alexkan.xyz">
+-        <meta property="og:locale" content="en_US">
+-        <meta property="og:title" content="Projects | alexkan.xyz">
+-        <meta property="og:description" content="Things I've built.">
+-        <meta property="og:url" content="https://alexkan.xyz/projects">
+-        <meta property="og:image" content="https://alexkan.xyz/assets/og.jpg">
+-        <meta property="og:image:type" content="image/jpeg">
+-        <meta property="og:image:width" content="1200">
+-        <meta property="og:image:height" content="630">
+-        <meta property="og:image:alt" content="alexkan.xyz, Alex Kan's personal website">
+-        <!-- X reads twitter:*; set explicitly rather than relying on its og:* fallback -->
+-        <meta name="twitter:card" content="summary_large_image">
+-        <meta name="twitter:title" content="Projects | alexkan.xyz">
+-        <meta name="twitter:description" content="Things I've built.">
+-        <meta name="twitter:image" content="https://alexkan.xyz/assets/og.jpg">
+-        <meta name="twitter:image:alt" content="alexkan.xyz, Alex Kan's personal website">
+         <script type="module" src="/assets/screensaver.js"></script>
+         <style>
+             body { max-width: 720px; margin: 40px auto; padding: 0 16px; }
+diff --git a/src/lib.rs b/src/lib.rs
+index 1f17f01..9e27940 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -1,13 +1,12 @@
+ use rand::Rng;
+ use worker::*;
+ 
++mod link_preview;
++
+ // Cig IDs go from 1 -> 9996
+ const CIG_MIN: u32 = 1;
+ const CIG_MAX: u32 = 9996;
+ 
+-// Absolute origin baked into the Open Graph tags in public/*.html
+-const PROD_ORIGIN: &str = "https://alexkan.xyz";
+-
+ // Worker entrypoint
+ #[event(fetch)]
+ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
+@@ -48,22 +47,25 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
+         }
+     }
+ 
+-    // PR previews run this Worker ahead of static assets (wrangler.preview.toml) so
+-    // share-card URLs in HTML point at the preview host instead of production.
+-    // In production assets are served first, so this only ever sees misses.
++    // Pages run this Worker ahead of static assets (run_worker_first in wrangler.toml)
++    // so every HTML page gets link-preview tags; see link_preview.rs
+     let assets = env.assets("ASSETS")?;
+     let mut res = assets.fetch_request(req.clone()?).await?;
+     if res.status_code() != 404 {
+-        let origin = url.origin().ascii_serialization();
+         let is_html = res
+             .headers()
+             .get("content-type")?
+             .is_some_and(|t| t.starts_with("text/html"));
+-        if origin != PROD_ORIGIN && is_html && res.status_code() == 200 {
+-            let html = res.text().await?.replace(
+-                &format!("content=\"{PROD_ORIGIN}"),
+-                &format!("content=\"{origin}"),
+-            );
++        if is_html && res.status_code() == 200 {
++            // Crawlers expect https URLs even if the page was requested over http
++            let origin = match url.host_str() {
++                Some("localhost" | "127.0.0.1") => url.origin().ascii_serialization(),
++                _ => url
++                    .origin()
++                    .ascii_serialization()
++                    .replacen("http://", "https://", 1),
++            };
++            let html = link_preview::add_tags(&res.text().await?, &origin, path);
+             return Response::from_html(html);
+         }
+         return Ok(res);
+diff --git a/src/link_preview.rs b/src/link_preview.rs
+new file mode 100644
+index 0000000..88c877b
+--- /dev/null
++++ b/src/link_preview.rs
+@@ -0,0 +1,182 @@
++//! Link-preview (Open Graph / Twitter) tags for every HTML page, added at the edge so
++//! iMessage, Slack, Discord, etc. show the site card without each page repeating them.
++//!
++//! A page overrides any default by declaring that tag itself, e.g.
++//! `<meta property="og:image" content="/assets/other.jpg">`. Root-relative `content`
++//! paths are made absolute, since crawlers don't resolve them.
++
++const SITE_NAME: &str = "alexkan.xyz";
++const DEFAULT_DESCRIPTION: &str = "Alex Kan's personal website.";
++// 1200x630 card generated by scripts/og.py
++const DEFAULT_IMAGE: &str = "/assets/og.jpg";
++const DEFAULT_IMAGE_ALT: &str = "alexkan.xyz, Alex Kan's personal website";
++
++/// Adds every preview tag `html` doesn't already declare, just before `</head>`.
++pub fn add_tags(html: &str, origin: &str, path: &str) -> String {
++    let html = html.replace("content=\"/", &format!("content=\"{origin}/"));
++    let Some(head_end) = html.find("</head>") else {
++        return html;
++    };
++
++    let title = meta(&html, "og:title")
++        .or_else(|| page_title(&html))
++        .unwrap_or_else(|| SITE_NAME.to_string());
++    let description = meta(&html, "og:description")
++        .or_else(|| meta(&html, "description"))
++        .unwrap_or_else(|| DEFAULT_DESCRIPTION.to_string());
++    let page_image = meta(&html, "og:image");
++    let image = page_image
++        .clone()
++        .unwrap_or_else(|| format!("{origin}{DEFAULT_IMAGE}"));
++
++    let mut tags = vec![
++        ("name", "description", description.clone()),
++        ("name", "theme-color", "#f4f4f4".to_string()),
++        ("property", "og:type", "website".to_string()),
++        ("property", "og:site_name", SITE_NAME.to_string()),
++        ("property", "og:locale", "en_US".to_string()),
++        ("property", "og:title", title.clone()),
++        ("property", "og:description", description.clone()),
++        ("property", "og:url", format!("{origin}{path}")),
++        ("property", "og:image", image.clone()),
++    ];
++    // Only describe the default card; a page's own image has its own dimensions
++    if page_image.is_none() {
++        tags.extend([
++            ("property", "og:image:type", "image/jpeg".to_string()),
++            ("property", "og:image:width", "1200".to_string()),
++            ("property", "og:image:height", "630".to_string()),
++            ("property", "og:image:alt", DEFAULT_IMAGE_ALT.to_string()),
++        ]);
++    }
++    // X reads twitter:*; set explicitly rather than relying on its og:* fallback
++    tags.extend([
++        ("name", "twitter:card", "summary_large_image".to_string()),
++        ("name", "twitter:title", title),
++        ("name", "twitter:description", description),
++        ("name", "twitter:image", image),
++    ]);
++
++    let mut added = String::new();
++    for (attr, key, value) in tags {
++        if meta(&html, key).is_none() {
++            added += &format!("<meta {attr}=\"{key}\" content=\"{value}\">\n");
++        }
++    }
++    // Small site icon in iMessage and Slack previews
++    if !html.contains("rel=\"apple-touch-icon\"") {
++        added += "<link rel=\"apple-touch-icon\" href=\"/assets/apple-touch-icon.png\">\n";
++    }
++
++    let mut out = html.clone();
++    out.insert_str(head_end, &added);
++    out
++}
++
++/// `content` of the `<meta>` tag whose `property` or `name` is `key`.
++fn meta(html: &str, key: &str) -> Option<String> {
++    let at = [format!("property=\"{key}\""), format!("name=\"{key}\"")]
++        .iter()
++        .find_map(|attr| html.find(attr.as_str()))?;
++    let start = html[..at].rfind('<')?;
++    let tag = &html[start..at + html[at..].find('>')?];
++    let content = &tag[tag.find("content=\"")? + "content=\"".len()..];
++    Some(content[..content.find('"')?].to_string())
++}
++
++/// Text of `<title>`, escaped for use inside an attribute.
++fn page_title(html: &str) -> Option<String> {
++    let start = html.find("<title>")? + "<title>".len();
++    let end = start + html[start..].find("</title>")?;
++    Some(html[start..end].trim().replace('"', "&quot;"))
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    const ORIGIN: &str = "https://alexkan.xyz";
++
++    fn page(head: &str) -> String {
++        format!(
++            "<html><head><title>Projects | alexkan.xyz</title>{head}</head><body></body></html>"
++        )
++    }
++
++    #[test]
++    fn bare_page_gets_default_card() {
++        let html = add_tags(&page(""), ORIGIN, "/projects");
++        assert_eq!(meta(&html, "og:title").unwrap(), "Projects | alexkan.xyz");
++        assert_eq!(meta(&html, "og:description").unwrap(), DEFAULT_DESCRIPTION);
++        assert_eq!(
++            meta(&html, "og:url").unwrap(),
++            "https://alexkan.xyz/projects"
++        );
++        assert_eq!(
++            meta(&html, "og:image").unwrap(),
++            "https://alexkan.xyz/assets/og.jpg"
++        );
++        assert_eq!(meta(&html, "og:image:width").unwrap(), "1200");
++        assert_eq!(
++            meta(&html, "twitter:image").unwrap(),
++            "https://alexkan.xyz/assets/og.jpg"
++        );
++        assert!(html.contains("apple-touch-icon"));
++        assert!(html.find("og:image").unwrap() < html.find("</head>").unwrap());
++    }
++
++    #[test]
++    fn page_description_feeds_og_and_twitter() {
++        let head = r#"<meta name="description" content="Things I've built.">"#;
++        let html = add_tags(&page(head), ORIGIN, "/projects");
++        assert_eq!(meta(&html, "og:description").unwrap(), "Things I've built.");
++        assert_eq!(
++            meta(&html, "twitter:description").unwrap(),
++            "Things I've built."
++        );
++        assert_eq!(html.matches("name=\"description\"").count(), 1);
++    }
++
++    #[test]
++    fn page_image_overrides_default() {
++        let head = r#"<meta property="og:image" content="/assets/other.jpg">"#;
++        let html = add_tags(&page(head), ORIGIN, "/projects");
++        assert_eq!(
++            meta(&html, "og:image").unwrap(),
++            "https://alexkan.xyz/assets/other.jpg"
++        );
++        assert_eq!(
++            meta(&html, "twitter:image").unwrap(),
++            "https://alexkan.xyz/assets/other.jpg"
++        );
++        assert_eq!(html.matches("property=\"og:image\"").count(), 1);
++        assert!(meta(&html, "og:image:width").is_none());
++    }
++
++    #[test]
++    fn preview_host_gets_its_own_urls() {
++        let html = add_tags(&page(""), "https://xyz-pr-9.akan72.workers.dev", "/");
++        assert_eq!(
++            meta(&html, "og:image").unwrap(),
++            "https://xyz-pr-9.akan72.workers.dev/assets/og.jpg"
++        );
++    }
++
++    #[test]
++    fn links_are_left_alone() {
++        let head = r#"<link rel="icon" href="/assets/favicon.ico">"#;
++        let html = add_tags(&page(head), ORIGIN, "/");
++        assert!(html.contains(r#"href="/assets/favicon.ico""#));
++    }
++
++    #[test]
++    fn quotes_in_title_are_escaped() {
++        let html = add_tags("<head><title>Say \"hi\"</title></head>", ORIGIN, "/");
++        assert!(html.contains(r#"content="Say &quot;hi&quot;""#));
++    }
++
++    #[test]
++    fn html_without_head_is_unchanged() {
++        assert_eq!(add_tags("<p>hi</p>", ORIGIN, "/"), "<p>hi</p>");
++    }
++}
+diff --git a/wrangler.preview.toml b/wrangler.preview.toml
+index 64150ec..3ef3787 100644
+--- a/wrangler.preview.toml
++++ b/wrangler.preview.toml
+@@ -1,10 +1,8 @@
+ # Preview-only wrangler config used by .github/workflows/deploy.yml for
+-# PR previews. Mirrors wrangler.toml except the [[routes]]
++# PR previews. Mirrors wrangler.toml exactly except the [[routes]]
+ # blocks are omitted so each PR Worker publishes only to its
+ # <name>.<subdomain>.workers.dev URL and cannot deploy to the production
+-# custom domain, and `run_worker_first` is set so the Worker can point
+-# the pages' link-preview (og:image, og:url) URLs at the preview host.
+-# The Worker name is passed via `--name` at deploy
++# custom domain. The Worker name is passed via `--name` at deploy
+ # time (e.g. `--name xyz-pr-5`); the `name` field below is a
+ # placeholder that gets overridden.
+ name = "xyz"
+@@ -18,7 +16,9 @@ command = "command -v worker-build >/dev/null 2>&1 || cargo install worker-build
+ directory = "./public"
+ binding = "ASSETS"
+ not_found_handling = "none"
+-run_worker_first = true
++# Pages go through the Worker so it can add link-preview tags (src/link_preview.rs);
++# assets are still served straight from the edge
++run_worker_first = ["/*", "!/assets/*", "!/pgp.txt"]
+ 
+ [[r2_buckets]]
+ binding = "BUCKET"
+diff --git a/wrangler.toml b/wrangler.toml
+index c78f521..15646fb 100644
+--- a/wrangler.toml
++++ b/wrangler.toml
+@@ -9,6 +9,9 @@ command = "command -v worker-build >/dev/null 2>&1 || cargo install worker-build
+ directory = "./public"
+ binding = "ASSETS"
+ not_found_handling = "none"
++# Pages go through the Worker so it can add link-preview tags (src/link_preview.rs);
++# assets are still served straight from the edge
++run_worker_first = ["/*", "!/assets/*", "!/pgp.txt"]
+ 
+ [[r2_buckets]]
+ binding = "BUCKET"

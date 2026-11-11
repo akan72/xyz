@@ -1,0 +1,518 @@
+diff --git a/.dockerignore b/.dockerignore
+deleted file mode 100644
+index d1cdd23..0000000
+--- a/.dockerignore
++++ /dev/null
+@@ -1,3 +0,0 @@
+-fly.toml
+-.git/
+-target
+\ No newline at end of file
+diff --git a/.env.template b/.env.template
+deleted file mode 100644
+index ca55f75..0000000
+--- a/.env.template
++++ /dev/null
+@@ -1,5 +0,0 @@
+-R2_ACCOUNT_ID=
+-R2_ACCESS_KEY_ID=
+-R2_SECRET_ACCESS_KEY=
+-R2_BUCKET=
+-
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+new file mode 100644
+index 0000000..4fd8211
+--- /dev/null
++++ b/.github/workflows/deploy.yml
+@@ -0,0 +1,32 @@
++name: Deploy
++on:
++  push:
++    branches: [master, main]
++  workflow_dispatch:
++
++jobs:
++  deploy:
++    runs-on: ubuntu-latest
++    concurrency: deploy-group
++    permissions:
++      contents: read
++    steps:
++      - uses: actions/checkout@v4
++
++      - name: Install Rust toolchain
++        uses: dtolnay/rust-toolchain@stable
++        with:
++          targets: wasm32-unknown-unknown
++
++      - name: Cache cargo
++        uses: Swatinem/rust-cache@v2
++
++      - name: Install worker-build
++        run: cargo install worker-build --locked
++
++      - name: Deploy
++        uses: cloudflare/wrangler-action@v3
++        with:
++          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
++          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
++          wranglerVersion: "4.90.0"
+diff --git a/.github/workflows/fly.yml b/.github/workflows/fly.yml
+deleted file mode 100644
+index 6eee566..0000000
+--- a/.github/workflows/fly.yml
++++ /dev/null
+@@ -1,16 +0,0 @@
+-name: Fly Deploy
+-on:
+-  push:
+-    branches:
+-      - master    # change to main if needed
+-jobs:
+-  deploy:
+-    name: Deploy app
+-    runs-on: ubuntu-latest
+-    concurrency: deploy-group    # optional: ensure only one action runs at a time
+-    steps:
+-      - uses: actions/checkout@v4
+-      - uses: superfly/flyctl-actions/setup-flyctl@master
+-      - run: flyctl deploy --remote-only
+-        env:
+-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+\ No newline at end of file
+diff --git a/.gitignore b/.gitignore
+index 299e1c5..8b34241 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,5 +1,9 @@
+ /target
+ .vscode
+-.DS_STORE
++.DS_Store
+ .env
++.dev.vars
++.wrangler/
++build/
+ src/bin/
++node_modules/
+diff --git a/Cargo.toml b/Cargo.toml
+index 2c73452..91d8a77 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -2,39 +2,18 @@
+ name = "xyz"
+ version = "0.1.0"
+ edition = "2021"
+-default-run = "xyz"
+ 
+-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
++[lib]
++crate-type = ["cdylib"]
+ 
+ [dependencies]
+-aws-sdk-s3 = "1"
+-axum = "0.7.5"
+-base64 = "0.22.1"
+-dotenvy = "0.15"
+-image = "0.25.1"
+-include_dir = "0.7.3"
+-markdown = "1.0.0-alpha.17"
+-mdxjs = "0.2.2"
+-rand = "0.8.5"
+-tokio = { version = "1.37.0", features = ["full"] }
+-tower-http = { version = "0.5.2" , features = ["fs", "trace"] }
+-tower-serve-static = "0.1.1"
+-tracing = "0.1.40"
+-tracing-subscriber = "0.3.18"
++worker = "0.8"
++worker-macros = "0.8"
++console_error_panic_hook = "0.1"
++getrandom = { version = "0.2", features = ["js"] }
++rand = "0.8"
+ 
+-# Optimize image-processing crates in dev so both
+-# cargo run and image processing are fast
+-[profile.dev.package.image]
+-opt-level = 3
+-[profile.dev.package.zune-jpeg]
+-opt-level = 3
+-[profile.dev.package.zune-core]
+-opt-level = 3
+-[profile.dev.package.jpeg-decoder]
+-opt-level = 3
+-[profile.dev.package.png]
+-opt-level = 3
+-[profile.dev.package.miniz_oxide]
+-opt-level = 3
+-[profile.dev.package.flate2]
+-opt-level = 3
++[profile.release]
++opt-level = "s"
++lto = true
++strip = true
+diff --git a/Dockerfile b/Dockerfile
+deleted file mode 100644
+index 04fe245..0000000
+--- a/Dockerfile
++++ /dev/null
+@@ -1,21 +0,0 @@
+-FROM lukemathwalker/cargo-chef:latest-rust-1 AS chef
+-WORKDIR /app
+-
+-FROM chef AS planner
+-COPY . .
+-RUN cargo chef prepare --recipe-path recipe.json
+-
+-FROM chef AS builder
+-COPY --from=planner /app/recipe.json recipe.json
+-# Build dependencies - this is the caching Docker layer!
+-RUN cargo chef cook --release --recipe-path recipe.json
+-# Build application
+-COPY . .
+-RUN cargo build --release --bin xyz
+-
+-# We do not need the Rust toolchain to run the binary!
+-FROM debian:bookworm-slim AS runtime
+-RUN apt-get update && apt install -y openssl
+-WORKDIR /app
+-COPY --from=builder /app/target/release/xyz /usr/local/bin
+-ENTRYPOINT ["/usr/local/bin/xyz"]
+diff --git a/README.md b/README.md
+index b5955cb..bf1a5f0 100644
+--- a/README.md
++++ b/README.md
+@@ -1,51 +1,57 @@
+ # xyz
+ 
+-Personal Website [`alexkan.xyz`](https://alexkan.xyz/) using [Axum](https://github.com/tokio-rs/axum), hosted on [fly.io](https://fly.io)
++Personal website [`alexkan.xyz`](https://alexkan.xyz/) built in Rust on
++[Cloudflare Workers](https://developers.cloudflare.com/workers/) via
++[`workers-rs`](https://github.com/cloudflare/workers-rs).
++[Static Assets](https://developers.cloudflare.com/workers/static-assets/)
++serves the HTML/images from the edge; an
++[R2](https://developers.cloudflare.com/r2/) binding backs the dynamic
++`/image` endpoint.
+ 
+-## Local Build
++## Layout
+ 
+-Copy the env template and fill in your R2 credentials:
++- `public/` — static HTML and images served by Workers Static Assets.
++- `src/lib.rs` — the Worker code. Handles `GET /image` (random cig HTML) and
++  `GET /cig/{id}` (R2 fetch + stream). Falls back to `404.html` for
++  unmatched paths.
++- `wrangler.toml` — assets directory, R2 binding, custom domain routes.
++- `Cargo.toml` — `workers-rs` deps; compiled to WASM by `worker-build`.
+ 
+-```{bash}
+-cp .env.template .env
+-```
++## Local dev
+ 
+-Then run:
++Prerequisites:
+ 
+-```{bash}
+-cargo run
+-```
++    rustup target add wasm32-unknown-unknown
++    cargo install worker-build
++    npm install -g wrangler
+ 
+-Navigate to `localhost:8080`
++Run against the real R2 bucket:
+ 
+-## Deploy
++    wrangler dev --remote
+ 
+-Install fly.io cli
++Open http://localhost:8787
+ 
+-```{bash}
+-brew install flyctl
+-```
++## Deploy
+ 
+-Deploy
++Pushes to `master` deploy via GitHub Actions
++(`.github/workflows/deploy.yml`). To deploy manually:
+ 
+-```{bash}
+-fly deploy
+-```
++    wrangler deploy
+ 
+-Generate Zyn Favicon
++First-time setup:
+ 
+-```{python}
+-python scripts/favicon.py
+-```
++1. Set `bucket_name` in `wrangler.toml` to your R2 bucket.
++2. `wrangler login` (or set `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`).
++3. Add repo secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` for
++   GitHub Actions.
++4. Add your custom domain to Clodufalre.
+ 
+-## Details
++## Generate Zyn Favicon
+ 
+-- Axum webserver
+-- [`tower_serve_static`](https://docs.rs/tower-serve-static/latest/tower_serve_static/) to embed static assets into the Rust binary
++    python scripts/favicon.py
+ 
+ ## Inspiration
+ 
+ - [Tom Schmidt's Website](https://github.com/tomhschmidt/PersonalWebsite)
+ - [Artur Sapek's Website](https://github.com/artursapek/isometric-cubes/blob/main/artcx/src/main.rs)
+ - [0xichigo's Website](https://github.com/0xIchigo/0xIchigo-Website/tree/main)
+-
+diff --git a/fly.toml b/fly.toml
+deleted file mode 100644
+index 1e421fd..0000000
+--- a/fly.toml
++++ /dev/null
+@@ -1,18 +0,0 @@
+-app = 'alexkanxyz'
+-primary_region = 'ewr'
+-
+-[build]
+-
+-[env]
+-  PORT = '8080'
+-
+-[http_service]
+-  internal_port = 8080
+-  force_https = true
+-  auto_start_machines = true
+-  auto_stop_machines = false
+-  min_machines_running = 1
+-  processes = ['app']
+-
+-[[vm]]
+-  size = 'shared-cpu-1x'
+diff --git a/assets/404.html b/public/404.html
+similarity index 100%
+rename from assets/404.html
+rename to public/404.html
+diff --git a/assets/akan72.txt b/public/assets/akan72.txt
+similarity index 100%
+rename from assets/akan72.txt
+rename to public/assets/akan72.txt
+diff --git a/assets/cig.jpg b/public/assets/cig.jpg
+similarity index 100%
+rename from assets/cig.jpg
+rename to public/assets/cig.jpg
+diff --git a/assets/favicon.ico b/public/assets/favicon.ico
+similarity index 100%
+rename from assets/favicon.ico
+rename to public/assets/favicon.ico
+diff --git a/assets/remilio.jpg b/public/assets/remilio.jpg
+similarity index 100%
+rename from assets/remilio.jpg
+rename to public/assets/remilio.jpg
+diff --git a/assets/zyn.webp b/public/assets/zyn.webp
+similarity index 100%
+rename from assets/zyn.webp
+rename to public/assets/zyn.webp
+diff --git a/assets/ideology.html b/public/ideology.html
+similarity index 100%
+rename from assets/ideology.html
+rename to public/ideology.html
+diff --git a/assets/index.html b/public/index.html
+similarity index 100%
+rename from assets/index.html
+rename to public/index.html
+diff --git a/assets/pgp.html b/public/pgp.html
+similarity index 100%
+rename from assets/pgp.html
+rename to public/pgp.html
+diff --git a/src/lib.rs b/src/lib.rs
+new file mode 100644
+index 0000000..5caec47
+--- /dev/null
++++ b/src/lib.rs
+@@ -0,0 +1,56 @@
++use rand::Rng;
++use worker::*;
++
++// Cig IDs go from 1 -> 9996
++const CIG_MIN: u32 = 1;
++const CIG_MAX: u32 = 9996;
++
++// Worker entrypoint
++#[event(fetch)]
++async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
++    // Route panics to stack trace via wrangler tail
++    console_error_panic_hook::set_once();
++
++    let url = req.url()?;
++    let path = url.path();
++
++    // Replace base Cig with random one on button click
++    if path == "/image" {
++        let id = rand::thread_rng().gen_range(CIG_MIN..=CIG_MAX);
++        return Response::from_html(format!(
++            r#"<img id="cig" alt="Cigawrette" width="400" height="400" src="/cig/{id}">"#
++        ));
++    }
++
++    if let Some(id_str) = path.strip_prefix("/cig/") {
++        // Validate Cig IDs
++        if let Ok(id) = id_str.parse::<u32>() {
++            if (CIG_MIN..=CIG_MAX).contains(&id) {
++                // Fetch image from R2
++                let bucket = env.bucket("BUCKET")?;
++                if let Some(obj) = bucket
++                    .get(format!("cig-collection/{id}.jpg"))
++                    .execute()
++                    .await?
++                {
++                    let body = obj.body().ok_or_else(|| Error::from("R2 object had no body"))?;
++                    let bytes = body.bytes().await?;
++                    let headers = Headers::new();
++                    // Add Edge Caching with 24hr TTL
++                    headers.set("content-type", "image/jpeg")?;
++                    headers.set("cache-control", "public, max-age=86400, immutable")?;
++                    return Ok(Response::from_bytes(bytes)?.with_headers(headers));
++                }
++            }
++        }
++    }
++
++    // 404 support
++    let mut not_found_url = url.clone();
++    not_found_url.set_path("/404.html");
++    let nf_req = Request::new(not_found_url.as_str(), Method::Get)?;
++    let res = env.assets("ASSETS")?.fetch_request(nf_req).await?;
++    Ok(res.with_status(404))
++}
++
++
+diff --git a/src/main.rs b/src/main.rs
+deleted file mode 100644
+index 46c411a..0000000
+--- a/src/main.rs
++++ /dev/null
+@@ -1,88 +0,0 @@
+-use axum::{response::Html, Router};
+-use base64::{engine::general_purpose, Engine as _};
+-use axum::routing::get;
+-use axum::extract::State;
+-use tower_serve_static::{ServeDir, ServeFile, include_file};
+-use include_dir::{Dir, include_dir};
+-use rand::Rng;
+-use std::io::{BufWriter, Cursor};
+-use image::{imageops::FilterType::{CatmullRom}, ImageFormat};
+-use aws_sdk_s3::{Client, config::{BehaviorVersion, Credentials, Region}};
+-
+-#[derive(Clone)]
+-struct AppState {
+-    s3: Client,
+-    bucket: String,
+-}
+-
+-#[tokio::main]
+-async fn main() {
+-    let _ = dotenvy::dotenv();
+-    tracing_subscriber::fmt::init();
+-
+-    static ASSETS_DIR: Dir<'static> = include_dir!("$CARGO_MANIFEST_DIR/assets");
+-
+-    let account_id = std::env::var("R2_ACCOUNT_ID").expect("R2_ACCOUNT_ID");
+-    let access_key = std::env::var("R2_ACCESS_KEY_ID").expect("R2_ACCESS_KEY_ID");
+-    let secret_key = std::env::var("R2_SECRET_ACCESS_KEY").expect("R2_SECRET_ACCESS_KEY");
+-    let bucket = std::env::var("R2_BUCKET").expect("R2_BUCKET");
+-
+-    let endpoint_url = format!("https://{account_id}.r2.cloudflarestorage.com");
+-    let creds = Credentials::new(access_key, secret_key, None, None, "r2");
+-    let cfg = aws_sdk_s3::Config::builder()
+-        .region(Region::new("auto"))
+-        .endpoint_url(&endpoint_url)
+-        .credentials_provider(creds)
+-        .behavior_version(BehaviorVersion::latest())
+-        .build();
+-    tracing::info!(bucket = %bucket, endpoint = %endpoint_url, "configured R2 client");
+-    let state = AppState { s3: Client::from_conf(cfg), bucket };
+-
+-    let app = Router::new()
+-        .nest_service("/", root())
+-        .nest_service("/assets", ServeDir::new(&ASSETS_DIR))
+-        .nest_service("/pgp", ServeFile::new(include_file!("/assets/pgp.html")))
+-        .nest_service("/ideology", ServeFile::new(include_file!("/assets/ideology.html")))
+-        .route("/image", get(get_image))
+-        .with_state(state);
+-
+-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
+-    axum::serve(listener, app).await.unwrap();
+-}
+-
+-fn root() -> Router {
+-    Router::new()
+-        .route_service("/", ServeFile::new(include_file!("/assets/index.html")))
+-        .fallback_service(ServeFile::new(include_file!("/assets/404.html")))
+-}
+-
+-async fn get_image(State(state): State<AppState>) -> impl axum::response::IntoResponse {
+-    let cig_id = rand::thread_rng().gen_range(1..9997);
+-    let key = format!("cig-collection/{cig_id}.jpg");
+-
+-    tracing::info!(bucket = %state.bucket, key = %key, "fetching cig from R2");
+-    let obj = state.s3.get_object()
+-        .bucket(&state.bucket)
+-        .key(&key)
+-        .send()
+-        .await
+-        .unwrap();
+-    let img_bytes = obj.body.collect().await.unwrap().into_bytes();
+-    tracing::info!(key = %key, bytes = img_bytes.len(), "fetched cig from R2");
+-
+-    let image = image::load_from_memory(&img_bytes)
+-        .unwrap()
+-        .resize(400, 400, CatmullRom);
+-
+-    let mut buffer = BufWriter::new(Cursor::new(Vec::new()));
+-    image.write_to(&mut buffer, ImageFormat::Png).unwrap();
+-    let arr: Vec<u8> = buffer.into_inner().unwrap().into_inner();
+-
+-    // Convert bytes to base64 string
+-    let buf_string = general_purpose::STANDARD.encode(&arr);
+-    let html_string = format!("<html><img id=\"cig\" alt=\"Cigawrette\" width=\"400\" height=\"400\" src=\"data:image/png;charset=utf-8;base64,{buf_string}\"></html>");
+-    (
+-        axum::response::AppendHeaders([(axum::http::header::CONTENT_TYPE, "text/html")]),
+-        Html(html_string)
+-    )
+-}
+diff --git a/wrangler.toml b/wrangler.toml
+new file mode 100644
+index 0000000..8baf7c6
+--- /dev/null
++++ b/wrangler.toml
+@@ -0,0 +1,27 @@
++name = "xyz"
++main = "build/worker/shim.mjs"
++compatibility_date = "2026-05-01"
++
++[build]
++command = "cargo install -q worker-build && worker-build --release"
++
++[assets]
++directory = "./public"
++binding = "ASSETS"
++not_found_handling = "none"
++
++[[r2_buckets]]
++binding = "BUCKET"
++bucket_name = "cigawrette-packs"
++
++[[routes]]
++pattern = "alexkan.xyz"
++custom_domain = true
++
++[[routes]]
++pattern = "www.alexkan.xyz"
++custom_domain = true
++
++[observability]
++enabled = true
++
