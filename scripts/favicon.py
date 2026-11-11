@@ -30,21 +30,37 @@ TOUCH_BACKGROUND = (
     244,
 )  # --bg in site/styles/site.css; iOS fills transparency with black
 
-with open(logo_path) as f:
-    logo = f.read()
+# Share of the tab icon's height the letters fill. The logo is a 550x260
+# wordmark, so fitting it whole leaves it a thin strip next to other sites'
+# favicons; instead the letters are narrowed to fill the square.
+LETTERS_HEIGHT = 0.85
 
-# The logo is 550x260: center it in a 550x550 square so browsers don't stretch it.
-logo = re.sub(r"<metadata>.*?</metadata>", "", logo, flags=re.DOTALL)
+with open(logo_path) as f:
+    logo = re.sub(r"<metadata>.*?</metadata>", "", f.read(), flags=re.DOTALL)
 logo = logo.replace(' xmlns:c2pa="http://c2pa.org/manifest"', "")
-logo = logo.replace(
-    'viewBox="0 0 550 260" width="550" height="260"', 'viewBox="0 -145 550 550"'
-)
-if 'viewBox="0 -145 550 550"' not in logo:
+ORIGINAL_SIZE = 'viewBox="0 0 550 260" width="550" height="260"'
+if ORIGINAL_SIZE not in logo:
     raise SystemExit(f"unexpected viewBox in {logo_path}")
 
+# Tab icon: only the letters (x 22-522.8, y 52.6-192.6), stretched to the
+# square's full width and LETTERS_HEIGHT of its height. The thin bars above
+# and below are dropped: they vanish at 16px.
+span = 140 / LETTERS_HEIGHT
+tab_icon, bars = re.subn(
+    r'\s*<rect x="0" y="(?:0|252)" width="550" height="8"/>', "", logo
+)
+if bars != 2:
+    raise SystemExit(f"expected the logo's 2 bars in {logo_path}, found {bars}")
+tab_icon = tab_icon.replace(
+    ORIGINAL_SIZE,
+    f'viewBox="22 {122.6 - span / 2:.1f} 500.8 {span:.1f}" width="32" height="32" preserveAspectRatio="none"',
+)
+# Home-screen icon: the whole logo, centered in a square.
+full_logo = logo.replace(ORIGINAL_SIZE, 'viewBox="0 -145 550 550"')
 
-def colored(theme):
-    return logo.replace('fill="currentColor"', f'fill="{COLORS[theme]}"')
+
+def colored(svg, theme):
+    return svg.replace('fill="currentColor"', f'fill="{COLORS[theme]}"')
 
 
 def render(svg, size):
@@ -55,18 +71,18 @@ def render(svg, size):
 for theme in COLORS:
     path = os.path.join(assets, f"favicon-{theme}.svg")
     with open(path, "w") as f:
-        f.write(colored(theme))
+        f.write(colored(tab_icon, theme))
     print(f"Generated {path}")
 
 ico_path = os.path.join(assets, "favicon.ico")
-render(colored("light"), 256).save(
+render(colored(tab_icon, "light"), 256).save(
     ico_path, format="ICO", sizes=[(16, 16), (32, 32), (48, 48)]
 )
 print(f"Generated {ico_path}")
 
 touch_path = os.path.join(assets, "apple-touch-icon.png")
 touch = Image.new("RGB", (180, 180), TOUCH_BACKGROUND)
-mark = render(colored("light"), 152)
+mark = render(colored(full_logo, "light"), 152)
 touch.paste(mark, (14, 14), mark)
 touch.save(touch_path, format="PNG", optimize=True)
 print(f"Generated {touch_path}")
