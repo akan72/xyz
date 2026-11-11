@@ -10,7 +10,6 @@
     "check": "astro check",
     "build": "astro build",
     "vesta:demo": "node scripts/update-vesta-demo.mjs",
-    "repo:history": "node scripts/update-repo-history.mjs",
     "test": "node --test 'scripts/*.test.ts' scripts/test_*.cjs"
   },
   "dependencies": {

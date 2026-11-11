@@ -8,9 +8,10 @@
 // The build renders the tree. The browser (site/scripts/repo-figure.ts)
 // hydrates it and renders files and diffs itself with @pierre/diffs and its
 // WebAssembly highlighter, fetching files from raw.githubusercontent.com and
-// each commit's patch from /repo/xyz/<sha>.patch.
+// the history and each commit's patch from /repo/xyz/ (site/pages/repo/xyz/).
 import { preloadFileTree } from "@pierre/trees/ssr";
-import { commitDate, commitUrl, loadHistory } from "../lib/repo-history";
+import { readHistory } from "../lib/repo-git";
+import { commitDate, commitUrl, createHistory } from "../lib/repo-history";
 
 interface Props {
     /** The commit the slider starts at, by SHA prefix; the newest by default */
@@ -18,11 +19,11 @@ interface Props {
 }
 
 const { at } = Astro.props;
-const history = await loadHistory();
+const history = createHistory(readHistory());
 const { repo, commits } = history;
 const last = commits.length - 1;
 const start = at ? commits.findIndex(({ sha }) => sha.startsWith(at)) : last;
-if (start === -1) throw new Error(`No commit ${at} in site/generated/xyz-history.json; run npm run repo:history`);
+if (start === -1) throw new Error(`No commit ${at} on this branch`);
 const head = commits[start];
 const tree = preloadFileTree(history.treeOptions(start));
 ---

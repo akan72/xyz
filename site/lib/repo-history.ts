@@ -1,15 +1,14 @@
 // This repo's history, for the figure on /projects
-// (site/components/RepoFigure.astro), from site/generated/xyz-history.json,
-// which `npm run repo:history` writes. The build renders the tree at the
-// slider's first commit and the browser hydrates it, which only works when
-// both build it from the same options, so both get them from here.
+// (site/components/RepoFigure.astro). The build reads it from git
+// (site/lib/repo-git.ts) and the browser from /repo/xyz/history.json. The
+// build renders the tree at the slider's first commit and the browser
+// hydrates it, which only works when both build it from the same options, so
+// both get them from here.
 import type { FileTreeOptions, GitStatusEntry } from "@pierre/trees";
 
 export interface Change { path: string; status: string; from?: string }
 export interface Commit { sha: string; date: string; subject: string; changes: Change[] }
-export interface History { repo: string; branch: string; commits: Commit[] }
-
-export const loadHistory = async () => createHistory((await import("../generated/xyz-history.json")).default as History);
+export interface History { repo: string; commits: Commit[] }
 
 export function createHistory(history: History) {
     const { commits } = history;

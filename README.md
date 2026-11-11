@@ -116,9 +116,9 @@ DuckDB and the tables are about 14 MB.
 `media: repo-history` shows this repo at any commit: a slider picks the commit,
 and the file tree sits beside what it changed (`site/components/RepoFigure.astro`,
 drawn with Pierre's [`@pierre/trees`](https://github.com/pierrecomputer/pierre)
-and [`@pierre/diffs`](https://diffs.com)). Its history is a snapshot in
-`site/generated/xyz-history.json`, with each commit's patch in `public/repo/xyz/`;
-`npm run repo:history` takes a new one from GitHub after a merge.
+and [`@pierre/diffs`](https://diffs.com)). The build reads the history from git
+(`site/lib/repo-git.ts`) and writes it, with each commit's patch, to
+`/repo/xyz/` (`site/pages/repo/xyz/`), so it needs the full clone.
 See [docs/vesta/README.md](docs/vesta/README.md) for regeneration instructions
 and the plan for securely serving refreshed market prices in a future update.
 `astro build` fails if an entry doesn't match the schema in

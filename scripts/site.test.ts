@@ -184,7 +184,7 @@ describe("/projects", () => {
     });
 
     test("the xyz repo figure opens at the Cloudflare migration, with a patch for every commit", () => {
-        const { commits } = JSON.parse(readFileSync("site/generated/xyz-history.json", "utf8")) as { commits: { sha: string }[] };
+        const { commits } = JSON.parse(dist("repo/xyz/history.json")) as { commits: { sha: string }[] };
         const figure = main.querySelector(".repo-figure");
         const slider = figure?.querySelector(".commit-slider");
         assert.equal(slider?.getAttribute("max"), String(commits.length - 1));

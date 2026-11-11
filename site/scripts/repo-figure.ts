@@ -17,8 +17,11 @@ function debounce(run: () => void, ms: number) {
 }
 
 async function mount(figure: HTMLElement) {
-    const [{ FileTree }, diffs, lib] = await Promise.all([import("@pierre/trees"), import("@pierre/diffs"), import("../lib/repo-history")]);
-    const history = await lib.loadHistory();
+    const [{ FileTree }, diffs, lib, response] = await Promise.all([
+        import("@pierre/trees"), import("@pierre/diffs"), import("../lib/repo-history"), fetch("/repo/xyz/history.json").catch(() => null),
+    ]);
+    if (!response?.ok) return;
+    const history = lib.createHistory(await response.json());
     const container = figure.querySelector<HTMLElement>("file-tree-container");
     if (!container?.isConnected) return;
     const options = { ...lib.diffsTheme, overflow: "wrap", preferredHighlighter: "highlights" } as const;

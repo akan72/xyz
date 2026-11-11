@@ -1,9 +1,0 @@
-diff --git a/Cargo.toml b/Cargo.toml
-index 91d8a77..66fe3fa 100644
---- a/Cargo.toml
-+++ b/Cargo.toml
-@@ -16,4 +16,3 @@ rand = "0.8"
- [profile.release]
- opt-level = "s"
- lto = true
--strip = true
