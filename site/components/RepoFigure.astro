@@ -53,7 +53,8 @@ const tree = preloadFileTree(history.treeOptions(start));
 
 <style>
     .repo-figure { margin: 1em 0; }
-    figcaption { color: var(--muted, #666); font-size: 0.9em; margin-bottom: 8px; }
+    /* Body color, so it reads as the demo's label and not as more of the grey stack line above */
+    figcaption { font-size: 0.9em; margin-bottom: 8px; }
     .commit-slider { display: block; width: 100%; margin: 0; accent-color: currentColor; }
     .commit-slider:disabled { opacity: 0.5; }
     /* The figure's width, not the text column's */

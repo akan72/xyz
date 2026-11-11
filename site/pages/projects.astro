@@ -35,20 +35,23 @@ const icons: Record<NonNullable<(typeof projects)[number]["icon"]>, string> = { 
             <li>
                 <a href={url} target="_blank">{name}</a> <span class="years">{years(project.years)}</span>
                 {icon && <img class="icon" src={`/assets/icons/${icon}.svg`} alt={icons[icon]} width="20" height="20">}
+                <Content />
+                <p class="meta">{stack.join(" · ")}</p>
+                {/* Each project's demo, under its description and stack */}
                 {media === "subway-vis" && <SubwayFigure />}
                 {media === "cig-picker" && <CigPicker />}
                 {media === "vesta-demo" && <VestaPreview />}
                 {media === "mingus-3d" && <MingusEmbed />}
                 {/* Opens at the move from Fly.io to Cloudflare Workers */}
                 {media === "repo-history" && <RepoFigure at="157e55a" />}
-                <Content />
-                <p class="meta">{stack.join(" · ")}</p>
             </li>
         ))}
     </ul>
 </Page>
 
 <style>
+    /* The same gap after every project, whether it ends with its stack line or a demo */
+    li > :global(:last-child) { margin-bottom: 1em; }
     /* The stack line under each description */
     .meta { color: var(--muted, #666); font-size: 0.9em; margin-top: -0.4em; }
     /* Logo after the years, sized to the text */

@@ -21,7 +21,8 @@ if (!board) throw new Error("Vesta demo HTML must contain a board");
 
 <style>
     .vesta-preview { width: 536px; max-width: 100%; margin: 1em 0; container-type: inline-size; }
-    figcaption { color: var(--muted, #666); font-size: 0.9em; margin-bottom: 8px; }
+    /* Body color, so it reads as the demo's label and not as more of the grey stack line above */
+    figcaption { font-size: 0.9em; margin-bottom: 8px; }
     .rendering :global(.board) {
         display: grid; grid-template-columns: repeat(22, minmax(0, 1fr));
         gap: clamp(2px, 0.45cqw, 6px); padding: clamp(8px, 2cqw, 26px);
