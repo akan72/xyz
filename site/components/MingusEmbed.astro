@@ -7,7 +7,9 @@
 // previews and `wrangler dev` from framing this site's own 404 page instead.
 //
 // The SQL frame is not in the HTML: it loads DuckDB-Wasm and the tables
-// (about 14 MB), so site/scripts/mingus-tabs.js adds it on the first click.
+// (about 14 MB on a first visit), so site/scripts/mingus-tabs.js adds it,
+// still hidden, when the tab is hovered or focused, and never on page load.
+// It points at sql, not sql.html, which Cloudflare redirects to sql.
 // Both panels share one box, so switching tabs never resizes the figure.
 const MINGUS = "https://alexkan.xyz/mingus/";
 ---
@@ -25,12 +27,12 @@ const MINGUS = "https://alexkan.xyz/mingus/";
             referrerpolicy="no-referrer"
         ></iframe>
     </div>
-    <div class="panel sql" id="mingus-panel-sql" role="tabpanel" aria-labelledby="mingus-tab-sql" data-src={`${MINGUS}sql.html?embed`} hidden>
+    <div class="panel sql" id="mingus-panel-sql" role="tabpanel" aria-labelledby="mingus-tab-sql" data-src={`${MINGUS}sql?embed`} hidden>
         <p class="loading">Starting DuckDB in your browser…</p>
     </div>
     </div>
     <figcaption>
-        <a href={MINGUS} target="_blank">Full map</a> · <a href={`${MINGUS}sql.html`} target="_blank">SQL playground</a>
+        <a href={MINGUS} target="_blank">Full map</a> · <a href={`${MINGUS}sql`} target="_blank">SQL playground</a>
     </figcaption>
 </figure>
 
