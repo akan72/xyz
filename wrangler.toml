@@ -29,8 +29,9 @@ id = "1434bc71e28a4c5b90e15f6a57a1078c"
 [build]
 # Astro builds dist/: the pages in site/, public/, and llms.txt, the sitemap
 # and Markdown copies of pages (site/integrations/agent-files.ts). Then
-# worker-build compiles the Worker. Needs `npm ci` first.
-command = "npm run build && (command -v worker-build >/dev/null 2>&1 || cargo install worker-build) && worker-build --release"
+# worker-build compiles the Worker. Needs `npm ci` first. worker-build 0.9
+# requires the worker 0.9 crate, so it stays on 0.8 to match Cargo.toml.
+command = "npm run build && (command -v worker-build >/dev/null 2>&1 || cargo install worker-build --version '^0.8' --locked) && worker-build --release"
 watch_dir = ["src", "public", "site"]
 
 [assets]
