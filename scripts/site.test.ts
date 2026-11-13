@@ -131,6 +131,8 @@ describe("every page", () => {
             assert.equal(svg.getAttribute("data-light-href"), "/assets/favicon-light.svg");
             assert.equal(svg.getAttribute("data-dark-href"), "/assets/favicon-dark.svg");
             for (const href of icons.map((l) => l.getAttribute("href")!).concat(svg.getAttribute("data-dark-href")!)) assert.ok(existsSync(`dist${href}`), href);
+            // Browsers and crawlers fetch /favicon.ico on their own: same icon
+            assert.ok(readFileSync("dist/favicon.ico").equals(readFileSync("dist/assets/favicon.ico")));
         });
     }
 });

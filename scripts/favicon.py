@@ -58,11 +58,15 @@ for theme in COLORS:
         f.write(colored(theme))
     print(f"Generated {path}")
 
-ico_path = os.path.join(assets, "favicon.ico")
-render(colored("light"), 256).save(
-    ico_path, format="ICO", sizes=[(16, 16), (32, 32), (48, 48)]
-)
-print(f"Generated {ico_path}")
+# The pages link /assets/favicon.ico; /favicon.ico is the copy browsers and
+# crawlers fetch on their own.
+ico = render(colored("light"), 256)
+for ico_path in (
+    os.path.join(assets, "favicon.ico"),
+    os.path.join(base_dir, "public", "favicon.ico"),
+):
+    ico.save(ico_path, format="ICO", sizes=[(16, 16), (32, 32), (48, 48)])
+    print(f"Generated {ico_path}")
 
 touch_path = os.path.join(assets, "apple-touch-icon.png")
 touch = Image.new("RGB", (180, 180), TOUCH_BACKGROUND)
