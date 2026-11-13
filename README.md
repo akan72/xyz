@@ -109,7 +109,7 @@ sentence or two about it as the body:
 
     What it does. Links like [this one](https://example.com) open in a new tab.
 
-`media: subway-vis` puts the live istheldown figure above the description.
+`media: subway-vis` puts the live istheldown figure under the description.
 `media: mingus-3d` frames the mingus map, with a second tab that frames its SQL
 playground (`site/components/MingusEmbed.astro`). Both share one square box.
 `site/scripts/mingus-tabs.js` adds the SQL frame on the tab's first click, since
@@ -118,6 +118,12 @@ DuckDB and the tables are about 14 MB.
 followed by a muted recording of a real board (`public/assets/vesta-board.mp4`).
 See [docs/vesta/README.md](docs/vesta/README.md) for regeneration instructions
 and the plan for securely serving refreshed market prices in a future update.
+`media: repo-history` shows this repo at any commit: a slider picks the commit,
+and the file tree sits beside what it changed (`site/components/RepoFigure.astro`,
+drawn with Pierre's [`@pierre/trees`](https://github.com/pierrecomputer/pierre)
+and [`@pierre/diffs`](https://diffs.com)). The build reads the history from git
+(`site/lib/repo-git.ts`) and writes it, with each commit's patch, to
+`/repo/xyz/` (`site/pages/repo/xyz/`), so it needs the full clone.
 `astro build` fails if an entry doesn't match the schema in
 `site/content.config.ts` (https URL, a known kind of years with the start
 before the end, a non-empty stack), or if two projects share an `order`.
