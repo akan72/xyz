@@ -9,9 +9,8 @@ const board = demo.querySelector(".board");
 if (!board) throw new Error("Vesta demo HTML must contain a board");
 ---
 <figure class="vesta-preview">
-    <!--vesta-sample:start-->
-    <figcaption>Sample Prices</figcaption>
-    <!--vesta-sample:end-->
+    <!-- The Worker (src/vesta.rs) swaps this label for a live one when it serves live prices -->
+    <figcaption><!--vesta-sample:start-->Sample Prices<!--vesta-sample:end--></figcaption>
     <div class="rendering">
         <!--vesta-board:start-->
         <Fragment set:html={board.outerHTML} />

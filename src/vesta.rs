@@ -45,6 +45,9 @@ const BOARD_START: &str = "<!--vesta-board:start-->";
 const BOARD_END: &str = "<!--vesta-board:end-->";
 const SAMPLE_START: &str = "<!--vesta-sample:start-->";
 const SAMPLE_END: &str = "<!--vesta-sample:end-->";
+// Replaces Sample Prices in the caption when the board shows market data. The
+// producer (workers/vesta) refreshes it at minutes 17 and 47 of every hour.
+const LIVE_CAPTION: &str = "Live prices updated every 30 minutes";
 
 pub fn enabled(env: &Env) -> bool {
     env.var("VESTA_LIVE_ENABLED")
@@ -130,7 +133,7 @@ pub fn render_cached(html: &str, text: &str, now: u64) -> Option<String> {
         return None;
     }
     let html = replace_section(html, BOARD_START, BOARD_END, &board_html(&market.board))?;
-    replace_section(&html, SAMPLE_START, SAMPLE_END, "")
+    replace_section(&html, SAMPLE_START, SAMPLE_END, LIVE_CAPTION)
 }
 
 pub async fn render(html: String, env: &Env) -> String {
@@ -153,7 +156,7 @@ mod tests {
     use super::*;
     use serde_json::{json, Value};
 
-    const TEMPLATE: &str = "before<!--vesta-board:start-->sample<!--vesta-board:end-->middle<!--vesta-sample:start-->Sample Prices<!--vesta-sample:end-->after";
+    const TEMPLATE: &str = "before<!--vesta-board:start-->sample<!--vesta-board:end-->middle<figcaption><!--vesta-sample:start-->Sample Prices<!--vesta-sample:end--></figcaption>after";
 
     fn display() -> Value {
         let fixtures: Value =
@@ -162,11 +165,12 @@ mod tests {
     }
 
     #[test]
-    fn renders_cli_board_and_removes_sample_caption() {
+    fn renders_cli_board_and_labels_it_live() {
         let html = render_cached(TEMPLATE, &display().to_string(), 1000).unwrap();
         assert_eq!(html.matches("class=\"tile").count(), 132);
         assert!(html.contains("BTC     $83,436 +2.8%"));
         assert!(!html.contains("Sample Prices"));
+        assert!(html.contains("<figcaption>Live prices updated every 30 minutes</figcaption>"));
         assert!(html.starts_with("before") && html.ends_with("after"));
     }
 

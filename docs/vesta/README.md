@@ -22,7 +22,8 @@ never sends to a physical board.
   and the private producer `xyz-vesta-refresh`. PR previews and the staging
   producer use separate KV `f47f1c49d816470ca5947468c050442c`.
 - The main site serves safe allowlisted tile HTML, not price JSON. Market data
-  removes the Sample Prices caption. There is no text-view option on the page.
+  changes the Sample Prices caption to "Live prices updated every 30 minutes".
+  There is no text-view option on the page.
 - `/projects` uses a 60-second cache TTL. Static HTML conditional validators are
   removed before live rendering. Markdown/static `.html` copies remain samples.
 
