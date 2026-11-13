@@ -240,7 +240,7 @@ window.xyzMountProjects = function () {
   }
   function describe(sc, k, live) {
     const one = k.n === 1;
-    caption.innerHTML = 'There ' + (one ? 'is ' : 'are ') + k.n + ' <img class="bullet" src="/assets/bullets/' + sc.route + '.svg" alt="' + sc.route + '" width="18" height="18"> train' + (one ? '' : 's') + ' running right now! Refresh to see a different line.';
+    caption.innerHTML = 'There ' + (one ? 'is ' : 'are ') + k.n + ' <img class="bullet" src="/assets/bullets/' + sc.route + '.svg" alt="' + sc.route + '" width="18" height="18"> train' + (one ? '' : 's') + ' running right now! Refresh to see a different line and click the link above to see the full map.';
   }
 
   (async () => {

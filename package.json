@@ -15,6 +15,8 @@
   "dependencies": {
     "@astrojs/markdown-satteri": "0.4.2",
     "@astrojs/mdx": "8.0.3",
+    "@pierre/diffs": "1.6.4",
+    "@pierre/trees": "1.0.0-beta.6",
     "astro": "7.3.5",
     "node-html-parser": "9.0.4",
     "satteri": "0.10.5",

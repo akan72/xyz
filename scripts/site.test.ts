@@ -91,9 +91,10 @@ describe("/contact email reveal", () => {
         assert.ok(row.querySelector("noscript")?.text.includes("enable JavaScript"));
     });
 
-    test("the build preserves obfuscation in HTML, JavaScript, and machine-readable copies", () => {
+    test("the build preserves obfuscation in HTML, JavaScript, machine-readable copies and commit patches", () => {
         const files = ["contact.html", "contact.md", "llms-full.txt", ...readdirSync("dist/_astro")
-            .filter(file => file.endsWith(".js")).map(file => `_astro/${file}`)];
+            .filter(file => file.endsWith(".js")).map(file => `_astro/${file}`),
+            ...readdirSync("dist/repo/xyz").map(file => `repo/xyz/${file}`)];
         for (const file of files) assert.ok(!dist(file).includes("me@alexkan.xyz"), `${file} exposes the address`);
     });
 });
@@ -197,6 +198,17 @@ describe("/projects", () => {
     test("the mingus SQL tab frames /mingus/sql directly", () => {
         assert.equal(main.querySelector("#mingus-panel-sql")?.getAttribute("data-src"), "https://alexkan.xyz/mingus/sql?embed");
         assert.ok(!dist("projects.html").includes("sql.html"));
+    });
+
+    test("the xyz repo figure opens at the Cloudflare migration, with a patch for every commit", () => {
+        const { commits } = JSON.parse(dist("repo/xyz/history.json")) as { commits: { sha: string }[] };
+        const figure = main.querySelector(".repo-figure");
+        const slider = figure?.querySelector(".commit-slider");
+        assert.equal(slider?.getAttribute("max"), String(commits.length - 1));
+        assert.equal(commits[Number(slider?.getAttribute("value"))].sha.slice(0, 7), "157e55a");
+        assert.equal(figure?.querySelector(".commit code")?.text, "157e55a");
+        assert.ok(figure?.querySelector("file-tree-container"), "the tree is rendered at build time");
+        for (const { sha } of commits) assert.ok(existsSync(`dist/repo/xyz/${sha}.patch`), sha);
     });
 });
 
