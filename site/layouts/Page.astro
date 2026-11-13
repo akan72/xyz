@@ -24,10 +24,11 @@ const markdownCopy = path === "/" ? "/index.md" : `${path}.md`;
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="icon" href="/assets/favicon.ico" sizes="32x32">
+        <link rel="icon" type="image/svg+xml" href="/assets/favicon-light.svg" data-light-href="/assets/favicon-light.svg" data-dark-href="/assets/favicon-dark.svg">
         <ThemeScript />
         <title>{title}</title>
         {noindex && <meta name="robots" content="noindex">}
-        <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
         {description && <meta name="description" content={description}>}
         {!noindex && (
             <>
