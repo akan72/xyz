@@ -192,6 +192,12 @@ describe("/projects", () => {
         assert.ok(html.includes('<script src="/assets/subway-vis.js" defer></script>'));
         assert.ok(html.includes('<link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/hydra-synth@1.4.0/dist/hydra-synth.js">'));
     });
+
+    // sql.html answers with a redirect to sql, an extra round trip before DuckDB starts
+    test("the mingus SQL tab frames /mingus/sql directly", () => {
+        assert.equal(main.querySelector("#mingus-panel-sql")?.getAttribute("data-src"), "https://alexkan.xyz/mingus/sql?embed");
+        assert.ok(!dist("projects.html").includes("sql.html"));
+    });
 });
 
 describe("/writing", () => {

@@ -112,8 +112,10 @@ sentence or two about it as the body:
 `media: subway-vis` puts the live istheldown figure above the description.
 `media: mingus-3d` frames the mingus map, with a second tab that frames its SQL
 playground (`site/components/MingusEmbed.astro`). Both share one square box.
-`site/scripts/mingus-tabs.js` adds the SQL frame on the tab's first click, since
-DuckDB and the tables are about 14 MB.
+`site/scripts/mingus-tabs.js` adds the SQL frame, still hidden, when the tab is
+first hovered or focused, so DuckDB starts before the click. It never loads with
+the page, since DuckDB and the tables are about 14 MB. The frame points at
+`/mingus/sql`, not `sql.html`, which redirects there.
 `media: vesta-demo` embeds Vesta's generated offline board preview and text view,
 followed by a muted recording of a real board (`public/assets/vesta-board.mp4`).
 See [docs/vesta/README.md](docs/vesta/README.md) for regeneration instructions
