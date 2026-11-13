@@ -17,7 +17,9 @@ serves the HTML/images from the edge; an
   - `site/layouts/Page.astro` — every page's `<head>`, the shared header
     (`site/components/SiteHeader.astro`) and the scripts every page loads.
     `site/components/ThemeScript.astro` sets the light/dark theme before the
-    page paints.
+    page paints. The favicon is the screensaver's XYZ logo; `data-light-href`
+    and `data-dark-href` on the SVG icon link in `site/layouts/Page.astro`
+    pick the light or dark version to match the page's theme.
   - `site/styles/site.css` — styles every page shares: fonts, colors, the
     page column, page transitions. Each page and component keeps its own
     styles in a scoped `<style>` block; Astro inlines a page's CSS into it.
@@ -107,20 +109,21 @@ sentence or two about it as the body:
 
     What it does. Links like [this one](https://example.com) open in a new tab.
 
-`media: subway-vis` puts the live istheldown figure above the description.
+`media: subway-vis` puts the live istheldown figure under the description.
 `media: mingus-3d` frames the mingus map, with a second tab that frames its SQL
 playground (`site/components/MingusEmbed.astro`). Both share one square box.
 `site/scripts/mingus-tabs.js` adds the SQL frame on the tab's first click, since
 DuckDB and the tables are about 14 MB.
-`media: vesta-demo` embeds Vesta's generated offline board preview and text view.
+`media: vesta-demo` embeds Vesta's generated offline board preview and text view,
+followed by a muted recording of a real board (`public/assets/vesta-board.mp4`).
+See [docs/vesta/README.md](docs/vesta/README.md) for regeneration instructions
+and the plan for securely serving refreshed market prices in a future update.
 `media: repo-history` shows this repo at any commit: a slider picks the commit,
 and the file tree sits beside what it changed (`site/components/RepoFigure.astro`,
 drawn with Pierre's [`@pierre/trees`](https://github.com/pierrecomputer/pierre)
 and [`@pierre/diffs`](https://diffs.com)). The build reads the history from git
 (`site/lib/repo-git.ts`) and writes it, with each commit's patch, to
 `/repo/xyz/` (`site/pages/repo/xyz/`), so it needs the full clone.
-See [docs/vesta/README.md](docs/vesta/README.md) for regeneration instructions
-and the plan for securely serving refreshed market prices in a future update.
 `astro build` fails if an entry doesn't match the schema in
 `site/content.config.ts` (https URL, a known kind of years with the start
 before the end, a non-empty stack), or if two projects share an `order`.
@@ -255,9 +258,12 @@ First-time setup:
    it's missing.
 4. Add your custom domain to Clodufalre.
 
-## Generate Zyn Favicon
+## Generate Favicons
 
-    python scripts/favicon.py
+Renders the favicons and `apple-touch-icon.png` from
+`public/assets/xyz-logo/xyz-currentcolor.svg`:
+
+    uv run scripts/favicon.py
 
 ## Link Previews
 

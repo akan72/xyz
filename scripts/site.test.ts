@@ -124,6 +124,17 @@ describe("every page", () => {
             const path = pagePath(file);
             assert.deepEqual(current, links.map(([, href]) => href).filter((href) => href === path || (href !== "/" && path.startsWith(`${href}/`))));
         });
+
+        test(`${file} uses the XYZ logo favicon that follows the theme`, () => {
+            const icons = doc(file).querySelectorAll('head link[rel="icon"]');
+            assert.deepEqual(icons.map((l) => l.getAttribute("href")), ["/assets/favicon.ico", "/assets/favicon-light.svg"]);
+            const svg = icons[1];
+            assert.equal(svg.getAttribute("data-light-href"), "/assets/favicon-light.svg");
+            assert.equal(svg.getAttribute("data-dark-href"), "/assets/favicon-dark.svg");
+            for (const href of icons.map((l) => l.getAttribute("href")!).concat(svg.getAttribute("data-dark-href")!)) assert.ok(existsSync(`dist${href}`), href);
+            // Browsers and crawlers fetch /favicon.ico on their own: same icon
+            assert.ok(readFileSync("dist/favicon.ico").equals(readFileSync("dist/assets/favicon.ico")));
+        });
     }
 });
 
