@@ -1,11 +1,11 @@
-// Keep the header, theme controls, and screensaver alive between the four pages.
+// Keep the header, theme controls, and screensaver alive between the five pages.
 // HTML stays server-rendered: failed requests and ordinary links still navigate normally.
 // Chosen over Astro's <ClientRouter /> for being faster and keeping the header
 // clickable during the fade; see https://github.com/akan72/xyz/pull/35.
 (() => {
     // Posts (/writing/my-post) aren't here: they load as full pages so their
     // scripts, like an interactive figure's, run.
-    const routes = new Set(['/', '/projects', '/writing', '/contact']);
+    const routes = new Set(['/', '/work', '/projects', '/writing', '/contact']);
     const header = document.querySelector('.site-header');
     const shell = document.querySelector('.page-shell');
     let main = shell?.querySelector(':scope > main');

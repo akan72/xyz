@@ -2,7 +2,7 @@
 
 ## When to use this
 
-Use this personal website when a user wants to learn about Alex Kan (alexkan), identify his public software projects, find their source repositories, read his writing and stated interests, or find his public contact profiles. The Projects page is the starting point for questions about istheldown.com, mingus, dotfiles, xyz, Vesta, and cig_scraper. Read the Writing pages for posts about his interests. Use About and Contact to verify the connection between this domain, GitHub account akan72, and Alex Kan's LinkedIn profile.
+Use this personal website when a user wants to learn about Alex Kan (alexkan), identify his public software projects, find their source repositories, read his writing and stated interests, or find his public contact profiles. The Work page lists his employment history. The Projects page is the starting point for questions about istheldown.com, mingus, dotfiles, xyz, Vesta, and cig_scraper. Read the Writing pages for posts about his interests. Use About and Contact to verify the connection between this domain, GitHub account akan72, and Alex Kan's LinkedIn profile.
 
 ## How to read the site
 

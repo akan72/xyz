@@ -1,0 +1,79 @@
+---
+import Page from "../layouts/Page.astro";
+
+// The web version of my resume. Each logo is an SVG in public/assets/logos/.
+type Job = {
+    company: string;
+    logo: string;
+    title: string;
+    dates: string;
+    place: string;
+    bullets: string[]; // HTML, for the inline links
+};
+
+const link = (href: string, text: string) => `<a href="${href}" target="_blank">${text}</a>`;
+
+const jobs: Job[] = [
+    {
+        company: "Artemis Analytics",
+        logo: "artemis",
+        title: "Senior Software Engineer",
+        dates: "5/2024 - Present",
+        place: "New York, NY",
+        bullets: [
+            `Reduced the mean latency of our backend service by 55%, including 4‑10x speedups on multiple user-facing endpoints powering ${link("https://www.artemis.ai/", "artemis.ai")}.`,
+            `Rebuilt the ${link("https://x.com/jonbma/status/2075628864026399189", "Artemis Analyst")}’s backend, moving from Managed Agents to a self-hosted runtime. Shipped numerous cost, performance, and UX features for our agent and MCP server.`,
+            "Shipped multiple five- and six-figure annualized savings across our data platform and AI infrastructure. Led capacity planning and built cost observability tools to manage our seven-figure cloud spend.",
+            "Owned diligence, negotiations, and integrations with numerous vendors across crypto/onchain data, market data, and cloud infrastructure/SaaS.",
+        ],
+    },
+    {
+        company: "Messari",
+        logo: "messari",
+        title: "Data Engineer, Crypto",
+        dates: "4/2022 - 5/2024",
+        place: "San Francisco, CA",
+        bullets: [
+            `Designed and implemented Messari’s first data platform as we scaled from 2 to 100+ ${link("https://messari.io/research/protocol-reporting", "quarterly research reports")}.`,
+            `Adapted the data pipelines behind Messari’s research reports to power our first ${link("https://messari.io/networks", "enterprise data product")}.`,
+            "Collaborated with stakeholders across both Messari’s internal research team and the broader crypto space on research requirements and data vendor diligence.",
+        ],
+    },
+    {
+        company: "Facebook",
+        logo: "facebook",
+        title: "Data Engineer, Trust & Safety",
+        dates: "8/2020 - 4/2022",
+        place: "Menlo Park, CA",
+        bullets: [
+            "Improved the Spam team’s reporting and core data infrastructure leading up to the 2020 U.S. election.",
+            "Built data products to measure our enforcement against Spam and Fake Accounts, empowering our team to build more accurate takedown systems.",
+            "Led capacity planning for a petabyte-scale data warehouse used by 40 data and ML engineers.",
+        ],
+    },
+];
+---
+<Page title="Work | alexkan.xyz" description="Alex Kan's work experience.">
+    <h1>Work</h1>
+
+    {jobs.map(({ company, logo, title, dates, place, bullets }) => (
+        <section class="entry">
+            <h2><img class="logo" src={`/assets/logos/${logo}.svg`} alt="" width="20" height="20">{company}</h2>
+            <p class="role">{title}</p>
+            <p class="meta">{dates} | {place}</p>
+            <ul>{bullets.map((b) => <li set:html={b} />)}</ul>
+        </section>
+    ))}
+</Page>
+
+<style>
+    h1 { font-size: 1.5em; margin-block: 1.4em 0.6em; }
+    .entry { margin-bottom: 1.6em; }
+    h2 { display: flex; align-items: center; gap: 0.45em; font-size: 1.15em; margin: 0 0 0.25em; }
+    /* Logo before the company name, sized to the heading text */
+    .logo { flex: none; width: 1.15em; height: 1.15em; border-radius: 3px; }
+    .role { margin: 0; font-style: italic; }
+    .meta { margin: 0.15em 0 0; color: var(--muted, #666); font-size: 0.9em; }
+    ul { margin-top: 0.6em; padding-left: 1.2em; }
+    li { margin-bottom: 0.4em; max-width: 70ch; line-height: 1.45; }
+</style>
