@@ -4,6 +4,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { describe, test } from "node:test";
 import { parse } from "node-html-parser";
 import { markdownPath } from "../site/integrations/agent-files.ts";
+import { lastUpdated } from "../site/lib/last-updated.ts";
 
 const SITE_URL = "https://alexkan.xyz";
 const pagePath = (file: string) => (file === "index.html" ? "/" : "/" + file.replace(/\.html$/, ""));
@@ -136,6 +137,21 @@ describe("every page", () => {
             assert.ok(readFileSync("dist/favicon.ico").equals(readFileSync("dist/assets/favicon.ico")));
         });
     }
+
+    test("only the homepage shows the month of the latest commit, at the end of <main>", () => {
+        for (const file of htmlFiles) {
+            const footers = doc(file).querySelectorAll("footer");
+            if (file !== "index.html") {
+                assert.equal(footers.length, 0, file);
+                continue;
+            }
+            assert.equal(footers.length, 1);
+            assert.equal(footers[0].parentNode?.tagName, "MAIN");
+            assert.equal(footers[0].text.trim(), `Last updated ${lastUpdated()}`);
+        }
+        // index.md dates the page in its Source line instead
+        assert.ok(!dist("index.md").includes("Last updated"));
+    });
 });
 
 describe("machine-readable files", () => {
