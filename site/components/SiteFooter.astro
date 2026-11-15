@@ -1,0 +1,16 @@
+---
+// The footer every page shares, below <main>. page-navigation.js keeps it
+// mounted while it swaps <main>, which is fine: every page shows the same date.
+import { lastUpdated } from "../lib/last-updated.ts";
+---
+<footer class="site-footer">Last updated {lastUpdated()}</footer>
+
+<style>
+    /* The same 16px the homepage leaves under its avatar; margins collapse, so
+       a page that ends with a larger margin keeps that one instead */
+    .site-footer { margin-top: 16px; font-size: 14px; color: #666; }
+    :global(:root[data-theme="dark"]) .site-footer { color: var(--muted); }
+    @media (prefers-color-scheme: dark) {
+        :global(:root:not([data-theme="light"])) .site-footer { color: var(--muted); }
+    }
+</style>

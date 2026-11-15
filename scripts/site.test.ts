@@ -4,6 +4,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { describe, test } from "node:test";
 import { parse } from "node-html-parser";
 import { markdownPath } from "../site/integrations/agent-files.ts";
+import { lastUpdated } from "../site/lib/last-updated.ts";
 
 const SITE_URL = "https://alexkan.xyz";
 const pagePath = (file: string) => (file === "index.html" ? "/" : "/" + file.replace(/\.html$/, ""));
@@ -134,6 +135,12 @@ describe("every page", () => {
             for (const href of icons.map((l) => l.getAttribute("href")!).concat(svg.getAttribute("data-dark-href")!)) assert.ok(existsSync(`dist${href}`), href);
             // Browsers and crawlers fetch /favicon.ico on their own: same icon
             assert.ok(readFileSync("dist/favicon.ico").equals(readFileSync("dist/assets/favicon.ico")));
+        });
+
+        test(`${file} shows the month of the latest commit in its footer`, () => {
+            const footers = doc(file).querySelectorAll("body > footer");
+            assert.equal(footers.length, 1);
+            assert.equal(footers[0].text.trim(), `Last updated ${lastUpdated()}`);
         });
     }
 });
