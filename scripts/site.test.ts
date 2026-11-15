@@ -146,7 +146,7 @@ describe("every page", () => {
                 continue;
             }
             assert.equal(footers.length, 1);
-            assert.equal(footers[0].parentNode.tagName, "MAIN");
+            assert.equal(footers[0].parentNode?.tagName, "MAIN");
             assert.equal(footers[0].text.trim(), `Last updated ${lastUpdated()}`);
         }
         // index.md dates the page in its Source line instead
