@@ -102,7 +102,7 @@ describe("/contact email reveal", () => {
 
 describe("every page", () => {
     test("covers the site's pages, with only 404 left out of the index", () => {
-        for (const page of ["404.html", "contact.html", "index.html", "projects.html", "writing.html"]) assert.ok(htmlFiles.includes(page), page);
+        for (const page of ["404.html", "contact.html", "index.html", "projects.html", "work.html", "writing.html"]) assert.ok(htmlFiles.includes(page), page);
         assert.deepEqual(htmlFiles.filter((f) => !indexable.includes(f)), ["404.html"]);
     });
 
@@ -119,7 +119,7 @@ describe("every page", () => {
             const headers = page.querySelectorAll("header");
             assert.equal(headers.length, 1);
             const links = headers[0].querySelectorAll("a").map((a) => [a.text, a.getAttribute("href")]);
-            assert.deepEqual(links, [["Main", "/"], ["Projects", "/projects"], ["Writing", "/writing"], ["Contact", "/contact"]]);
+            assert.deepEqual(links, [["Main", "/"], ["Work", "/work"], ["Projects", "/projects"], ["Writing", "/writing"], ["Contact", "/contact"]]);
             const current = headers[0].querySelectorAll('[aria-current="page"]').map((a) => a.getAttribute("href"));
             // The page's own link is marked (a post marks Writing); 404 has none
             const path = pagePath(file);

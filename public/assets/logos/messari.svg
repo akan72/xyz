@@ -1,0 +1,7 @@
+<!-- Messari's "M" mark in its three-blue colorway, shape traced from its GitHub avatar (github.com/messari) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="82 80 240 240" width="240" height="240">
+    <rect x="82" y="80" width="240" height="240" rx="24" fill="#dfe6ee"/>
+    <path fill="#86b2df" d="M123 124 165 166v70l-42 39z"/>
+    <path fill="#5a8dc8" d="M183 182 202 201 222 181v57l-39 39z"/>
+    <path fill="#2f6cb3" d="M242 161 281 123v115l-39 38z"/>
+</svg>
