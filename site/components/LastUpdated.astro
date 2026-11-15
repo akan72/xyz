@@ -1,0 +1,16 @@
+---
+// "Last updated November 2026" at the end of the homepage, the month of the
+// newest commit. It sits inside <main>, so page-navigation.js takes it away
+// with the rest of the homepage when it swaps in another page.
+import { lastUpdated } from "../lib/last-updated.ts";
+---
+<footer class="last-updated">Last updated {lastUpdated()}</footer>
+
+<style>
+    /* Margins collapse, so this matches the 16px the homepage leaves under its avatar */
+    .last-updated { margin-top: 16px; font-size: 14px; color: #666; }
+    :global(:root[data-theme="dark"]) .last-updated { color: var(--muted); }
+    @media (prefers-color-scheme: dark) {
+        :global(:root:not([data-theme="light"])) .last-updated { color: var(--muted); }
+    }
+</style>

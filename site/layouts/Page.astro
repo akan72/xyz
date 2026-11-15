@@ -1,11 +1,9 @@
 ---
-// The shell of every page: <head>, the shared header, <main>, and the footer
-// with the month of the latest commit.
+// The shell of every page: <head>, the shared header, and <main>.
 //
 // Slots: "head-scripts" for page scripts that must load before the
 // screensaver (the projects figure's early loaders), "head" for anything else
 // in <head>, like JSON-LD.
-import SiteFooter from "../components/SiteFooter.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import ThemeScript from "../components/ThemeScript.astro";
 import "../styles/site.css";
@@ -58,6 +56,5 @@ const markdownCopy = path === "/" ? "/index.md" : `${path}.md`;
                 <slot />
             </main>
         </div>
-        <SiteFooter />
     </body>
 </html>

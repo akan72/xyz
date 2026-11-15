@@ -136,13 +136,22 @@ describe("every page", () => {
             // Browsers and crawlers fetch /favicon.ico on their own: same icon
             assert.ok(readFileSync("dist/favicon.ico").equals(readFileSync("dist/assets/favicon.ico")));
         });
-
-        test(`${file} shows the month of the latest commit in its footer`, () => {
-            const footers = doc(file).querySelectorAll("body > footer");
-            assert.equal(footers.length, 1);
-            assert.equal(footers[0].text.trim(), `Last updated ${lastUpdated()}`);
-        });
     }
+
+    test("only the homepage shows the month of the latest commit, at the end of <main>", () => {
+        for (const file of htmlFiles) {
+            const footers = doc(file).querySelectorAll("footer");
+            if (file !== "index.html") {
+                assert.equal(footers.length, 0, file);
+                continue;
+            }
+            assert.equal(footers.length, 1);
+            assert.equal(footers[0].parentNode.tagName, "MAIN");
+            assert.equal(footers[0].text.trim(), `Last updated ${lastUpdated()}`);
+        }
+        // index.md dates the page in its Source line instead
+        assert.ok(!dist("index.md").includes("Last updated"));
+    });
 });
 
 describe("machine-readable files", () => {
