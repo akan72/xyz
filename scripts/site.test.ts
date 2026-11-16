@@ -190,11 +190,18 @@ describe("/projects", () => {
 
     test("every project shows its years, a description and its stack", () => {
         for (const li of items) {
-            const name = li.querySelector("a")!.text;
+            const name = li.querySelector("a, .name")!.text;
             assert.match(li.querySelector(".years")?.text ?? "", /^\((\d{4})(-(\d{4}|Present))?\)$/, name);
             assert.equal(li.querySelectorAll("p:not([class])").length, 1, name);
             assert.ok(li.querySelector(".meta")?.text.trim(), `${name}: missing its stack line`);
         }
+    });
+
+    test("pangea is coming soon, with no link to the game", () => {
+        const li = items.find((li) => li.querySelector(".name")?.text === "pangea")!;
+        assert.equal(li.querySelector(".soon")?.text, "Coming Soon ™️");
+        assert.equal(li.querySelectorAll("a").length, 0);
+        assert.ok(li.querySelector('iframe[src="https://pangea.akan72.workers.dev/embed"]'));
     });
 
     test("links in descriptions open in a new tab", () => {

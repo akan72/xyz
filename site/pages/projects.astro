@@ -2,6 +2,7 @@
 import { getCollection, render } from "astro:content";
 import CigPicker from "../components/CigPicker.astro";
 import MingusEmbed from "../components/MingusEmbed.astro";
+import PangeaEmbed from "../components/PangeaEmbed.astro";
 import RepoFigure from "../components/RepoFigure.astro";
 import SubwayFigure from "../components/SubwayFigure.astro";
 import SubwayHead from "../components/SubwayHead.astro";
@@ -31,9 +32,9 @@ const icons: Record<NonNullable<(typeof projects)[number]["icon"]>, string> = { 
     </Fragment>
     <h1>Projects</h1>
     <ul>
-        {projects.map(({ name, url, Content, media, icon, stack, ...project }) => (
+        {projects.map(({ name, url, comingSoon, Content, media, icon, stack, ...project }) => (
             <li>
-                <a href={url} target="_blank">{name}</a> <span class="years">{years(project.years)}</span>
+                {url ? <a href={url} target="_blank">{name}</a> : <span class="name">{name}</span>} <span class="years">{years(project.years)}</span> {comingSoon && <span class="soon">Coming Soon ™️</span>}
                 {icon && <img class="icon" src={`/assets/icons/${icon}.svg`} alt={icons[icon]} width="20" height="20">}
                 <Content />
                 <p class="meta">{stack.join(" · ")}</p>
@@ -42,6 +43,7 @@ const icons: Record<NonNullable<(typeof projects)[number]["icon"]>, string> = { 
                 {media === "cig-picker" && <CigPicker />}
                 {media === "vesta-demo" && <VestaPreview />}
                 {media === "mingus-3d" && <MingusEmbed />}
+                {media === "pangea-board" && <PangeaEmbed />}
                 {/* Opens at the move from Fly.io to Cloudflare Workers */}
                 {media === "repo-history" && <RepoFigure at="157e55a" />}
             </li>
@@ -54,6 +56,8 @@ const icons: Record<NonNullable<(typeof projects)[number]["icon"]>, string> = { 
     li > :global(:last-child) { margin-bottom: 1em; }
     /* The stack line under each description */
     .meta { color: var(--muted, #666); font-size: 0.9em; margin-top: -0.4em; }
+    /* After the years of a project that isn't out yet */
+    .soon { color: var(--muted, #666); white-space: nowrap; }
     /* Logo after the years, sized to the text */
     .icon { width: 1.1em; height: 1.1em; vertical-align: -0.2em; margin-left: 0.15em; }
     /* Wrap descriptions at the right edge of the figure (2 x 260px + 16px gap),

@@ -116,6 +116,11 @@ playground (`site/components/MingusEmbed.astro`). Both share one square box.
 first hovered or focused, so DuckDB starts before the click. It never loads with
 the page, since DuckDB and the tables are about 14 MB. The frame points at
 `/mingus/sql`, not `sql.html`, which redirects there.
+`media: pangea-board` frames a Pangea board, random-move bots on the Earth map,
+from `pangea.akan72.workers.dev/embed` (`site/components/PangeaEmbed.astro`).
+Nothing on it links to the game, which isn't out yet.
+`comingSoon: true` in place of `url` shows the name without a link and
+"Coming Soon ™️" after the years.
 `media: vesta-demo` embeds Vesta's generated offline board preview and text view,
 followed by a muted recording of a real board (`public/assets/vesta-board.mp4`).
 See [docs/vesta/README.md](docs/vesta/README.md) for regeneration instructions
@@ -127,7 +132,7 @@ and [`@pierre/diffs`](https://diffs.com)). The build reads the history from git
 (`site/lib/repo-git.ts`) and writes it, with each commit's patch, to
 `/repo/xyz/` (`site/pages/repo/xyz/`), so it needs the full clone.
 `astro build` fails if an entry doesn't match the schema in
-`site/content.config.ts` (https URL, a known kind of years with the start
+`site/content.config.ts` (an https URL or `comingSoon: true`, a known kind of years with the start
 before the end, a non-empty stack), or if two projects share an `order`.
 
 ## Writing
