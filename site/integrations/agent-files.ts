@@ -49,8 +49,9 @@ export function readPage(html: string, path: string, site: URL): Page | undefine
 
     const url = new URL(path, site).href;
     const main = doc.querySelector("main") ?? doc.querySelector("body")!;
-    // Leave out controls, the live figure, and anything hidden
-    main.querySelectorAll('script, style, button, canvas, [hidden], [aria-hidden="true"]').forEach((el) => el.remove());
+    // Leave out controls, the live figure, anything hidden, and the homepage's
+    // "Last updated" line (the copy's Source line already gives the date)
+    main.querySelectorAll('script, style, button, canvas, .last-updated, [hidden], [aria-hidden="true"]').forEach((el) => el.remove());
     // The title is the copy's H1, so drop a heading that repeats it
     const heading = main.querySelector("h1, h2");
     if (heading?.text.trim().toLowerCase() === title.toLowerCase()) heading.remove();

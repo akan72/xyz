@@ -4,6 +4,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { describe, test } from "node:test";
 import { parse } from "node-html-parser";
 import { markdownPath } from "../site/integrations/agent-files.ts";
+import { lastUpdated } from "../site/lib/last-updated.ts";
 
 const SITE_URL = "https://alexkan.xyz";
 const pagePath = (file: string) => (file === "index.html" ? "/" : "/" + file.replace(/\.html$/, ""));
@@ -91,16 +92,17 @@ describe("/contact email reveal", () => {
         assert.ok(row.querySelector("noscript")?.text.includes("enable JavaScript"));
     });
 
-    test("the build preserves obfuscation in HTML, JavaScript, and machine-readable copies", () => {
+    test("the build preserves obfuscation in HTML, JavaScript, machine-readable copies and commit patches", () => {
         const files = ["contact.html", "contact.md", "llms-full.txt", ...readdirSync("dist/_astro")
-            .filter(file => file.endsWith(".js")).map(file => `_astro/${file}`)];
+            .filter(file => file.endsWith(".js")).map(file => `_astro/${file}`),
+            ...readdirSync("dist/repo/xyz").map(file => `repo/xyz/${file}`)];
         for (const file of files) assert.ok(!dist(file).includes("me@alexkan.xyz"), `${file} exposes the address`);
     });
 });
 
 describe("every page", () => {
     test("covers the site's pages, with only 404 left out of the index", () => {
-        for (const page of ["404.html", "contact.html", "index.html", "projects.html", "writing.html"]) assert.ok(htmlFiles.includes(page), page);
+        for (const page of ["404.html", "contact.html", "index.html", "projects.html", "work.html", "writing.html"]) assert.ok(htmlFiles.includes(page), page);
         assert.deepEqual(htmlFiles.filter((f) => !indexable.includes(f)), ["404.html"]);
     });
 
@@ -117,7 +119,7 @@ describe("every page", () => {
             const headers = page.querySelectorAll("header");
             assert.equal(headers.length, 1);
             const links = headers[0].querySelectorAll("a").map((a) => [a.text, a.getAttribute("href")]);
-            assert.deepEqual(links, [["Main", "/"], ["Projects", "/projects"], ["Writing", "/writing"], ["Contact", "/contact"]]);
+            assert.deepEqual(links, [["Main", "/"], ["Work", "/work"], ["Projects", "/projects"], ["Writing", "/writing"], ["Contact", "/contact"]]);
             const current = headers[0].querySelectorAll('[aria-current="page"]').map((a) => a.getAttribute("href"));
             // The page's own link is marked (a post marks Writing); 404 has none
             const path = pagePath(file);
@@ -135,6 +137,21 @@ describe("every page", () => {
             assert.ok(readFileSync("dist/favicon.ico").equals(readFileSync("dist/assets/favicon.ico")));
         });
     }
+
+    test("only the homepage shows the month of the latest commit, at the end of <main>", () => {
+        for (const file of htmlFiles) {
+            const footers = doc(file).querySelectorAll("footer");
+            if (file !== "index.html") {
+                assert.equal(footers.length, 0, file);
+                continue;
+            }
+            assert.equal(footers.length, 1);
+            assert.equal(footers[0].parentNode?.tagName, "MAIN");
+            assert.equal(footers[0].text.trim(), `Last updated ${lastUpdated()}`);
+        }
+        // index.md dates the page in its Source line instead
+        assert.ok(!dist("index.md").includes("Last updated"));
+    });
 });
 
 describe("machine-readable files", () => {
@@ -198,6 +215,23 @@ describe("/projects", () => {
         assert.ok(html.includes("wss://istheldown.com/ws?systems=subway&alerts=subway"));
         assert.ok(html.includes('<script src="/assets/subway-vis.js" defer></script>'));
         assert.ok(html.includes('<link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/hydra-synth@1.4.0/dist/hydra-synth.js">'));
+    });
+
+    // sql.html answers with a redirect to sql, an extra round trip before DuckDB starts
+    test("the mingus SQL tab frames /mingus/sql directly", () => {
+        assert.equal(main.querySelector("#mingus-panel-sql")?.getAttribute("data-src"), "https://alexkan.xyz/mingus/sql?embed");
+        assert.ok(!dist("projects.html").includes("sql.html"));
+    });
+
+    test("the xyz repo figure opens at the Cloudflare migration, with a patch for every commit", () => {
+        const { commits } = JSON.parse(dist("repo/xyz/history.json")) as { commits: { sha: string }[] };
+        const figure = main.querySelector(".repo-figure");
+        const slider = figure?.querySelector(".commit-slider");
+        assert.equal(slider?.getAttribute("max"), String(commits.length - 1));
+        assert.equal(commits[Number(slider?.getAttribute("value"))].sha.slice(0, 7), "157e55a");
+        assert.equal(figure?.querySelector(".commit code")?.text, "157e55a");
+        assert.ok(figure?.querySelector("file-tree-container"), "the tree is rendered at build time");
+        for (const { sha } of commits) assert.ok(existsSync(`dist/repo/xyz/${sha}.patch`), sha);
     });
 });
 

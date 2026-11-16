@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="ag-base" x1="0" y1="0" x2="0" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#b2bee2"></stop>
+      <stop offset="1" stop-color="#5858c5"></stop>
+    </linearGradient>
+    <radialGradient id="ag-glow" cx="1044.5" cy="1044.5" r="921.6" gradientUnits="userSpaceOnUse">
+      <stop offset="0.0000" stop-color="#f27e8b" stop-opacity="1.0000"></stop>
+      <stop offset="0.0833" stop-color="#f27e8b" stop-opacity="0.9009"></stop>
+      <stop offset="0.1667" stop-color="#f27e8b" stop-opacity="0.8035"></stop>
+      <stop offset="0.2500" stop-color="#f27e8b" stop-opacity="0.7081"></stop>
+      <stop offset="0.3333" stop-color="#f27e8b" stop-opacity="0.6147"></stop>
+      <stop offset="0.4167" stop-color="#f27e8b" stop-opacity="0.5237"></stop>
+      <stop offset="0.5000" stop-color="#f27e8b" stop-opacity="0.4353"></stop>
+      <stop offset="0.5833" stop-color="#f27e8b" stop-opacity="0.3497"></stop>
+      <stop offset="0.6667" stop-color="#f27e8b" stop-opacity="0.2676"></stop>
+      <stop offset="0.7500" stop-color="#f27e8b" stop-opacity="0.1895"></stop>
+      <stop offset="0.8333" stop-color="#f27e8b" stop-opacity="0.1165"></stop>
+      <stop offset="0.9167" stop-color="#f27e8b" stop-opacity="0.0507"></stop>
+      <stop offset="1.0000" stop-color="#f27e8b" stop-opacity="0.0000"></stop>
+    </radialGradient>
+    <clipPath id="ag-tile"><rect x="0" y="0" width="1024" height="1024" rx="143" ry="143"></rect></clipPath>
+  </defs>
+  <g clip-path="url(#ag-tile)">
+    <rect width="1024" height="1024" fill="url(#ag-base)"></rect>
+    <rect width="1024" height="1024" fill="url(#ag-glow)"></rect>
+    <path fill="#ffffff" d="M528.5 171.5L769.5 171.5L778.5 175.5L783.5 183.5L783.5 839.5L781.5 844.5L776.5 849.5L767.5 852.5L665.5 852.5L654.5 847.5L649.5 839.5L650.5 838.5L648.5 834.5L649.5 833.5L648.5 832.5L648.5 729.5L645.5 723.5L641.5 719.5L634.5 716.5L389.5 716.5L388.5 717.5L387.5 716.5L382.5 719.5L377.5 724.5L375.5 728.5L375.5 833.5L374.5 834.5L375.5 835.5L370.5 846.5L365.5 850.5L358.5 852.5L256.5 852.5L247.5 849.5L242.5 844.5L240.5 839.5L240.5 729.5L240.5 457.5L244.5 450.5L251.5 445.5L254.5 444.5L360.5 444.5L367.5 447.5L373.5 454.5L372.5 455.5L374.5 457.5L375.5 461.5L375.5 568.5L382.5 577.5L391.5 581.5L632.5 581.5L641.5 577.5L646.5 571.5L648.5 567.5L648.5 320.5L645.5 314.5L638.5 308.5L633.5 306.5L530.5 306.5L523.5 309.5L516.5 317.5L514.5 324.5L514.5 426.5L511.5 432.5L509.5 434.5L507.5 434.5L506.5 436.5L500.5 438.5L394.5 438.5L387.5 435.5L383.5 431.5L380.5 425.5L379.5 421.5L379.5 320.5L383.5 310.5L389.5 305.5L395.5 303.5L498.5 303.5L504.5 300.5L511.5 292.5L513.5 284.5L513.5 184.5L519.5 175.5L524.5 172.5Z"></path>
+  </g>
+</svg>

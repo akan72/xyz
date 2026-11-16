@@ -1,0 +1,100 @@
+---
+// This repo at any commit on its default branch, drawn with Pierre's
+// libraries (https://pierre.computer). A slider picks the commit; the tree at
+// that commit (@pierre/trees) sits beside what the commit changed
+// (@pierre/diffs). Clicking a changed file jumps to its diff, and any other
+// file opens over the diff as it was at that commit.
+//
+// The build renders the tree. The browser (site/scripts/repo-figure.ts)
+// hydrates it and renders files and diffs itself with @pierre/diffs and its
+// WebAssembly highlighter, fetching files from raw.githubusercontent.com and
+// the history and each commit's patch from /repo/xyz/ (site/pages/repo/xyz/).
+import { preloadFileTree } from "@pierre/trees/ssr";
+import { readHistory } from "../lib/repo-git";
+import { commitDate, commitUrl, createHistory } from "../lib/repo-history";
+
+interface Props {
+    /** The commit the slider starts at, by SHA prefix; the newest by default */
+    at?: string;
+}
+
+const { at } = Astro.props;
+const history = createHistory(readHistory());
+const { repo, commits } = history;
+const last = commits.length - 1;
+const start = at ? commits.findIndex(({ sha }) => sha.startsWith(at)) : last;
+if (start === -1) throw new Error(`No commit ${at} on this branch`);
+const head = commits[start];
+const tree = preloadFileTree(history.treeOptions(start));
+---
+<figure class="repo-figure">
+    <figcaption>View diffs to the site over time</figcaption>
+    <!-- Enabled once the script can redraw the tree -->
+    <input type="range" class="commit-slider" min="0" max={last} value={start} step="1" disabled
+        aria-label={`Commit in ${repo}`} aria-valuetext={`${commitDate(head.date)}: ${head.subject}`} />
+    <p class="commit">
+        <a href={commitUrl(repo, head.sha)} target="_blank"><code>{head.sha.slice(0, 7)}</code></a>
+        <span class="subject" title={head.subject}>{head.subject}</span>
+        <span class="date">{commitDate(head.date)}</span>
+    </p>
+    <div class="stage">
+        <div class="tree"><Fragment set:html={tree.outerStart + tree.shadowHtml + tree.outerEnd} /></div>
+        <div class="diff-pane" tabindex="0" aria-label="What this commit changed"><div class="diff-body"></div></div>
+        <!-- The open file, over the diff -->
+        <div class="file" hidden>
+            <div class="file-bar">
+                <button type="button" class="close">← Diff</button>
+                <span class="file-path"></span>
+            </div>
+            <div class="file-body"><div class="code"></div><div class="message" hidden></div></div>
+        </div>
+    </div>
+</figure>
+
+<style>
+    .repo-figure { margin: 1em 0; }
+    /* Body color, so it reads as the demo's label and not as more of the grey stack line above */
+    figcaption { font-size: 0.9em; margin-bottom: 8px; }
+    .commit-slider { display: block; width: 100%; margin: 0; accent-color: currentColor; }
+    .commit-slider:disabled { opacity: 0.5; }
+    /* The figure's width, not the text column's */
+    .commit { display: flex; gap: 8px; align-items: baseline; max-width: none; margin: 4px 0 8px; font-size: 0.9em; white-space: nowrap; }
+    .commit a { color: inherit; }
+    .subject { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .date { color: var(--muted, #666); }
+    /* Rows fixed to the stage, so the diff and the file scroll inside it */
+    .stage {
+        display: grid; grid-template-columns: minmax(200px, 36%) 1fr; grid-template-rows: minmax(0, 1fr); height: 400px;
+        border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+    }
+    .tree { grid-area: 1 / 1; min-height: 0; }
+    .diff-pane, .file {
+        grid-area: 1 / 2; min-width: 0; min-height: 0;
+        border-left: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+    }
+    .diff-pane { overflow-y: auto; overscroll-behavior: contain; }
+    .diff-pane:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
+    /* Above the diff's own positioned parts (its sticky file headers) */
+    .file { position: relative; z-index: 2; display: flex; flex-direction: column; background: var(--bg); }
+    .file[hidden] { display: none; }
+    .file-bar {
+        display: flex; gap: 10px; align-items: baseline; padding: 6px 10px; font-size: 0.85em;
+        border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+    }
+    .file-bar button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
+    .file-path { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+    .file-body :global(img) { display: block; max-width: 100%; margin: 12px auto; }
+    .stage :global(.message) { color: var(--muted, #666); font-size: 0.9em; padding: 10px 12px; margin: 0; }
+    .message[hidden] { display: none; }
+    .diff-body :global(diffs-container) { display: block; border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent); }
+    /* Both libraries set color-scheme: light dark on their shadow host, which
+       follows the system; these follow the site's theme toggle instead */
+    .stage :global(file-tree-container), .stage :global(diffs-container) { color-scheme: inherit; }
+    .tree :global(file-tree-container) { height: 100%; }
+    /* On a phone, the tree above the diff */
+    @media (max-width: 600px) {
+        .stage { height: 520px; grid-template-columns: none; grid-template-rows: minmax(0, 2fr) minmax(0, 3fr); }
+        .diff-pane, .file { grid-area: 2 / 1; border-left: 0; border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent); }
+    }
+</style>

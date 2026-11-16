@@ -1,0 +1,6 @@
+<!-- The pre-2015 Facebook icon: white "f" on a #3B5998 square (Wikimedia Commons, File:F_icon.svg) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+    <path fill="#3B5998" d="M126 118c0 4.418-3.582 8-8 8H10c-4.418 0-8-3.582-8-8V10c0-4.418 3.582-8 8-8h108c4.418 0 8 3.582 8 8z"/>
+    <rect x="5.667" y="98.98" fill="#6D84B4" width="116.666" height="18.039"/>
+    <path fill="#fff" d="M93.376 117.012H72.203V65.767H61.625v-17.66h10.578V37.504c0-14.407 5.973-22.974 22.943-22.974h14.128v17.662h-8.831c-6.606 0-7.043 2.468-7.043 7.074l-.024 8.839h15.998l-1.872 17.66H93.376z"/>
+</svg>
