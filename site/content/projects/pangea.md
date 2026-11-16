@@ -1,6 +1,6 @@
 ---
 name: pangea
-url: https://pangea.akan72.workers.dev/
+comingSoon: true
 years:
   kind: since
   start: 2026
@@ -11,3 +11,5 @@ stack:
 order: 7
 media: pangea-board
 ---
+
+Play a Risk-style game against your favorite LLMs!

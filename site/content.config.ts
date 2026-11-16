@@ -12,7 +12,10 @@ const projects = defineCollection({
     loader: glob({ pattern: "*.md", base: "./site/content/projects" }),
     schema: z.strictObject({
         name: z.string().trim().min(1),
-        url: z.url().startsWith("https://", "use an https:// URL"),
+        // The name links here. Leave it out only with comingSoon: true.
+        url: z.url().startsWith("https://", "use an https:// URL").optional(),
+        // Not out yet: the name isn't a link, and "Coming Soon ™️" follows the years
+        comingSoon: z.literal(true).optional(),
         // Shown after the link as (2020-Present), (2020-2023) or (2025)
         years: z.discriminatedUnion("kind", [
             z.strictObject({ kind: z.literal("since"), start: year }),
@@ -29,6 +32,8 @@ const projects = defineCollection({
         media: z.enum(["subway-vis", "cig-picker", "vesta-demo", "mingus-3d", "pangea-board"]).optional(),
         // Small logo shown after the years (public/assets/icons/<icon>.svg)
         icon: z.enum(["vim"]).optional(),
+    }).refine((p) => (p.url === undefined) === (p.comingSoon === true), {
+        message: "give a url, or leave it out and set comingSoon: true",
     }),
 });
 

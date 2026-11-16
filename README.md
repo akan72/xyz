@@ -114,15 +114,17 @@ sentence or two about it as the body:
 playground (`site/components/MingusEmbed.astro`). Both share one square box.
 `site/scripts/mingus-tabs.js` adds the SQL frame on the tab's first click, since
 DuckDB and the tables are about 14 MB.
-`media: pangea-board` frames a Pangea board, four random-move bots on the Earth
-map, from `pangea.akan72.workers.dev/embed` (`site/components/PangeaEmbed.astro`).
-The frame ignores the pointer, so the board is one link to the game.
+`media: pangea-board` frames a Pangea board, random-move bots on the Earth map,
+from `pangea.akan72.workers.dev/embed` (`site/components/PangeaEmbed.astro`).
+Nothing on it links to the game, which isn't out yet.
+`comingSoon: true` in place of `url` shows the name without a link and
+"Coming Soon ™️" after the years.
 `media: vesta-demo` embeds Vesta's generated offline board preview and text view,
 followed by a muted recording of a real board (`public/assets/vesta-board.mp4`).
 See [docs/vesta/README.md](docs/vesta/README.md) for regeneration instructions
 and the plan for securely serving refreshed market prices in a future update.
 `astro build` fails if an entry doesn't match the schema in
-`site/content.config.ts` (https URL, a known kind of years with the start
+`site/content.config.ts` (an https URL or `comingSoon: true`, a known kind of years with the start
 before the end, a non-empty stack), or if two projects share an `order`.
 
 ## Writing
