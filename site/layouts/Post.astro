@@ -39,5 +39,8 @@ const jsonLd = {
     article { max-width: 65ch; line-height: 1.6; }
     h1 { font-size: 1.6em; line-height: 1.2; margin: 0 0 4px; }
     .byline { color: var(--muted, #666); margin: 0 0 2em; }
-    article :global(img) { max-width: 100%; height: auto; }
+    article :global(img) { display: block; max-width: 100%; height: auto; margin: 1.25em 0; }
+    article :global(table) { width: 100%; border-collapse: collapse; margin: 1.25em 0; }
+    article :global(th), article :global(td) { padding: 0.4em 0.65em; text-align: left; border-bottom: 1px solid var(--border, #888); }
+    article :global(code) { overflow-wrap: anywhere; }
 </style>
