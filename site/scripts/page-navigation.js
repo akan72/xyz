@@ -195,13 +195,6 @@
     for (const type of ['pointerover', 'pointerdown', 'focusin']) {
         document.addEventListener(type, event => warm(event.target.closest?.('a')));
     }
-    if (!globalThis.navigator?.connection?.saveData) {
-        const prefetchNav = () => {
-            for (const link of header.querySelectorAll('a')) warm(link);
-        };
-        if (typeof globalThis.requestIdleCallback === 'function') globalThis.requestIdleCallback(prefetchNav, { timeout: 2000 });
-        else setTimeout(prefetchNav, 1500);
-    }
     addEventListener('popstate', event => {
         const url = new URL(location.href);
         if (!routes.has(url.pathname) || url.search || url.hash) { location.reload(); return; }
