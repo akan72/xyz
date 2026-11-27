@@ -17,7 +17,7 @@
 
     const cache = new Map();
     const scrolls = new Map();
-    const preconnected = new Set();
+    const headHints = new Set();
     let request = 0, finishFade = () => {}, projectsScript;
     let currentPath = location.pathname;
     const newKey = () => crypto.randomUUID();
@@ -33,13 +33,28 @@
         return url.origin === location.origin && routes.has(url.pathname) && !url.search && !url.hash ? url : null;
     }
 
-    function preconnect(doc) {
-        for (const link of doc.head.querySelectorAll('link[rel="preconnect"]')) {
+    function forwardLinks(doc, selector) {
+        for (const link of doc.head.querySelectorAll(selector)) {
             const href = link.getAttribute?.('href');
-            if (!href || preconnected.has(href)) continue;
-            preconnected.add(href);
+            const key = `${selector}:${href}`;
+            if (!href || headHints.has(key)) continue;
+            headHints.add(key);
             document.head.append(document.importNode(link, true));
         }
+    }
+
+    function warmProjects(doc) {
+        forwardLinks(doc, 'link[rel="preload"]');
+        if (window.__subway || typeof WebSocket !== 'function') return;
+        try {
+            const s = { ws: new WebSocket('wss://istheldown.com/ws?systems=subway&alerts=subway'), queue: [], closed: null, t0: performance.now() };
+            s.onmsg = e => s.queue.push(e.data);
+            s.ws.addEventListener('message', s.onmsg);
+            s.ws.addEventListener('close', e => { s.closed = e.code; });
+            s.stations = fetch('/assets/subway-stations.json').then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+            s.stations.catch(() => {});
+            window.__subway = s;
+        } catch {}
     }
 
     function page(url) {
@@ -51,7 +66,7 @@
                     if (!response.ok || !response.headers.get('content-type')?.includes('text/html') || (new URL(response.url).origin !== url.origin || new URL(response.url).pathname !== url.pathname)) throw new Error('Not a site page');
                     const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
                     if (!doc.querySelector('main') || !doc.querySelector('.site-header') || !doc.title) throw new Error('Missing page content');
-                    preconnect(doc);
+                    forwardLinks(doc, 'link[rel="preconnect"]');
                     return doc;
                 })
                 .catch(error => { cache.delete(url.pathname); throw error; })
@@ -160,7 +175,10 @@
             animation = outgoing.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, easing: 'ease-out', fill: 'both' });
             animation.finished.then(finishFade, () => {});
         } else finishFade();
-        if (currentPath === '/projects') void mountProjects(incoming, finished);
+        if (currentPath === '/projects') {
+            warmProjects(doc);
+            void mountProjects(incoming, finished);
+        }
     }
 
     function warm(link) {
