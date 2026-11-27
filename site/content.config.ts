@@ -47,6 +47,7 @@ const writing = defineCollection({
         // One sentence: the page's meta description and its llms.txt entry
         description: z.string().trim().min(1),
         date: z.coerce.date(),
+        cover: z.string().trim().startsWith("/assets/").optional(),
         // Drafts show up in `npm run dev` only; the build leaves them out entirely
         draft: z.boolean().default(false),
     }),

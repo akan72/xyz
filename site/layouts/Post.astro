@@ -9,25 +9,34 @@ interface Props {
 }
 
 const { post } = Astro.props;
-const { title, description, date, draft } = post.data;
+const { title, description, date, cover, draft } = post.data;
 const url = new URL(`/writing/${post.id}`, Astro.site).href;
+const image = cover && new URL(cover, Astro.site).href;
+const datePublished = formatDate(date);
 // So search engines and AI crawlers can read the title, date and author
 const jsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     headline: title,
     description,
-    datePublished: formatDate(date),
+    datePublished,
     url,
+    ...(image ? { image } : {}),
     author: { "@type": "Person", name: "Alex Kan", url: new URL("/", Astro.site).href },
 };
 ---
 <Page title={`${title} | alexkan.xyz`} description={description}>
-    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <Fragment slot="head">
+        <meta property="og:type" content="article">
+        <meta property="article:published_time" content={datePublished}>
+        {image && <meta property="og:image" content={image}>}
+        {image && <meta name="twitter:image" content={image}>}
+        <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    </Fragment>
     <article>
         <h1>{title}</h1>
         <p class="byline">
-            <time datetime={formatDate(date)}>{formatDate(date)}</time>
+            <time datetime={datePublished}>{datePublished}</time>
             {draft && <strong> · Draft (shown in dev only)</strong>}
         </p>
         <slot />
