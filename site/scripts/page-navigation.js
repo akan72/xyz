@@ -17,6 +17,7 @@
 
     const cache = new Map();
     const scrolls = new Map();
+    const headHints = new Set();
     let request = 0, finishFade = () => {}, projectsScript;
     let currentPath = location.pathname;
     const newKey = () => crypto.randomUUID();
@@ -32,6 +33,30 @@
         return url.origin === location.origin && routes.has(url.pathname) && !url.search && !url.hash ? url : null;
     }
 
+    function forwardLinks(doc, selector) {
+        for (const link of doc.head.querySelectorAll(selector)) {
+            const href = link.getAttribute?.('href');
+            const key = `${selector}:${href}`;
+            if (!href || headHints.has(key)) continue;
+            headHints.add(key);
+            document.head.append(document.importNode(link, true));
+        }
+    }
+
+    function warmProjects(doc) {
+        forwardLinks(doc, 'link[rel="preload"]');
+        if (window.__subway || typeof WebSocket !== 'function') return;
+        try {
+            const s = { ws: new WebSocket('wss://istheldown.com/ws?systems=subway&alerts=subway'), queue: [], closed: null, t0: performance.now() };
+            s.onmsg = e => s.queue.push(e.data);
+            s.ws.addEventListener('message', s.onmsg);
+            s.ws.addEventListener('close', e => { s.closed = e.code; });
+            s.stations = fetch('/assets/subway-stations.json').then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+            s.stations.catch(() => {});
+            window.__subway = s;
+        } catch {}
+    }
+
     function page(url) {
         if (!cache.has(url.pathname)) {
             const controller = new AbortController();
@@ -41,6 +66,7 @@
                     if (!response.ok || !response.headers.get('content-type')?.includes('text/html') || (new URL(response.url).origin !== url.origin || new URL(response.url).pathname !== url.pathname)) throw new Error('Not a site page');
                     const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
                     if (!doc.querySelector('main') || !doc.querySelector('.site-header') || !doc.title) throw new Error('Missing page content');
+                    forwardLinks(doc, 'link[rel="preconnect"]');
                     return doc;
                 })
                 .catch(error => { cache.delete(url.pathname); throw error; })
@@ -83,18 +109,22 @@
         catch { if (id === request) location.assign(url.href); return; }
         if (id !== request) return;
 
-        // Decode homepage images before exposing them; no shaders or feed scripts run here.
+        // Decode eager images (e.g. homepage portrait) briefly before exposing them;
+        // lazy images below the fold never block navigation.
         const incoming = document.importNode(doc.querySelector('main'), true);
         incoming.querySelectorAll('script').forEach(script => script.remove());
-        await Promise.race([
-            Promise.all(Array.from(incoming.querySelectorAll('img'), async img => {
-                img.src = new URL(img.getAttribute('src'), url).href;
-                const preload = new Image();
-                preload.src = img.src;
-                try { await preload.decode(); } catch { /* A broken image must not block navigation. */ }
-            })),
-            new Promise(resolve => setTimeout(resolve, 1200)),
-        ]);
+        const eagerImages = Array.from(incoming.querySelectorAll('img')).filter(img => img.getAttribute?.('loading') !== 'lazy');
+        if (eagerImages.length) {
+            await Promise.race([
+                Promise.all(eagerImages.map(async img => {
+                    img.src = new URL(img.getAttribute('src'), url).href;
+                    const preload = new Image();
+                    preload.src = img.src;
+                    try { await preload.decode(); } catch { /* A broken image must not block navigation. */ }
+                })),
+                new Promise(resolve => setTimeout(resolve, 150)),
+            ]);
+        }
         if (id !== request) return;
 
         finishFade();
@@ -128,11 +158,10 @@
         const position = options.pop ? scrolls.get(key) || [0, 0] : [0, 0];
         scrollTo({ left: position[0], top: position[1], behavior: 'instant' });
         if (options.keyboard || options.pop) { main.tabIndex = -1; main.focus({ preventScroll: true }); }
-        document.dispatchEvent(new Event('xyz:navigated'));
-
         let resolveFinished;
         const finished = new Promise(resolve => { resolveFinished = resolve; });
         window.__pageTransitionFinished = finished;
+        document.dispatchEvent(new Event('xyz:navigated'));
         let animation;
         finishFade = () => {
             animation?.cancel();
@@ -143,10 +172,18 @@
             finishFade = () => {};
         };
         if (!matchMedia('(prefers-reduced-motion: reduce)').matches && outgoing.animate) {
-            animation = outgoing.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 240, easing: 'ease-out', fill: 'both' });
+            animation = outgoing.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, easing: 'ease-out', fill: 'both' });
             animation.finished.then(finishFade, () => {});
         } else finishFade();
-        if (currentPath === '/projects') void mountProjects(incoming, finished);
+        if (currentPath === '/projects') {
+            warmProjects(doc);
+            void mountProjects(incoming, finished);
+        }
+    }
+
+    function warm(link) {
+        const url = target(link, { button: 0 });
+        if (url && url.pathname !== currentPath) void page(url).catch(() => {});
     }
 
     document.addEventListener('click', event => {
@@ -155,10 +192,9 @@
         event.preventDefault();
         void navigate(url, { keyboard: event.detail === 0 });
     });
-    document.addEventListener('pointerover', event => {
-        const url = target(event.target.closest?.('a'), { button: 0 });
-        if (url && url.pathname !== currentPath) void page(url).catch(() => {});
-    });
+    for (const type of ['pointerover', 'pointerdown', 'focusin']) {
+        document.addEventListener(type, event => warm(event.target.closest?.('a')));
+    }
     addEventListener('popstate', event => {
         const url = new URL(location.href);
         if (!routes.has(url.pathname) || url.search || url.hash) { location.reload(); return; }

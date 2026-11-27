@@ -43,7 +43,9 @@ const markdownCopy = path === "/" ? "/index.md" : `${path}.md`;
         <script src="../scripts/email-reveal.ts"></script>
         <script src="../scripts/cig-button.js"></script>
         <script src="../scripts/mingus-tabs.js"></script>
+        <script src="../scripts/lazy-video.js"></script>
         <script src="../scripts/repo-figure.ts"></script>
+        <script type="speculationrules" is:inline>{"prefetch":[{"where":{"href_matches":"/writing/*"},"eagerness":"moderate"}]}</script>
         <slot name="head" />
     </head>
     <body>
