@@ -233,6 +233,29 @@ describe("/projects", () => {
         assert.ok(figure?.querySelector("file-tree-container"), "the tree is rendered at build time");
         for (const { sha } of commits) assert.ok(existsSync(`dist/repo/xyz/${sha}.patch`), sha);
     });
+
+    test("embeds and offscreen media are configured for fast loading", () => {
+        const page = doc("projects.html");
+        assert.ok(page.querySelector('link[rel="preconnect"][href="https://pangea.akan72.workers.dev"]'));
+        const mapPanel = main.querySelector("#mingus-panel-map");
+        assert.ok(mapPanel?.querySelector(".loading"));
+        assert.equal(mapPanel?.querySelector("iframe")?.getAttribute("loading"), undefined);
+        assert.equal(main.querySelector("#cig")?.getAttribute("loading"), "lazy");
+        const video = main.querySelector("video.recording");
+        assert.equal(video?.getAttribute("preload"), "none");
+        assert.ok(video?.hasAttribute("data-autoplay-visible"));
+        assert.equal(video?.hasAttribute("autoplay"), false);
+    });
+});
+
+describe("caching headers", () => {
+    test("_headers caches static assets, favicon, and commit patches", () => {
+        const headers = dist("_headers");
+        assert.match(headers, /^\/assets\/\*\n  Cache-Control: public, max-age=86400, stale-while-revalidate=604800$/m);
+        assert.match(headers, /^\/favicon\.ico\n  Cache-Control: public, max-age=86400, stale-while-revalidate=604800$/m);
+        assert.match(headers, /^\/repo\/xyz\/\*\.patch\n  Cache-Control: public, max-age=31536000, immutable$/m);
+        assert.match(headers, /^\/repo\/xyz\/history\.json\n  Cache-Control: public, max-age=300, stale-while-revalidate=86400$/m);
+    });
 });
 
 describe("/writing", () => {
@@ -251,6 +274,16 @@ describe("/writing", () => {
     test("the index links every published post", () => {
         const links = doc("writing.html").querySelectorAll("main li a").map((a) => a.getAttribute("href"));
         assert.deepEqual(links.sort(), published.map((f) => `/writing/${f.replace(/\.mdx?$/, "")}`).sort());
+    });
+
+    test("long post images below the cover are lazy-loaded", () => {
+        const images = doc("writing/workin-at-the-software-factory.html").querySelectorAll("article img");
+        assert.ok(images.length > 1);
+        for (const img of images) {
+            assert.equal(img.getAttribute("decoding"), "async");
+            const isCover = img.getAttribute("src")?.endsWith("/cover.jpg");
+            assert.equal(img.getAttribute("loading"), isCover ? undefined : "lazy");
+        }
     });
 });
 

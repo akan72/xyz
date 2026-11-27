@@ -15,6 +15,7 @@ function app(reduced = false) {
     before(el) { const siblings = this.parent.children; siblings.splice(siblings.indexOf(this), 0, el); el.parent = this.parent; }
     remove() { if (this.parent) this.parent.children.splice(this.parent.children.indexOf(this), 1); this.parent = null; }
     setAttribute(k, v) { this.attrs[k] = v; }
+    getAttribute(k) { return this.attrs[k]; }
     removeAttribute(k) { delete this.attrs[k]; }
     hasAttribute(k) { return Object.hasOwn(this.attrs, k); }
     focus() { document.focused = this; }
@@ -78,6 +79,10 @@ function app(reduced = false) {
       const link = header.links.find(link => new URL(link.href).pathname === path) || { href: 'https://elsewhere.test/', hasAttribute: () => false, closest() { return this; } };
       const event = { target: link, button: 0, detail: 1, preventDefault() { this.defaultPrevented = true; }, ...extra };
       events.click(event); return event;
+    },
+    fire(type, path) {
+      const link = header.links.find(link => new URL(link.href).pathname === path);
+      events[type]({ target: link });
     },
     respond(path, ok = true) { requests.find(r => new URL(r.url).pathname === path).resolve({ ok, url: 'https://example.test' + path, headers: { get: () => 'text/html' }, text: async () => path }); },
     async settle() { animations.splice(0).forEach(a => a.finish()); await flush(); },
@@ -151,4 +156,12 @@ test('reduced motion swaps content immediately without leaving an outgoing page'
   assert.equal(a.mains().length, 1);
   assert.equal(a.pageStyles().length, 1);
   assert.equal(a.mounts, 1);
+});
+
+test('pointerdown and focusin prefetch a route once before click', () => {
+  const a = app();
+  a.fire('pointerdown', '/writing');
+  a.fire('focusin', '/writing');
+  a.fire('focusin', '/projects');
+  assert.deepEqual(a.requests.map(r => new URL(r.url).pathname), ['/writing', '/projects']);
 });
