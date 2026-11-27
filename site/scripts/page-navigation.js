@@ -143,11 +143,10 @@
         const position = options.pop ? scrolls.get(key) || [0, 0] : [0, 0];
         scrollTo({ left: position[0], top: position[1], behavior: 'instant' });
         if (options.keyboard || options.pop) { main.tabIndex = -1; main.focus({ preventScroll: true }); }
-        document.dispatchEvent(new Event('xyz:navigated'));
-
         let resolveFinished;
         const finished = new Promise(resolve => { resolveFinished = resolve; });
         window.__pageTransitionFinished = finished;
+        document.dispatchEvent(new Event('xyz:navigated'));
         let animation;
         finishFade = () => {
             animation?.cancel();

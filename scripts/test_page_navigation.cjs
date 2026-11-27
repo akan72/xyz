@@ -47,7 +47,7 @@ function app(reduced = false) {
     createElement: tag => new Element(tag),
     importNode(el) { const copy = new Element(el.tag); copy.path = el.path; copy.dataset = { ...el.dataset }; return copy; },
     addEventListener: (name, fn) => { events[name] = fn; },
-    dispatchEvent: event => { document.lastEvent = event.type; },
+    dispatchEvent: event => { document.lastEvent = event.type; document.transitionAtNavigated = context.window.__pageTransitionFinished; },
   };
   const location = new URL('https://example.test/');
   location.assign = url => assigned.push(url);
@@ -164,4 +164,18 @@ test('pointerdown and focusin prefetch a route once before click', () => {
   a.fire('focusin', '/writing');
   a.fire('focusin', '/projects');
   assert.deepEqual(a.requests.map(r => new URL(r.url).pathname), ['/writing', '/projects']);
+});
+
+test('window.__pageTransitionFinished is set before xyz:navigated fires', async () => {
+  const a = app();
+  a.click('/projects');
+  a.respond('/projects');
+  await flush();
+  assert.equal(typeof a.document.transitionAtNavigated?.then, 'function');
+  let settled = false;
+  a.document.transitionAtNavigated.then(() => { settled = true; });
+  await flush();
+  assert.equal(settled, false);
+  await a.settle();
+  assert.equal(settled, true);
 });
