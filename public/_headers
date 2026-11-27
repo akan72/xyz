@@ -17,10 +17,6 @@
 /favicon.ico
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
 
-# Commit patches are keyed by full git SHA and never change; history.json
-# updates on deploy.
+# Commit patches are keyed by full git SHA and never change.
 /repo/xyz/*.patch
   Cache-Control: public, max-age=31536000, immutable
-
-/repo/xyz/history.json
-  Cache-Control: public, max-age=300, stale-while-revalidate=86400

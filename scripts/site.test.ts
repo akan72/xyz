@@ -254,7 +254,7 @@ describe("caching headers", () => {
         assert.match(headers, /^\/assets\/\*\n  Cache-Control: public, max-age=86400, stale-while-revalidate=604800$/m);
         assert.match(headers, /^\/favicon\.ico\n  Cache-Control: public, max-age=86400, stale-while-revalidate=604800$/m);
         assert.match(headers, /^\/repo\/xyz\/\*\.patch\n  Cache-Control: public, max-age=31536000, immutable$/m);
-        assert.match(headers, /^\/repo\/xyz\/history\.json\n  Cache-Control: public, max-age=300, stale-while-revalidate=86400$/m);
+        assert.ok(!headers.includes("/repo/xyz/history.json"));
     });
 });
 
