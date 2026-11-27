@@ -158,6 +158,13 @@ describe("machine-readable files", () => {
     const sitemap = dist("sitemap.xml");
     const llms = dist("llms.txt");
 
+    test("the sitemap includes the two canonical Mingus pages", () => {
+        assert.deepEqual(sitemap.match(/<loc>https:\/\/alexkan\.xyz\/mingus[^<]*<\/loc>/g), [
+            `<loc>${SITE_URL}/mingus/</loc>`,
+            `<loc>${SITE_URL}/mingus/sql</loc>`,
+        ]);
+    });
+
     for (const file of indexable) {
         const path = pagePath(file);
         test(`${path} is in the sitemap and llms.txt, with a Markdown copy its <head> points to`, () => {
@@ -251,6 +258,29 @@ describe("/writing", () => {
     test("the index links every published post", () => {
         const links = doc("writing.html").querySelectorAll("main li a").map((a) => a.getAttribute("href"));
         assert.deepEqual(links.sort(), published.map((f) => `/writing/${f.replace(/\.mdx?$/, "")}`).sort());
+    });
+
+    test("the Software Factory post shares its cover as a published article", () => {
+        const page = doc("writing/workin-at-the-software-factory.html");
+        const imagePath = page.querySelector("article img")!.getAttribute("src")!;
+        assert.ok(existsSync(`dist${imagePath}`), imagePath);
+        const image = SITE_URL + imagePath;
+        const date = page.querySelector("time")!.getAttribute("datetime");
+        assert.equal(page.querySelector('meta[property="og:type"]')?.getAttribute("content"), "article");
+        assert.equal(page.querySelector('meta[property="article:published_time"]')?.getAttribute("content"), date);
+        assert.equal(page.querySelector('meta[property="og:image"]')?.getAttribute("content"), image);
+        assert.equal(page.querySelector('meta[name="twitter:image"]')?.getAttribute("content"), image);
+        const data = JSON.parse(page.querySelector('script[type="application/ld+json"]')!.text);
+        assert.equal(data["@type"], "BlogPosting");
+        assert.equal(data.image, image);
+        assert.equal(data.datePublished, date);
+    });
+
+    test("posts without a cover leave the image to the Worker's default card", () => {
+        const page = doc("writing/gm.html");
+        assert.equal(page.querySelector('meta[property="og:type"]')?.getAttribute("content"), "article");
+        assert.equal(page.querySelector('meta[property="og:image"], meta[name="twitter:image"]'), null);
+        assert.equal(JSON.parse(page.querySelector('script[type="application/ld+json"]')!.text).image, undefined);
     });
 });
 

@@ -2,6 +2,7 @@
 title: Workin' at the Software Factory
 description: How we used agents, production traces, and live PR environments to cut backend latency by over 50%.
 date: 2026-11-18
+cover: /assets/writing/closing-the-loop-at-the-software-factory/cover.jpg
 ---
 
 *This article first appeared on the [Artemis Engineering blog](https://x.com/0xUltraviolence/status/2123145249421738412).*

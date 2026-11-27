@@ -25,9 +25,19 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     let head = req.method() == Method::Head;
 
     if url.host_str() == Some(WWW_HOST) {
-        let mut canonical = url.clone();
-        canonical.set_host(Some(SITE_HOST))?;
-        canonical.set_scheme("https").ok();
+        // Ask the asset layer which slash variants really have a canonical
+        // path, rather than stripping slashes from directories or missing URLs.
+        let location = if read_request && path != "/" && path.ends_with('/') {
+            let response = env.assets("ASSETS")?.fetch_request(req).await?;
+            if response.status_code() == 307 {
+                response.headers().get("location")?
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        let canonical = bare_domain_url(url, location.as_deref())?;
         // 308 keeps a POST a POST; a 301 would let clients turn it into a GET
         return Response::redirect_with_status(canonical, if read_request { 301 } else { 308 });
     }
@@ -151,6 +161,17 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     }
 }
 
+fn bare_domain_url(mut url: Url, asset_location: Option<&str>) -> Result<Url> {
+    if let Some(target) = asset_location.and_then(|location| url.join(location).ok()) {
+        if target.origin() == url.origin() {
+            url.set_path(target.path());
+        }
+    }
+    url.set_host(Some(SITE_HOST))?;
+    url.set_scheme("https").ok();
+    Ok(url)
+}
+
 // Path of a page's Markdown copy: / -> /index.md, /ideology -> /ideology.md.
 // None for paths with a dot, which are files, not pages. Keep in sync with
 // markdown_path in scripts/sitegen.py.
@@ -198,6 +219,28 @@ fn vary_on_accept(res: Response) -> Result<Response> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn combines_www_and_asset_redirects_without_losing_the_query() {
+        for scheme in ["http", "https"] {
+            let url = Url::parse(&format!("{scheme}://{WWW_HOST}/about/?ref=site")).unwrap();
+            assert_eq!(
+                bare_domain_url(url, Some("/about")).unwrap().as_str(),
+                "https://alexkan.xyz/about?ref=site"
+            );
+        }
+    }
+
+    #[test]
+    fn preserves_the_path_without_a_usable_asset_redirect() {
+        let url = Url::parse("https://www.alexkan.xyz/not-found/").unwrap();
+        for location in [None, Some("https://example.com/"), Some("http://[")] {
+            assert_eq!(
+                bare_domain_url(url.clone(), location).unwrap().as_str(),
+                "https://alexkan.xyz/not-found/"
+            );
+        }
+    }
 
     #[test]
     fn markdown_paths() {

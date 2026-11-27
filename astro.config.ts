@@ -44,8 +44,8 @@ export default defineConfig({
     integrations: [
         mdx(),
         agentFiles({
-            // The mingus Worker answers at alexkan.xyz/mingus/ (its own repository)
-            external: ["/mingus/"],
+            // The mingus Worker serves these pages from its own repository.
+            external: ["/mingus/", "/mingus/sql"],
             // What each page's sitemap date follows besides its .astro file
             sources: (path) =>
                 path === "/projects" ? ["site/content/projects"]
