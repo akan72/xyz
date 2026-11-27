@@ -14,8 +14,12 @@ const observer = 'IntersectionObserver' in window
 function observeVideos() {
     for (const video of document.querySelectorAll('video[data-autoplay-visible]:not([data-video-observed])')) {
         video.dataset.videoObserved = '';
+        if (reducedMotion.matches) {
+            video.controls = true;
+            continue;
+        }
         if (observer) observer.observe(video);
-        else if (!reducedMotion.matches) video.play().catch(() => {});
+        else video.play().catch(() => {});
     }
 }
 
