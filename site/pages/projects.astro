@@ -29,6 +29,7 @@ const icons: Record<NonNullable<(typeof projects)[number]["icon"]>, string> = { 
 <Page title="Projects | alexkan.xyz" description="Things I've built.">
     <Fragment slot="head-scripts">
         {projects.some((p) => p.media === "subway-vis") && <SubwayHead />}
+        {projects.some((p) => p.media === "pangea-board") && <link rel="preconnect" href="https://pangea.akan72.workers.dev" />}
     </Fragment>
     <h1>Projects</h1>
     <ul>

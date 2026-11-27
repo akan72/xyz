@@ -71,7 +71,7 @@ a:visited { color: var(--visited, VisitedText); }
 @view-transition { navigation: auto; }
 ::view-transition-group(root),
 ::view-transition-group(site-header) { animation: none; }
-::view-transition-old(root) { z-index: 1; mix-blend-mode: normal; animation: page-fade-out 240ms ease-out both; }
+::view-transition-old(root) { z-index: 1; mix-blend-mode: normal; animation: page-fade-out 120ms ease-out both; }
 ::view-transition-new(root) { z-index: 0; mix-blend-mode: normal; animation: none; }
 ::view-transition-old(site-header) { animation: none; opacity: 0; }
 ::view-transition-new(site-header) { animation: none; mix-blend-mode: normal; }

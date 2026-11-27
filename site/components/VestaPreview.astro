@@ -19,9 +19,9 @@ if (!board) throw new Error("Vesta demo HTML must contain a board");
 </figure>
 <figure class="vesta-preview">
     <figcaption>Demo with a real board</figcaption>
-    <!-- Silent clip of `vesta` updating a white Vestaboard; muted so it can autoplay -->
+    <!-- Silent clip of `vesta` updating a white Vestaboard; plays once near the viewport so it does not compete with embeds above it -->
     <video class="recording" src="/assets/vesta-board.mp4" poster="/assets/vesta-board.jpg"
-        width="1280" height="720" autoplay muted loop playsinline preload="metadata"
+        width="1280" height="720" muted loop playsinline preload="none" data-autoplay-visible
         aria-label="A white Vestaboard flipping from blank to six rows of prices"></video>
 </figure>
 

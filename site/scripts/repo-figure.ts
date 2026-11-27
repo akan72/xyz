@@ -17,6 +17,9 @@ function debounce(run: () => void, ms: number) {
 }
 
 async function mount(figure: HTMLElement) {
+    const transition = (window as Window & { __pageTransitionFinished?: Promise<void> }).__pageTransitionFinished;
+    if (transition) await transition.catch(() => {});
+    if (!figure.isConnected) return;
     const [{ FileTree }, diffs, lib, response] = await Promise.all([
         import("@pierre/trees"), import("@pierre/diffs"), import("../lib/repo-history"), fetch("/repo/xyz/history.json").catch(() => null),
     ]);

@@ -16,6 +16,19 @@ const externalLinksInNewTab = defineHastPlugin({
     },
 });
 
+// Defer below-the-fold images in Markdown posts so long articles don't fetch
+// megabytes of screenshots and GIFs up front.
+const lazyMarkdownImages = defineHastPlugin({
+    name: "lazy-markdown-images",
+    element: {
+        filter: ["img"],
+        visit(node, ctx) {
+            ctx.setProperty(node, "decoding", "async");
+            if (!String(node.properties.src ?? "").endsWith("/cover.jpg")) ctx.setProperty(node, "loading", "lazy");
+        },
+    },
+});
+
 // `src/` belongs to the Rust Worker, so Astro's sources live in `site/`.
 // public/ (images, robots.txt, the projects figure's script) is copied into
 // dist/ unchanged, and dist/ is what Workers Static Assets serves.
@@ -40,7 +53,7 @@ export default defineConfig({
             },
         },
     },
-    markdown: { processor: satteri({ hastPlugins: [externalLinksInNewTab] }) },
+    markdown: { processor: satteri({ hastPlugins: [externalLinksInNewTab, lazyMarkdownImages] }) },
     integrations: [
         mdx(),
         agentFiles({
