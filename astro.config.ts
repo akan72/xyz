@@ -3,6 +3,7 @@ import mdx from "@astrojs/mdx";
 import { defineConfig } from "astro/config";
 import { defineHastPlugin } from "satteri";
 import agentFiles from "./site/integrations/agent-files.ts";
+import { markdownImages } from "./site/lib/markdown-images.ts";
 
 // Links in Markdown (project descriptions) to other sites open in a new tab,
 // like every other outside link on the site
@@ -12,19 +13,6 @@ const externalLinksInNewTab = defineHastPlugin({
         filter: ["a"],
         visit(node, ctx) {
             if (/^https?:\/\//.test(String(node.properties.href))) ctx.setProperty(node, "target", "_blank");
-        },
-    },
-});
-
-// Defer below-the-fold images in Markdown posts so long articles don't fetch
-// megabytes of screenshots and GIFs up front.
-const lazyMarkdownImages = defineHastPlugin({
-    name: "lazy-markdown-images",
-    element: {
-        filter: ["img"],
-        visit(node, ctx) {
-            ctx.setProperty(node, "decoding", "async");
-            if (!String(node.properties.src ?? "").endsWith("/cover.jpg")) ctx.setProperty(node, "loading", "lazy");
         },
     },
 });
@@ -53,7 +41,7 @@ export default defineConfig({
             },
         },
     },
-    markdown: { processor: satteri({ hastPlugins: [externalLinksInNewTab, lazyMarkdownImages] }) },
+    markdown: { processor: satteri({ hastPlugins: [externalLinksInNewTab, markdownImages] }) },
     integrations: [
         mdx(),
         agentFiles({

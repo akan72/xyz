@@ -3,8 +3,10 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { describe, test } from "node:test";
 import { parse } from "node-html-parser";
+import { markdownToHtml } from "satteri";
 import { markdownPath } from "../site/integrations/agent-files.ts";
 import { lastUpdated } from "../site/lib/last-updated.ts";
+import { markdownImages } from "../site/lib/markdown-images.ts";
 
 const SITE_URL = "https://alexkan.xyz";
 const pagePath = (file: string) => (file === "index.html" ? "/" : "/" + file.replace(/\.html$/, ""));
@@ -313,6 +315,37 @@ describe("/writing", () => {
             assert.equal(img.getAttribute("decoding"), "async");
             const isCover = img.getAttribute("src")?.endsWith("/cover.jpg");
             assert.equal(img.getAttribute("loading"), isCover ? undefined : "lazy");
+        }
+    });
+
+    test("the Software Factory post uses sized WebP images and keeps its JPEG cover", () => {
+        const slug = "writing/workin-at-the-software-factory";
+        const markdown = dist(`${slug}.md`);
+        const images = doc(`${slug}.html`).querySelectorAll("article img");
+        for (const [index, img] of images.entries()) {
+            const src = img.getAttribute("src")!;
+            assert.match(src, index === 0 ? /\/cover\.jpg$/ : /\.webp$/);
+            assert.ok(existsSync(`dist${src}`), src);
+            assert.ok(markdown.includes(`](${SITE_URL}${src})`), src);
+            assert.match(img.getAttribute("width") ?? "", /^[1-9]\d*$/, src);
+            assert.match(img.getAttribute("height") ?? "", /^[1-9]\d*$/, src);
+        }
+        const animation = images.find((img) => img.getAttribute("src")?.endsWith("/art-vs-artrange-v6.webp"));
+        assert.equal(animation?.getAttribute("width"), "1200");
+        assert.equal(animation?.getAttribute("height"), "460");
+    });
+
+    test("the Markdown image plugin skips missing files and external URLs when sizing", async () => {
+        const { html } = await markdownToHtml(
+            "![Missing](/missing.png) ![Remote](//example.test/image.png)",
+            { hastPlugins: [markdownImages] },
+        );
+        const images = parse(html).querySelectorAll("img");
+        assert.equal(images.length, 2);
+        for (const img of images) {
+            assert.equal(img.getAttribute("width"), undefined);
+            assert.equal(img.getAttribute("height"), undefined);
+            assert.equal(img.getAttribute("loading"), "lazy");
         }
     });
 });
