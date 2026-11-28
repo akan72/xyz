@@ -206,12 +206,8 @@ async function mount(figure: HTMLElement) {
     container.addEventListener("keydown", (event) => {
         if (event.defaultPrevented || event.isComposing || !/^[\p{L}\p{N}]$/u.test(event.key) ||
             event.ctrlKey || event.metaKey || event.altKey) return;
-        event.preventDefault();
         event.stopPropagation();
-        const query = search.value + event.key;
-        search.value = query;
         search.focus();
-        tree.setSearch(query);
     }, { capture: true });
     figure.querySelector(".close")!.addEventListener("click", closeFile);
 
