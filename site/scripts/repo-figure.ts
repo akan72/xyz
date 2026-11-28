@@ -183,8 +183,11 @@ async function mount(figure: HTMLElement) {
             if (item) tree.scrollToPath(item.getPath(), { focus: true });
         } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
             event.preventDefault();
+            const previous = tree.getFocusedPath();
             if (event.key === "ArrowDown") tree.focusNextSearchMatch();
             else tree.focusPreviousSearchMatch();
+            const match = tree.getFocusedPath();
+            if (match && match !== previous) tree.scrollToPath(match, { focus: false, offset: "nearest" });
         }
     });
     container.addEventListener("keydown", (event) => {
