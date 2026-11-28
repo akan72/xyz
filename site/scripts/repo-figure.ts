@@ -149,6 +149,12 @@ async function mount(figure: HTMLElement) {
 
     // The build drew the tree at the slider's commit, with its changes' folders open
     const start = slider.valueAsNumber;
+    let selectingSearchResult = false;
+    function openTreePath(path: string) {
+        if (path.endsWith("/") || showChange(path)) return;
+        openPath = path;
+        showFile();
+    }
     const tree: FileTree = new FileTree({
         ...history.treeOptions(start),
         onSearchChange(value) {
@@ -156,9 +162,7 @@ async function mount(figure: HTMLElement) {
         },
         onSelectionChange(paths) {
             const path = paths.at(-1);
-            if (!path || path.endsWith("/") || showChange(path)) return;
-            openPath = path;
-            showFile();
+            if (path && !selectingSearchResult) openTreePath(path);
         },
     });
     tree.hydrate({ fileTreeContainer: container });
@@ -178,7 +182,16 @@ async function mount(figure: HTMLElement) {
         } else if (event.key === "Enter" && tree.isSearchOpen()) {
             event.preventDefault();
             const item = tree.getFocusedItem();
-            item?.select();
+            if (item) {
+                const path = item.getPath();
+                selectingSearchResult = true;
+                for (const selected of tree.getSelectedPaths()) {
+                    if (selected !== path) tree.getItem(selected)?.deselect();
+                }
+                item.select();
+                selectingSearchResult = false;
+                openTreePath(path);
+            }
             closeSearch();
             if (item) tree.scrollToPath(item.getPath(), { focus: true });
         } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
