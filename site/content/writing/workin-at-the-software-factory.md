@@ -17,7 +17,7 @@ One of our core products is the [Artemis Terminal](https://www.artemis.ai/), a f
 
 Since 2022, the Terminal has been an important top-of-funnel channel for us, and is used by leading retail and institutional investors alike.
 
-![Screenshot of the Artemis Terminal](/assets/writing/closing-the-loop-at-the-software-factory/image_4.png)
+![Screenshot of the Artemis Terminal](/assets/writing/closing-the-loop-at-the-software-factory/image_4.webp)
 
 *Screenshot of the Artemis Terminal*
 
@@ -31,7 +31,7 @@ However, in only two weeks with Opus 5[1], **we were able to reduce the mean lat
 
 Here you can see the overall results over time!
 
-![Mean latency across the entire service went from ~250ms -> ~110ms](/assets/writing/closing-the-loop-at-the-software-factory/image_18.png)
+![Mean latency across the entire service went from ~250ms -> ~110ms](/assets/writing/closing-the-loop-at-the-software-factory/image_18.webp)
 
 *Mean latency across the entire service went from ~250ms -> ~110ms*
 
@@ -49,7 +49,7 @@ One issue with sheets is that it's really easy for users to write inefficient qu
 
 Take this toy example below:
 
-![Gif comparing ART versus ARTRANGE Queries](/assets/writing/closing-the-loop-at-the-software-factory/art-vs-artrange-v6.gif)
+![Gif comparing ART versus ARTRANGE Queries](/assets/writing/closing-the-loop-at-the-software-factory/art-vs-artrange-v6.webp)
 
 *Gif comparing ART versus ARTRANGE Queries*
 
@@ -83,7 +83,7 @@ Some concrete examples of this are:
 
 **Logs, Traces, and Flamegraphs**
 
-![The SQL Queries view within Datadog APM](/assets/writing/closing-the-loop-at-the-software-factory/image_22.png)
+![The SQL Queries view within Datadog APM](/assets/writing/closing-the-loop-at-the-software-factory/image_22.webp)
 
 *The SQL Queries view within Datadog APM*
 
@@ -92,7 +92,7 @@ Some concrete examples of this are:
 
 **Branch Deployments**
 
-![Example showing PR Environments for Branch Deployments](/assets/writing/closing-the-loop-at-the-software-factory/pr-environments-illustrative.png)
+![Example showing PR Environments for Branch Deployments](/assets/writing/closing-the-loop-at-the-software-factory/pr-environments-illustrative.webp)
 
 *Example showing PR Environments for Branch Deployments*
 
@@ -108,7 +108,7 @@ Every backend PR creates an ephemeral, sandboxed instance of our API service
 
 **Skills and a Full-Stack Environment**
 
-![Pre-created Fullstack Environment in Cursor](/assets/writing/closing-the-loop-at-the-software-factory/fullstack-anonymized.png)
+![Pre-created Fullstack Environment in Cursor](/assets/writing/closing-the-loop-at-the-software-factory/fullstack-anonymized.webp)
 
 *Pre-created Fullstack Environment in Cursor*
 
@@ -122,7 +122,7 @@ During this optimization push we shipped 83 PRs that used a variety of strategie
 
 **Eliminating Join Fanouts**
 
-![Join Fanout query examples](/assets/writing/closing-the-loop-at-the-software-factory/image_15.png)
+![Join Fanout query examples](/assets/writing/closing-the-loop-at-the-software-factory/image_15.webp)
 
 *Join Fanout query examples*
 
@@ -148,7 +148,7 @@ One of the joins between these tables matched on metric alone, multiplying the n
 
 **Finding the First Qualifying Row**
 
-![Postgres query plan for the first qualifying row example](/assets/writing/closing-the-loop-at-the-software-factory/image_10.png)
+![Postgres query plan for the first qualifying row example](/assets/writing/closing-the-loop-at-the-software-factory/image_10.webp)
 
 *Postgres query plan for the first qualifying row example*
 
@@ -159,7 +159,7 @@ One of the joins between these tables matched on metric alone, multiplying the n
 
 **Matching the Query Predicate with the Index**
 
-![Query plan for the predicate match example](/assets/writing/closing-the-loop-at-the-software-factory/image_21.png)
+![Query plan for the predicate match example](/assets/writing/closing-the-loop-at-the-software-factory/image_21.webp)
 
 *Query plan for the predicate match example*
 
@@ -169,7 +169,7 @@ One of the joins between these tables matched on metric alone, multiplying the n
 
 **Eliminating Repeated Work**
 
-![Repeated calls to construct the NYSE calendar highlighted on a flamegraph](/assets/writing/closing-the-loop-at-the-software-factory/image_7.png)
+![Repeated calls to construct the NYSE calendar highlighted on a flamegraph](/assets/writing/closing-the-loop-at-the-software-factory/image_7.webp)
 
 *Repeated calls to construct the NYSE calendar highlighted on a flamegraph*
 
@@ -185,9 +185,9 @@ One feature that we love is [@planetscale](https://x.com/@planetscale) [Insights
 
 We've also built @cursor_ai Automations + Cloud Agents that take advantage of the same tools and skills described above. Whenever a Sentry issue is opened or a Datadog Monitor is triggered, we automatically dispatch a Cloud Agent to investigate.
 
-![Cursor pull request](/assets/writing/closing-the-loop-at-the-software-factory/image_17.png)
+![Cursor pull request](/assets/writing/closing-the-loop-at-the-software-factory/image_17.webp)
 
-![Sentry issue](/assets/writing/closing-the-loop-at-the-software-factory/image_19.png)
+![Sentry issue](/assets/writing/closing-the-loop-at-the-software-factory/image_19.webp)
 
 *PR auto-created by Cursor and the Sentry issue that triggered it*
 
@@ -195,17 +195,17 @@ These PRs are typically merge-ready, and the on-call engineer has a high degree 
 
 ## Takeaways
 
-![Themes endpoint speedup](/assets/writing/closing-the-loop-at-the-software-factory/themes-latency-v2.png)
+![Themes endpoint speedup](/assets/writing/closing-the-loop-at-the-software-factory/themes-latency-v2.webp)
 
 *Themes endpoint speedup*
 
 After landing these optimizations, endpoints that power critical pages like our home page and screener benefitted even more. You can see the speedup over time above, but it's pretty stark when you can actually **feel** the speedup on the real charts.
 
-![Themes endpoint speedup GIF](/assets/writing/closing-the-loop-at-the-software-factory/themes-mean-v4.gif)
+![Themes endpoint speedup GIF](/assets/writing/closing-the-loop-at-the-software-factory/themes-mean-v4.webp)
 
 *Themes endpoint speedup GIF*
 
-![Directory endpoint speedup GIF](/assets/writing/closing-the-loop-at-the-software-factory/directory-v3.gif)
+![Directory endpoint speedup GIF](/assets/writing/closing-the-loop-at-the-software-factory/directory-v3.webp)
 
 *Directory endpoint speedup GIF*
 
