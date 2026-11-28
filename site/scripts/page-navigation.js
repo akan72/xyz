@@ -43,20 +43,6 @@
         }
     }
 
-    function warmProjects(doc) {
-        forwardLinks(doc, 'link[rel="preload"]');
-        if (window.__subway || typeof WebSocket !== 'function') return;
-        try {
-            const s = { ws: new WebSocket('wss://istheldown.com/ws?systems=subway&alerts=subway'), queue: [], closed: null, t0: performance.now() };
-            s.onmsg = e => s.queue.push(e.data);
-            s.ws.addEventListener('message', s.onmsg);
-            s.ws.addEventListener('close', e => { s.closed = e.code; });
-            s.stations = fetch('/assets/subway-stations.json').then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
-            s.stations.catch(() => {});
-            window.__subway = s;
-        } catch {}
-    }
-
     function page(url) {
         if (!cache.has(url.pathname)) {
             const controller = new AbortController();
@@ -175,10 +161,7 @@
             animation = outgoing.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, easing: 'ease-out', fill: 'both' });
             animation.finished.then(finishFade, () => {});
         } else finishFade();
-        if (currentPath === '/projects') {
-            warmProjects(doc);
-            void mountProjects(incoming, finished);
-        }
+        if (currentPath === '/projects') void mountProjects(incoming, finished);
     }
 
     function warm(link) {

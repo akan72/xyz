@@ -55,7 +55,6 @@ export function createHistory(history: History) {
         initialExpandedPaths: changedFolders(index),
         initialVisibleRowCount: 12,
         density: "compact",
-        search: true,
     });
 
     return { ...history, treeAt, changedFolders, treeOptions, has: (index: number, path: string) => filesAfter[index].has(path) };
@@ -70,4 +69,15 @@ export const commitDate = (date: string) =>
 export const diffsTheme = {
     theme: { light: "pierre-light", dark: "pierre-dark" },
     themeType: "system",
+    unsafeCSS: `
+        [data-diffs-header="default"] { border-block-start: 1px solid color-mix(in srgb, currentColor 12%, transparent); }
+        [data-line] span {
+            color: light-dark(
+                oklch(from var(--diffs-token-light, var(--diffs-light)) min(l, .45) c h),
+                oklch(from var(--diffs-token-dark, var(--diffs-dark)) max(l, .74) c h)
+            );
+        }
+        [data-diffs-header="default"] [data-additions-count] { color: light-dark(#137548, #47d395); }
+        [data-diffs-header="default"] [data-deletions-count] { color: light-dark(#b5332c, #ff856a); }
+    `,
 } as const;

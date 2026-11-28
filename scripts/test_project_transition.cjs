@@ -9,8 +9,8 @@ const component = fs.readFileSync(path.join(root, 'site/components/SubwayHead.as
 const head = component.match(/<script is:inline>\s*([\s\S]*?)<\/script>/)[1];
 const renderer = fs.readFileSync(path.join(root, 'public/assets/subway-vis.js'), 'utf8');
 
-function page(supported = true) {
-  let reveal;
+function page(supported = true, near = true) {
+  let reveal, intersect;
   const scripts = [];
   const context = vm.createContext({
     window: { ...(supported ? { onpagereveal: null } : {}), addEventListener: (_, fn) => { reveal = fn; } },
@@ -21,13 +21,18 @@ function page(supported = true) {
       addEventListener() {}, removeEventListener() {}, hidden: false,
     },
     WebSocket: class { constructor() { throw new Error('No feed in lifecycle test'); } },
-    IntersectionObserver: class { observe() {} disconnect() {} },
+    IntersectionObserver: class {
+      constructor(fn, options) { if (options.rootMargin) intersect = value => fn([{ isIntersecting: value }]); }
+      observe() { if (near) intersect?.(true); }
+      disconnect() {}
+    },
+    fetch: async () => ({ ok: true, json: async () => ({}) }),
     matchMedia: () => ({ matches: false }), location: { search: '' },
     setTimeout: () => 0, clearTimeout() {}, cancelAnimationFrame() {}, console,
   });
   vm.runInContext(head, context);
   vm.runInContext(renderer, context);
-  return { scripts, reveal: event => reveal(event), pause: () => context.window.xyzPauseProjects() };
+  return { scripts, reveal: event => reveal(event), pause: () => context.window.xyzPauseProjects(), intersect: value => intersect(value) };
 }
 const flush = () => new Promise(resolve => setImmediate(resolve));
 
@@ -80,6 +85,16 @@ test('a failed CDN starts the fallback loader after the transition', async () =>
   await flush();
   assert.equal(p.scripts.length, 2);
   assert.match(p.scripts[1].src, /unpkg\.com/);
+});
+
+test('the preview does not load Hydra until it nears the viewport', async () => {
+  const p = page(false, false);
+  p.intersect(false);
+  await flush();
+  assert.equal(p.scripts.length, 0);
+  p.intersect(true);
+  await flush();
+  assert.equal(p.scripts.length, 1);
 });
 
 // Exercise the real frame scheduler without WebGL or a live network feed.

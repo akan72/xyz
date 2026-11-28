@@ -6,7 +6,7 @@
 // routed only at alexkan.xyz/mingus in production (see its wrangler.toml). The absolute URL keeps PR
 // previews and `wrangler dev` from framing this site's own 404 page instead.
 //
-// The SQL frame is not in the HTML: it loads DuckDB-Wasm and the tables
+// The map starts when its stage nears the viewport. The SQL view loads DuckDB-Wasm and the tables
 // (about 14 MB on a first visit), so site/scripts/mingus-tabs.js adds it,
 // still hidden, when the tab is hovered or focused, and never on page load.
 // It points at sql, not sql.html, which Cloudflare redirects to sql.
@@ -19,15 +19,12 @@ const MINGUS = "https://alexkan.xyz/mingus/";
         <button type="button" role="tab" id="mingus-tab-sql" aria-controls="mingus-panel-sql" aria-selected="false" tabindex="-1">Query with SQL</button>
     </div>
     <div class="stage">
-    <div class="panel" id="mingus-panel-map" role="tabpanel" aria-labelledby="mingus-tab-map">
+    <div class="panel" id="mingus-panel-map" role="tabpanel" aria-labelledby="mingus-tab-map"
+        data-src={`${MINGUS}?embed`} data-title="mingus: interactive 3D map of every artist I've listened to, clustered by genre">
         <p class="loading">Loading 3D map…</p>
-        <iframe
-            src={`${MINGUS}?embed`}
-            title="mingus: interactive 3D map of every artist I've listened to, clustered by genre"
-            referrerpolicy="no-referrer"
-        ></iframe>
     </div>
-    <div class="panel sql" id="mingus-panel-sql" role="tabpanel" aria-labelledby="mingus-tab-sql" data-src={`${MINGUS}sql?embed`} hidden>
+    <div class="panel sql" id="mingus-panel-sql" role="tabpanel" aria-labelledby="mingus-tab-sql"
+        data-src={`${MINGUS}sql?embed`} data-title="mingus: query my listening history with DuckDB SQL, in your browser" hidden>
         <p class="loading">Starting DuckDB in your browser…</p>
     </div>
     </div>

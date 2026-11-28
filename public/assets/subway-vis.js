@@ -151,21 +151,18 @@ window.xyzMountProjects = function () {
   observer.observe(box);
   const onVisibility = () => (document.hidden ? stop() : start());
   document.addEventListener('visibilitychange', onVisibility);
-  const pause = () => { suspended = true; stop(); };
+  let startupObserver;
+  const pause = () => { suspended = true; startupObserver?.disconnect(); stop(); };
   window.xyzPauseProjects = pause;
   window.xyzDisposeProjects = () => {
     if (disposed) return;
     disposed = true;
+    startupObserver?.disconnect();
     stop();
     observer.disconnect();
     document.removeEventListener('visibilitychange', onVisibility);
     clearTimeout(socketTimer); clearTimeout(retryTimer);
     if (activeSocket) { activeSocket.onclose = null; activeSocket.onmessage = null; activeSocket.close(); }
-    if (window.__subway) {
-      window.__subway.ws.removeEventListener('message', window.__subway.onmsg);
-      if (window.__subway.ws !== activeSocket) window.__subway.ws.close();
-      delete window.__subway;
-    }
     if (window.xyzPauseProjects === pause) window.xyzPauseProjects = null;
     hydra?.regl.destroy();
     hydra = null;
@@ -244,28 +241,33 @@ window.xyzMountProjects = function () {
   }
 
   (async () => {
+    await new Promise(resolve => {
+      startupObserver = new IntersectionObserver(([entry]) => {
+        if (!entry.isIntersecting) return;
+        startupObserver.disconnect();
+        resolve();
+      }, { rootMargin: '500px 0px' });
+      startupObserver.observe(box);
+    });
     await window.__pageTransitionFinished;
     if (disposed || suspended) return;
+    const stationsRequest = fetch(STATIONS_URL).then(r => r.ok ? r.json() : null).catch(() => null);
     if (!(await ensureHydra())) return disposed ? undefined : remove('hydra-synth did not load from jsDelivr or unpkg');
     if (disposed || suspended) return;
     // Create the renderer and compile the shader graph now, so the only work left when the snapshot lands is one rebuild with real numbers.
     try { createRenderer(); buildGraph(); hydra.tick(16); }
     catch (e) { return remove('renderer failed (WebGL?): ' + e); }
-    const pre = window.__subway || null;
-    let stations;
-    try { stations = await (pre && pre.stations ? pre.stations : fetch(STATIONS_URL).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })); } catch (e) { return remove('station file failed: ' + e); }
+    const stations = await stationsRequest;
     if (disposed || suspended) return;
+    if (!stations) return remove('station file failed');
     let attempts = 0;
     const connect = () => {
     if (disposed || suspended) return;
     attempts++;
-    // First attempt: adopt the socket the page opened in <head>, replaying anything it already queued.
-    const early = attempts === 1 && pre && pre.ws && pre.closed === null ? pre : null;
     let ws;
-    if (early) ws = early.ws; else { try { ws = new WebSocket(WS_URL); } catch (e) { return remove('WebSocket constructor failed: ' + e); } }
+    try { ws = new WebSocket(WS_URL); } catch (e) { return remove('WebSocket constructor failed: ' + e); }
     activeSocket = ws;
-    const elapsed = early ? performance.now() - early.t0 : 0;
-    const timer = socketTimer = setTimeout(() => { if (!disposed && !scene) { try { ws.close(); } catch (e) {} remove('no snapshot within 20 s'); } }, Math.max(2000, 20000 - elapsed));
+    const timer = socketTimer = setTimeout(() => { if (!disposed && !scene) { try { ws.close(); } catch (e) {} remove('no snapshot within 20 s'); } }, 20000);
     const subway = t => (t.system || 'subway') === 'subway';
     let lastBuild = 0, dirty = false;
     ws.onmessage = ev => {
@@ -296,7 +298,6 @@ window.xyzMountProjects = function () {
       clearTimeout(timer);
       if (attempts < 2) retryTimer = setTimeout(connect, 1500); else remove('socket closed before a snapshot (code ' + ev.code + ')');
     };
-    if (early) { ws.removeEventListener('message', early.onmsg); const q = early.queue.splice(0); q.forEach(d => ws.onmessage({ data: d })); if (early.closed !== null && !scene) ws.onclose({ code: early.closed }); }
     };
     connect();
   })();

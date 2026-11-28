@@ -96,7 +96,9 @@ fn board_html(board: &[Vec<u8>]) -> String {
             66 => "#51aa6a",
             _ => "#151515",
         };
-        html.push_str(&format!(r#"<span class="tile chip" style="background:{color}" aria-label="Color chip {}"></span>"#, row[21]));
+        html.push_str(&format!(
+            r#"<span class="tile chip" style="background:{color}"></span>"#
+        ));
     }
     html.push_str("</div>");
     html
@@ -169,6 +171,7 @@ mod tests {
         let html = render_cached(TEMPLATE, &display().to_string(), 1000).unwrap();
         assert_eq!(html.matches("class=\"tile").count(), 132);
         assert!(html.contains("BTC     $83,436 +2.8%"));
+        assert_eq!(html.matches("aria-label=").count(), 1);
         assert!(!html.contains("Sample Prices"));
         assert!(html.contains("<figcaption>Live prices updated every 30 minutes</figcaption>"));
         assert!(html.starts_with("before") && html.ends_with("after"));
