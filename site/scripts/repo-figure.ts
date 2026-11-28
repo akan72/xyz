@@ -151,6 +151,9 @@ async function mount(figure: HTMLElement) {
     const start = slider.valueAsNumber;
     const tree: FileTree = new FileTree({
         ...history.treeOptions(start),
+        onSearchChange(value) {
+            if (value === null) search.value = "";
+        },
         onSelectionChange(paths) {
             const path = paths.at(-1);
             if (!path || path.endsWith("/") || showChange(path)) return;
