@@ -7,6 +7,7 @@ import demoHtml from "../generated/vesta-demo.html?raw";
 const demo = parse(demoHtml);
 const board = demo.querySelector(".board");
 if (!board) throw new Error("Vesta demo HTML must contain a board");
+for (const chip of board.querySelectorAll(".chip")) chip.removeAttribute("aria-label");
 ---
 <figure class="vesta-preview">
     <!-- The Worker (src/vesta.rs) swaps this label for a live one when it serves live prices -->

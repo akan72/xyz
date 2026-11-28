@@ -13,7 +13,7 @@ function addFrame(panel) {
     if (!panel.dataset.src || panel.querySelector('iframe')) return;
     const frame = document.createElement('iframe');
     frame.src = panel.dataset.src;
-    frame.title = 'mingus: query my listening history with DuckDB SQL, in your browser';
+    frame.title = panel.dataset.title;
     frame.referrerPolicy = 'no-referrer';
     panel.append(frame);
 }
@@ -27,6 +27,24 @@ function select(tab) {
     }
     addFrame(panelOf(tab));
 }
+
+let mapObserver;
+function observeMap() {
+    mapObserver?.disconnect();
+    const stage = document.querySelector('main:not([data-outgoing-page]) .mingus-embed .stage');
+    if (!stage) return;
+    const panel = stage.querySelector('#mingus-panel-map');
+    if (typeof IntersectionObserver === 'undefined') return addFrame(panel);
+    const threshold = 0.45;
+    mapObserver = new IntersectionObserver(([entry], observer) => {
+        if (entry.intersectionRatio < threshold || !stage.isConnected || stage.closest('[data-outgoing-page]')) return;
+        observer.disconnect();
+        addFrame(panel);
+    }, { rootMargin: '320px 0px', threshold });
+    mapObserver.observe(stage);
+}
+observeMap();
+document.addEventListener('xyz:navigated', observeMap);
 
 // Neither event bubbles, so both are caught on the way down
 for (const type of ['pointerenter', 'focus']) {

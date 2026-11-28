@@ -30,11 +30,14 @@ async function mount(figure: HTMLElement) {
     const options = { ...lib.diffsTheme, overflow: "wrap", preferredHighlighter: "highlights" } as const;
 
     const slider = figure.querySelector<HTMLInputElement>(".commit-slider")!;
+    const search = figure.querySelector<HTMLInputElement>(".tree-search")!;
     const link = figure.querySelector<HTMLAnchorElement>(".commit a")!;
     const subject = figure.querySelector<HTMLElement>(".commit .subject")!;
     const date = figure.querySelector<HTMLElement>(".commit .date")!;
     const diffPane = figure.querySelector<HTMLElement>(".diff-pane")!;
     const diffBody = figure.querySelector<HTMLElement>(".diff-body")!;
+    const virtualizer = new diffs.Virtualizer({ overscrollSize: 400 });
+    virtualizer.setup(diffPane, diffBody);
     const filePane = figure.querySelector<HTMLElement>(".file")!;
     const filePath = figure.querySelector<HTMLElement>(".file-path")!;
     const code = figure.querySelector<HTMLElement>(".file-body .code")!;
@@ -121,9 +124,16 @@ async function mount(figure: HTMLElement) {
         const files = diffs.parsePatchFiles(patch).flatMap(({ files }) => files);
         if (files.length === 0) diffBody.append(note("Only binary files or lockfiles changed."));
         for (const fileDiff of files) {
-            const view = new diffs.FileDiff({ ...options, diffStyle: "unified" });
+            const view = new diffs.VirtualizedFileDiff({
+                ...options,
+                diffStyle: "unified",
+                onPostRender(node, _, phase) {
+                    if (phase === "mount") node.style.removeProperty("min-height");
+                },
+            }, virtualizer);
             const box = diffBody.appendChild(document.createElement("div"));
-            view.render({ fileDiff, containerWrapper: box });
+            const fileContainer = box.appendChild(document.createElement("diffs-container"));
+            if (!view.render({ fileDiff, fileContainer })) fileContainer.style.minHeight = `${view.height}px`;
             fileDiffs.push(view);
             diffOf.set(fileDiff.name, box);
         }
@@ -149,6 +159,39 @@ async function mount(figure: HTMLElement) {
         },
     });
     tree.hydrate({ fileTreeContainer: container });
+    search.disabled = false;
+    const closeSearch = () => {
+        search.value = "";
+        tree.closeSearch();
+    };
+    search.addEventListener("input", () => tree.setSearch(search.value || null));
+    search.addEventListener("blur", (event) => {
+        if (event.relatedTarget !== container) closeSearch();
+    });
+    search.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            event.preventDefault();
+            closeSearch();
+        } else if (event.key === "Enter" && tree.isSearchOpen()) {
+            event.preventDefault();
+            const item = tree.getFocusedItem();
+            item?.select();
+            closeSearch();
+            if (item) tree.scrollToPath(item.getPath(), { focus: true });
+        } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+            event.preventDefault();
+            if (event.key === "ArrowDown") tree.focusNextSearchMatch();
+            else tree.focusPreviousSearchMatch();
+        }
+    });
+    container.addEventListener("keydown", (event) => {
+        if (event.defaultPrevented || event.isComposing || !/^[\p{L}\p{N}]$/u.test(event.key) ||
+            event.ctrlKey || event.metaKey || event.altKey) return;
+        event.preventDefault();
+        search.focus();
+        search.value += event.key;
+        tree.setSearch(search.value);
+    });
     figure.querySelector(".close")!.addEventListener("click", closeFile);
 
     // Folders the last commit opened to show its changes, which the next one
@@ -185,6 +228,7 @@ async function mount(figure: HTMLElement) {
         tree.cleanUp();
         fileView?.cleanUp();
         for (const fileDiff of fileDiffs) fileDiff.cleanUp();
+        virtualizer.cleanUp();
     });
 }
 

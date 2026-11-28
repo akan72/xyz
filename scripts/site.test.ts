@@ -221,9 +221,9 @@ describe("/projects", () => {
     test("the live istheldown figure and its loaders are on the page", () => {
         const html = dist("projects.html");
         for (const id of ["subway-vis-caption", "subway-vis", "subway-map"]) assert.ok(main.querySelector(`#${id}`), id);
-        assert.ok(html.includes("wss://istheldown.com/ws?systems=subway&alerts=subway"));
+        assert.ok(!html.includes("wss://istheldown.com/ws?systems=subway&alerts=subway"));
         assert.ok(html.includes('<script src="/assets/subway-vis.js" defer></script>'));
-        assert.ok(html.includes('<link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/hydra-synth@1.4.0/dist/hydra-synth.js">'));
+        assert.ok(!html.includes('href="https://cdn.jsdelivr.net/npm/hydra-synth@1.4.0/dist/hydra-synth.js"'));
     });
 
     // sql.html answers with a redirect to sql, an extra round trip before DuckDB starts
@@ -240,7 +240,14 @@ describe("/projects", () => {
         assert.equal(commits[Number(slider?.getAttribute("value"))].sha.slice(0, 7), "157e55a");
         assert.equal(figure?.querySelector(".commit code")?.text, "157e55a");
         assert.ok(figure?.querySelector("file-tree-container"), "the tree is rendered at build time");
+        assert.ok(figure?.querySelector('.tree > input[type="search"][aria-label]'));
         for (const { sha } of commits) assert.ok(existsSync(`dist/repo/xyz/${sha}.patch`), sha);
+    });
+
+    test("the Vestaboard sample is named as a whole, not on individual chips", () => {
+        const board = main.querySelector('.vesta-preview .board[role="img"]')!;
+        assert.ok(board.getAttribute("aria-label")?.includes("BTC"));
+        assert.equal(board.querySelectorAll(".tile.chip[aria-label]").length, 0);
     });
 
     test("embeds and offscreen media are configured for fast loading", () => {
@@ -248,7 +255,8 @@ describe("/projects", () => {
         assert.ok(page.querySelector('link[rel="preconnect"][href="https://pangea.akan72.workers.dev"]'));
         const mapPanel = main.querySelector("#mingus-panel-map");
         assert.ok(mapPanel?.querySelector(".loading"));
-        assert.equal(mapPanel?.querySelector("iframe")?.getAttribute("loading"), undefined);
+        assert.equal(mapPanel?.getAttribute("data-src"), "https://alexkan.xyz/mingus/?embed");
+        assert.equal(mapPanel?.querySelector("iframe"), null);
         assert.equal(main.querySelector("#cig")?.getAttribute("loading"), "lazy");
         const video = main.querySelector("video.recording");
         assert.equal(video?.getAttribute("preload"), "none");
