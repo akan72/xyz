@@ -180,6 +180,19 @@ test("legacy writing redirects are preserved", async () => {
     }
 });
 
+test("legacy Software Factory article images redirect permanently to WebP", async () => {
+    const dir = "/assets/writing/closing-the-loop-at-the-software-factory/";
+    for (const old of [
+        "art-vs-artrange-v6.gif", "directory-v3.gif", "fullstack-anonymized.png", "image_10.png",
+        "image_15.png", "image_17.png", "image_18.png", "image_19.png", "image_21.png", "image_22.png",
+        "image_4.png", "image_7.png", "pr-environments-illustrative.png", "themes-latency-v2.png", "themes-mean-v4.gif",
+    ]) {
+        const response = await fetch(origin + dir + old, { redirect: "manual", signal: AbortSignal.timeout(15000) });
+        assert.equal(response.status, 301, old);
+        assert.equal(response.headers.get("location"), dir + old.replace(/\.(png|gif)$/, ".webp"), old);
+    }
+});
+
 test("the random image endpoint preserves its URL contract", async () => {
     const response = await request("/image");
     assert.equal(response.status, 200);
